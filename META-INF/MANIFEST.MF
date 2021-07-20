@@ -1,5 +1,4 @@
 Manifest-Version: 1.0
-Created-By: Apache Maven 3.6.3
-Built-By: ubuntu
-Build-Jdk: 11.0.8
+Created-By: Maven Javadoc Plugin 3.3.0
+Build-Jdk-Spec: 11
 
