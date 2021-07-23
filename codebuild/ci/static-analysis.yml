@@ -1,0 +1,11 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 12
+      java: corretto11
+  build:
+    commands:
+      - mvn com.coveo:fmt-maven-plugin:check
+      - ./util/test-conditions.sh
