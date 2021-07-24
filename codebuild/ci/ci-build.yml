@@ -68,6 +68,8 @@ batch:
     - identifier: static_analysis
       buildspec: codebuild/ci/static-analysis.yml
     - identifier: ci_build
+      depend-on:
+        - static_analysis
     - identifier: validate_ci_openjdk8
       depend-on:
         - ci_build
