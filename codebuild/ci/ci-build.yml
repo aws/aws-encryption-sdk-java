@@ -67,9 +67,16 @@ batch:
   build-graph:
     - identifier: static_analysis
       buildspec: codebuild/ci/static-analysis.yml
+      env:
+        env:
+        image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
     - identifier: ci_build
       depend-on:
         - static_analysis
+      buildspec: codebuild/ci/ci-build.yml
+      env:
+        env:
+        image: aws/codebuild/standard:3.0
     - identifier: validate_ci_openjdk8
       depend-on:
         - ci_build
@@ -78,6 +85,7 @@ batch:
         variables:
           JAVA_ENV_VERSION: openjdk8
           JAVA_NUMERIC_VERSION: 8
+        env:
         image: aws/codebuild/standard:3.0
     - identifier: validate_ci_openjdk11
       depend-on:
