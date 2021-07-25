@@ -36,6 +36,7 @@ phases:
           -Dgpg.passphrase="$GPG_PASS" \
           -Dsonatype.username="$SONA_USERNAME" \
           -Dsonatype.password="$SONA_PASSWORD" \
+          --no-transfer-progress \
           -s $SETTINGS_FILE
 
 
