@@ -36,7 +36,7 @@ phases:
           -Dcodeartifact.url=$CODEARTIFACT_REPO_URL \
           --no-transfer-progress \
           -s $SETTINGS_FILE
-  post-build:
+  post_build:
     commands:
       - cd $$CODEBUILD_SRC_DIR
       - |
