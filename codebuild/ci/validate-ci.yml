@@ -16,7 +16,6 @@ phases:
       java: $JAVA_ENV_VERSION
   pre_build:
     commands:
-      - export SRC_DIR=$(pwd)
       - VERSION_HASH="$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)-$CODEBUILD_RESOLVED_SOURCE_VERSION"
       - export SETTINGS_FILE=$(pwd)/codebuild/ci/settings.xml
       - git clone https://github.com/aws-samples/busy-engineers-document-bucket.git
@@ -36,21 +35,3 @@ phases:
           -Dcodeartifact.url=$CODEARTIFACT_REPO_URL \
           --no-transfer-progress \
           -s $SETTINGS_FILE
-  post_build:
-    commands:
-      - cd $$CODEBUILD_SRC_DIR
-      - |
-        mvn verify \
-          -Pcodeartifact \
-          -Dcheckstyle.skip \
-          -Desdk.version=$VERSION_HASH \
-          -Dmaven.compiler.target=$JAVA_NUMERIC_VERSION \
-          -Dmaven.compiler.source=$JAVA_NUMERIC_VERSION \
-          -Dcodeartifact.token=$CODEARTIFACT_TOKEN \
-          -Dcodeartifact.url=$CODEARTIFACT_REPO_URL \
-          --no-transfer-progress \
-          -Dgpg.skip=true \
-          "-DtestVectorZip=file://$CODEBUILD_SRC_DIR/src/test/resources/aws-encryption-sdk-test-vectors/vectors/awses-decrypt/python-2.3.0-mrks.zip" \
-          -s $SETTINGS_FILE
-
-

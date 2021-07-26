@@ -8,9 +8,13 @@ batch:
       env:
         env:
         image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+  - identifier: vectors_ci_openjdk11
+      buildspec: codebuild/ci/vectors-ci.yml
+      env:
+        variables:
+          JAVA_ENV_VERSION: openjdk11
+        image: aws/codebuild/standard:3.0
     - identifier: release_ci
-      depend-on:
-        - static_analysis
       buildspec: codebuild/ci/release-ci.yml
       env:
         env:
