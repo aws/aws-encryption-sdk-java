@@ -41,7 +41,7 @@ phases:
       - cp -r $CODEBUILD_SRC_DIR/src/examples/java/com src/main/java/
       - cp $CODEBUILD_SRC_DIR/codebuild/ci/busy-bucket-pom.xml pom.xml
       - |
-        mvn verify \
+        mvn test \
           -Pcodeartifact \
           -Dcheckstyle.skip \
           -Desdk.version=$VERSION_HASH \
