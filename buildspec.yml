@@ -8,7 +8,7 @@ batch:
       env:
         env:
         image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
-    - identifier: ci_build
+    - identifier: release_ci
       depend-on:
         - static_analysis
       buildspec: codebuild/ci/release-ci.yml
