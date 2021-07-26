@@ -34,4 +34,5 @@ phases:
           -Dcodeartifact.token=$CODEARTIFACT_TOKEN \
           -Dcodeartifact.url=$CODEARTIFACT_REPO_URL \
           --no-transfer-progress \
+          -T 4 \
           -s $SETTINGS_FILE

@@ -34,7 +34,7 @@ phases:
       - |
         mvn deploy \
           -PpublishingCodeArtifact \
-          -Pfast-tests-only \
+          -Dmaven.test.skip=true \
           -DperformRelease \
           -Dgpg.homedir="$HOME/mvn_gpg" \
           -DautoReleaseAfterClose=true \
@@ -43,6 +43,7 @@ phases:
           -Dcodeartifact.token=$CODEARTIFACT_TOKEN \
           -DaltDeploymentRepository=codeartifact::default::$CODEARTIFACT_REPO_URL \
           --no-transfer-progress \
+          -T 8 \
           -s $SETTINGS_FILE
     finally:
       - |
