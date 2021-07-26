@@ -29,7 +29,7 @@ phases:
       - VERSION_HASH="$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)-$CODEBUILD_RESOLVED_SOURCE_VERSION"
 #      See https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-env-vars.html
       - echo "Setting version in POM to $VERSION_HASH"
-      - mvn versions:set -DnewVersion="$VERSION_HASH"
+      - mvn versions:set -DnewVersion="$VERSION_HASH" --no-transfer-progress
       - echo "Version is now $(grep version pom.xml | head -n 1 | sed -n 's/[ \t]*<version>\(.*\)<\/version>/\1/p')"
       - |
         mvn deploy \
