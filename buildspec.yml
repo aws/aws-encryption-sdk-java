@@ -8,7 +8,7 @@ batch:
       env:
         env:
         image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
-  - identifier: vectors_ci_openjdk11
+   - identifier: vectors_ci_openjdk11
       buildspec: codebuild/ci/vectors-ci.yml
       env:
         variables:
