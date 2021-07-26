@@ -129,6 +129,7 @@
                     <maxmemory>1024m</maxmemory>
                     <doclint>none</doclint>
                     <source>8</source>
+                    <quiet>true</quiet>
                 </configuration>
             </plugin>
 
