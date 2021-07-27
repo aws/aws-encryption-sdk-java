@@ -81,8 +81,8 @@ public class JceMasterKey extends MasterKey<JceMasterKey> {
       final String provider,
       final String keyId,
       final String wrappingAlgorithm) {
-	// This should fail on JDK8 but not JDK11
-	"foo".isBlank();
+    // This should fail on JDK8 but not JDK11
+    "foo".isBlank();
     if (wrappingAlgorithm.toUpperCase().startsWith("RSA/ECB/")) {
       return new JceMasterKey(
           provider, keyId, JceKeyCipher.rsa(wrappingKey, unwrappingKey, wrappingAlgorithm));
