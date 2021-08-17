@@ -1,0 +1,62 @@
+version: 0.2
+
+env:
+  variables:
+    REGION: us-east-1
+    DOMAIN: crypto-tools-internal
+    REPOSITORY: java-esdk-ci
+    NAMESPACE: com.amazonaws
+    PACKAGE: aws-encryption-sdk-java
+  parameter-store:
+    ACCOUNT: /CodeBuild/AccountId
+  secrets-manager:
+    GPG_KEY: Maven-GPG-Keys-Credentials:Keyname
+    GPG_PASS: Maven-GPG-Keys-Credentials:Passphrase
+
+phases:
+  install:
+    runtime-versions:
+      java: openjdk11
+  pre_build:
+    commands:
+      - export SETTINGS_FILE=$(pwd)/codebuild/release/settings.xml
+      - export CODEARTIFACT_TOKEN=$(aws codeartifact get-authorization-token --domain $DOMAIN --domain-owner $ACCOUNT --query authorizationToken --output text --region ${REGION})
+      - export CODEARTIFACT_REPO_URL=https://${DOMAIN}-${ACCOUNT}.d.codeartifact.${REGION}.amazonaws.com/maven/${REPOSITORY}
+      - aws secretsmanager get-secret-value --region us-west-2 --secret-id Maven-GPG-Keys --query SecretBinary --output text | base64 -d > ~/mvn_gpg.tgz
+      - tar -xvf ~/mvn_gpg.tgz -C ~
+  build:
+    commands:
+      - VERSION_HASH="$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)-$CODEBUILD_RESOLVED_SOURCE_VERSION"
+#      See https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-env-vars.html
+      - echo "Setting version in POM to $VERSION_HASH"
+      - mvn versions:set -DnewVersion="$VERSION_HASH" --no-transfer-progress
+      - echo "Version is now $(grep version pom.xml | head -n 1 | sed -n 's/[ \t]*<version>\(.*\)<\/version>/\1/p')"
+      - |
+        mvn deploy \
+          -PpublishingCodeArtifact \
+          -Dmaven.test.skip=true \
+          -DperformRelease \
+          -Dgpg.homedir="$HOME/mvn_gpg" \
+          -DautoReleaseAfterClose=true \
+          -Dgpg.keyname="$GPG_KEY" \
+          -Dgpg.passphrase="$GPG_PASS" \
+          -Dcodeartifact.token=$CODEARTIFACT_TOKEN \
+          -DaltDeploymentRepository=codeartifact::default::$CODEARTIFACT_REPO_URL \
+          --no-transfer-progress \
+          -T 8 \
+          -s $SETTINGS_FILE
+    finally:
+      - |
+        if expr ${CODEBUILD_BUILD_SUCCEEDING} != 1; then
+          echo "An error occured while building and uploading $REPOSITORY."
+          echo "Did a previous build already upload $VERSION_HASH to $REPOSITORY?"
+          echo "Try deleting $VERSION_HASH from $REPOSITORY and restart"
+          echo "Delete Package Version Command \n
+            aws codeartifact delete-package-versions --domain $DOMAIN \
+              --repository $REPOSITORY \
+              --format maven \
+              --namespace $NAMESPACE \
+              --package $PACKAGE \
+              --versions $VERSION_HASH \
+              --region $REGION";
+        fi

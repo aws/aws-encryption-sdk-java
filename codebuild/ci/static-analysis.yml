@@ -7,5 +7,5 @@ phases:
       java: corretto11
   build:
     commands:
-      - mvn com.coveo:fmt-maven-plugin:check
+      - mvn -T 4 -ntp com.coveo:fmt-maven-plugin:check
       - ./util/test-conditions.sh

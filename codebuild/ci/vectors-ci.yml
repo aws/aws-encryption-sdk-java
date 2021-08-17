@@ -1,0 +1,9 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      java: $JAVA_ENV_VERSION
+  build:
+    commands:
+      - mvn install -T 8 -Dgpg.skip=true -ntp "-DtestVectorZip=file://$CODEBUILD_SRC_DIR/src/test/resources/aws-encryption-sdk-test-vectors/vectors/awses-decrypt/python-2.3.0.zip"

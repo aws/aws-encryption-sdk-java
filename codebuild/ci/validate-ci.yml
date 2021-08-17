@@ -4,7 +4,7 @@ env:
   variables:
     REGION: us-east-1
     DOMAIN: crypto-tools-internal
-    REPOSITORY: java-esdk-staging
+    REPOSITORY: java-esdk-ci
   parameter-store:
     ACCOUNT: /CodeBuild/AccountId
 
@@ -16,7 +16,8 @@ phases:
       java: $JAVA_ENV_VERSION
   pre_build:
     commands:
-      - export SETTINGS_FILE=$(pwd)/codebuild/release/settings.xml
+      - VERSION_HASH="$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)-$CODEBUILD_RESOLVED_SOURCE_VERSION"
+      - export SETTINGS_FILE=$(pwd)/codebuild/ci/settings.xml
       - git clone https://github.com/aws-samples/busy-engineers-document-bucket.git
       - cd busy-engineers-document-bucket/exercises/java/encryption-context-complete
       - export CODEARTIFACT_TOKEN=$(aws codeartifact get-authorization-token --domain $DOMAIN --domain-owner $ACCOUNT --query authorizationToken --output text --region ${REGION})
@@ -27,11 +28,11 @@ phases:
         mvn verify \
           -Pcodeartifact \
           -Dcheckstyle.skip \
-          -Desdk.version=$VERSION \
+          -Desdk.version=$VERSION_HASH \
           -Dmaven.compiler.target=$JAVA_NUMERIC_VERSION \
           -Dmaven.compiler.source=$JAVA_NUMERIC_VERSION \
           -Dcodeartifact.token=$CODEARTIFACT_TOKEN \
           -Dcodeartifact.url=$CODEARTIFACT_REPO_URL \
           --no-transfer-progress \
+          -T 4 \
           -s $SETTINGS_FILE
-

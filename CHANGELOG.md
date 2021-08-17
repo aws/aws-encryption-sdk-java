@@ -1,5 +1,29 @@
 # Changelog
 
+## 2.3.2 -- 2021-07-20
+
+### Maintenance
+
+* Bump maven-gpg-plugin from 1.6 to 3.0.1
+([#259](https://github.com/aws/aws-encryption-sdk-java/pull/259))
+* chore(deps): bump aws-java-sdk from 1.11.704 to 1.12.26
+([#284](https://github.com/aws/aws-encryption-sdk-java/pull/284))
+([#281](https://github.com/aws/aws-encryption-sdk-java/pull/281))
+([#280](https://github.com/aws/aws-encryption-sdk-java/pull/280))
+([#278](https://github.com/aws/aws-encryption-sdk-java/pull/278))
+* Bump maven-javadoc-plugin from 3.0.1 to 3.3.0
+([#267](https://github.com/aws/aws-encryption-sdk-java/pull/267))
+* chore: Bump maven-compiler-plugin from 3.8.0 to 3.8.1
+([#276](https://github.com/aws/aws-encryption-sdk-java/pull/276))
+* chore: Bump fmt-maven-plugin from 2.10 to 2.11
+([#275](https://github.com/aws/aws-encryption-sdk-java/pull/275))
+* chore: Bump junit-vintage-engine from 5.7.1 to 5.7.2
+([#268](https://github.com/aws/aws-encryption-sdk-java/pull/268))
+* chore: Bump mockito-core from 3.8.0 to 3.11.2
+([#270](https://github.com/aws/aws-encryption-sdk-java/pull/270))
+* chore: Add support policy
+([#274](https://github.com/aws/aws-encryption-sdk-java/pull/274))
+
 ## 2.3.1 -- 2021-06-29
 
 * fix: read project properties from package's own ClassLoader [(PR #269)](https://github.com/aws/aws-encryption-sdk-java/pull/269)

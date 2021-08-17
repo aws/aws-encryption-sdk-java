@@ -15,4 +15,5 @@ phases:
           -Dcheckstyle.skip \
           -Desdk.version=$VERSION \
           -Dmaven.compiler.target=$JAVA_NUMERIC_VERSION \
-          -Dmaven.compiler.source=$JAVA_NUMERIC_VERSION
+          -Dmaven.compiler.source=$JAVA_NUMERIC_VERSION \
+          --no-transfer-progress
