@@ -1,5 +1,31 @@
 # Changelog
 
+## 2.3.3 -- 2021-08-26
+
+### Updates
+* Javadoc release
+([#288](https://github.com/aws/aws-encryption-sdk-java/pull/288))
+* CI: Compilation with OpenJDK11 and validation with other JDKs
+([#293](https://github.com/aws/aws-encryption-sdk-java/pull/293))
+
+### Maintenance
+* chore(deps): bump aws-java-sdk from 1.12.26 to 1.12.54
+([#299](https://github.com/aws/aws-encryption-sdk-java/pull/299))
+([#301](https://github.com/aws/aws-encryption-sdk-java/pull/301))
+([#302](https://github.com/aws/aws-encryption-sdk-java/pull/302))
+([#301](https://github.com/aws/aws-encryption-sdk-java/pull/301))
+([#311](https://github.com/aws/aws-encryption-sdk-java/pull/311))
+([#312](https://github.com/aws/aws-encryption-sdk-java/pull/312))
+([#315](https://github.com/aws/aws-encryption-sdk-java/pull/315))
+([#317](https://github.com/aws/aws-encryption-sdk-java/pull/317))
+([#319](https://github.com/aws/aws-encryption-sdk-java/pull/319))
+([#321](https://github.com/aws/aws-encryption-sdk-java/pull/321))
+* chore: Bump fmt-maven-plugin from 2.11 to 2.12
+([#321](https://github.com/aws/aws-encryption-sdk-java/pull/321))
+* chore: Bump mockito-core from 3.11.2 to 3.12.3
+([#316](https://github.com/aws/aws-encryption-sdk-java/pull/316))
+
+
 ## 2.3.2 -- 2021-07-20
 
 ### Maintenance
