@@ -21,10 +21,10 @@
 ([#319](https://github.com/aws/aws-encryption-sdk-java/pull/319))
 ([#321](https://github.com/aws/aws-encryption-sdk-java/pull/321))
 * chore: Bump fmt-maven-plugin from 2.11 to 2.12
-([#321](https://github.com/aws/aws-encryption-sdk-java/pull/321))
+([#318](https://github.com/aws/aws-encryption-sdk-java/pull/318))
 * chore: Bump mockito-core from 3.11.2 to 3.12.3
 ([#316](https://github.com/aws/aws-encryption-sdk-java/pull/316))
-
+([#320](https://github.com/aws/aws-encryption-sdk-java/pull/320))
 
 ## 2.3.2 -- 2021-07-20
 
