@@ -2,13 +2,8 @@
 
 ## 2.3.3 -- 2021-08-26
 
-### Updates
-* Javadoc release
-([#288](https://github.com/aws/aws-encryption-sdk-java/pull/288))
-* CI: Compilation with OpenJDK11 and validation with other JDKs
-([#293](https://github.com/aws/aws-encryption-sdk-java/pull/293))
-
 ### Maintenance
+
 * chore(deps): bump aws-java-sdk from 1.12.26 to 1.12.54
 ([#299](https://github.com/aws/aws-encryption-sdk-java/pull/299))
 ([#301](https://github.com/aws/aws-encryption-sdk-java/pull/301))
@@ -25,6 +20,8 @@
 * chore: Bump mockito-core from 3.11.2 to 3.12.3
 ([#316](https://github.com/aws/aws-encryption-sdk-java/pull/316))
 ([#320](https://github.com/aws/aws-encryption-sdk-java/pull/320))
+* CI: Compilation with OpenJDK11 and validation with other JDKs
+([#293](https://github.com/aws/aws-encryption-sdk-java/pull/293))
 
 ## 2.3.2 -- 2021-07-20
 
