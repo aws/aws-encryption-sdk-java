@@ -1,0 +1,50 @@
+{
+    "branches": ["main"],
+    "plugins": [
+          ["@semantic-release/commit-analyzer", {
+            "preset": "conventionalcommits",
+            "parserOpts": {
+                "noteKeywords": ["BREAKING CHANGE", "BREAKING CHANGES"]
+            },
+            "presetConfig": {
+                "types": [
+                    {"type": "feat", "section": "Features"},
+                    {"type": "fix", "section": "Bug Fixes"},
+                    {"type": "chore", "section": "Maintenance"},
+                    {"type": "docs", "section": "Maintenance"},
+                    {"type": "style", "hidden": true},
+                    {"type": "refactor", "hidden": true},
+                    {"type": "perf", "hidden": true},
+                    {"type": "test", "hidden": true}
+                ]
+            }
+          }],
+          ["@semantic-release/release-notes-generator", {
+            "preset": "conventionalcommits",
+            "parserOpts": {
+                "noteKeywords": ["BREAKING CHANGE", "BREAKING CHANGES"]
+            },
+            "presetConfig": {
+                "types": [
+                    {"type": "feat", "section": "Features"},
+                    {"type": "fix", "section": "Bug Fixes"},
+                    {"type": "chore", "section": "Maintenance"},
+                    {"type": "docs", "section": "Maintenance"},
+                    {"type": "style", "hidden": true},
+                    {"type": "refactor", "hidden": true},
+                    {"type": "perf", "hidden": true},
+                    {"type": "test", "hidden": true}
+                ]
+            }
+          }],
+          ["@semantic-release/changelog", {
+            "changelogFile": "./CHANGELOG.md"
+          }],
+          ["@semantic-release/git", {
+            "assets": ["./CHANGELOG.md"],
+            "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+          }],
+          "@semantic-release/github"
+    ],
+    "repositoryUrl": "https://github.com/josecorella/test-semantic-release-pr",
+}
