@@ -1,3 +1,6 @@
+# Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 AWSTemplateFormatVersion: 2010-09-09
 Description: >-
   Template to build a CodeBuild Project, assumes that GitHub credentials are
@@ -75,9 +78,6 @@ Resources:
         S3Logs:
           Status: DISABLED
           EncryptionDisabled: false
-    Metadata:
-      "AWS::CloudFormation::Designer":
-        id: 46a42d6b-ae90-4ac0-8adf-e529eef5e9ac
   CodeBuildServiceRole:
     Type: "AWS::IAM::Role"
     Properties:
@@ -94,9 +94,6 @@ Resources:
         - !Ref ParameterStorePolicy
         - "arn:aws:iam::aws:policy/AWSCodeArtifactReadOnlyAccess"
         - "arn:aws:iam::aws:policy/AWSCodeArtifactAdminAccess"
-    Metadata:
-      "AWS::CloudFormation::Designer":
-        id: 19b17bdc-5d49-4f12-93e6-6d761b7ce324
   CodeBuildBatchPolicy:
     Type: "AWS::IAM::ManagedPolicy"
     Properties:
@@ -122,9 +119,6 @@ Resources:
             }
           ]
         }
-    Metadata:
-      "AWS::CloudFormation::Designer":
-        id: 894a45c5-5dc7-4f11-be65-8bf5e37e289d
   CodeBuildBasePolicy:
     Type: "AWS::IAM::ManagedPolicy"
     Properties:
@@ -178,9 +172,6 @@ Resources:
             }
           ]
         }
-    Metadata:
-      "AWS::CloudFormation::Designer":
-        id: 3dafd088-2792-4a41-b612-d9d049721644
   AccountIdParameter:
     Type: "AWS::SSM::Parameter"
     Properties:
@@ -188,9 +179,6 @@ Resources:
       Name: /CodeBuild/AccountId
       Type: String
       Value: !Sub "${AWS::AccountId}"
-    Metadata:
-      "AWS::CloudFormation::Designer":
-        id: 845aaadf-b869-42fa-90d5-c2557829b55e
   SecretsManagerPolicy:
     Type: "AWS::IAM::ManagedPolicy"
     Properties:
@@ -211,9 +199,6 @@ Resources:
             }
           ]
         }
-    Metadata:
-      "AWS::CloudFormation::Designer":
-        id: 41e195f9-22c7-44b7-9793-0232701f6223
   CryptoToolsKMS:
     Type: "AWS::IAM::ManagedPolicy"
     Properties:
@@ -238,9 +223,6 @@ Resources:
             }
           ]
         }
-    Metadata:
-      "AWS::CloudFormation::Designer":
-        id: dd99a5ab-b579-4f13-a80f-d72c35896892
   ParameterStorePolicy:
     Type: "AWS::IAM::ManagedPolicy"
     Properties:
@@ -259,6 +241,3 @@ Resources:
             }
           ]
         }
-    Metadata:
-      "AWS::CloudFormation::Designer":
-        id: f67609eb-975a-4747-8065-aea5b1fc038d
