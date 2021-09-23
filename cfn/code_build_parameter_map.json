@@ -1,0 +1,6 @@
+{
+  "NumberOfBuildsInBatch": 50,
+  "ProjectDescription": "CD for Java ESDK",
+  "ProjectName": "java-esdk",
+  "SourceLocation": "https://github.com/aws/aws-encryption-sdk-java.git"
+}

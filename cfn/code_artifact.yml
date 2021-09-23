@@ -1,0 +1,44 @@
+# Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+AWSTemplateFormatVersion: 2010-09-09
+Description: "Template for CodeArtifact repositories. Creates Domain if CreateDomainFlag is True"
+Parameters:
+  DomainName:
+    Type: String
+    Description: The name of the CodeArtifact Domain
+    Default: crypto-tools-internal
+  RepositoryName:
+    Type: String
+    Description: Base Name for the Repositories
+    Default: esdk-java
+  CreateDomainFlag:
+    Type: String
+    Description: Attempt to create Domain or not
+    Default: False
+    AllowedValues:
+      - True
+      - False
+
+Conditions:
+  CreateDomain: !Equals
+    - !Ref CreateDomainFlag
+    - True
+
+Resources:
+  Domain:
+    Type: AWS::CodeArtifact::Domain
+    Condition: CreateDomain
+    Properties:
+      DomainName: !Ref DomainName
+
+  CIRepo:
+    Type: AWS::CodeArtifact::Repository
+    Properties:
+      DomainName: !Ref DomainName
+      RepositoryName: !Sub "${RepositoryName}-ci"
+
+  StagingRepo:
+    Type: AWS::CodeArtifact::Repository
+    Properties:
+      DomainName: !Ref DomainName
+      RepositoryName: !Sub "${RepositoryName}-staging"
