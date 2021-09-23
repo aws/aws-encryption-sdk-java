@@ -9,3 +9,7 @@ target/
 /.history
 /.DS_Store
 /specification_compliance_report.html
+
+## semantic-release
+package-lock.json
+node_modules/
