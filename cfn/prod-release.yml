@@ -190,7 +190,7 @@ Resources:
               "Resource": [
                 "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Maven-GPG-Keys-GC6h0A",
                 "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Sonatype-Team-Account-0tWvZm",
-                "arn:aws:secretsmanager:us-west-2:587316601012:secret:Maven-GPG-Keys-Credentials-C0wCzI",
+                "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Maven-GPG-Keys-Credentials-C0wCzI",
               ],
               "Action": "secretsmanager:GetSecretValue"
             }
@@ -209,8 +209,8 @@ Resources:
             {
               "Effect": "Allow",
               "Resource": [
-                "arn:aws:kms:*:658956600833:key/*",
-                "arn:aws:kms:*:658956600833:alias/*"
+                "arn:aws:kms:*:${AWS::AccountId}:key/*",
+                "arn:aws:kms:*:${AWS::AccountId}:alias/*"
               ],
               "Action": [
                 "kms:Encrypt",
