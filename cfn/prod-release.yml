@@ -107,8 +107,7 @@ Resources:
             {
               "Effect": "Allow",
               "Resource": [
-                "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${ProjectName}-test-release",
-                "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${ProjectName}-prod-release",
+                "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${ProjectName}-release-prod",
                 "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${ProjectName}"
               ],
               "Action": [
@@ -133,10 +132,8 @@ Resources:
               "Resource": [
                 "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${ProjectName}",
                 "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${ProjectName}:*",
-                "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${ProjectName}-test-release",
-                "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${ProjectName}-test-release:*",
-                "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${ProjectName}-prod-release",
-                "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${ProjectName}-prod-release:*"
+                "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${ProjectName}-release-prod",
+                "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${ProjectName}-release-prod:*"
               ],
               "Action": [
                 "logs:CreateLogGroup",
