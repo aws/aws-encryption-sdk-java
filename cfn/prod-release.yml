@@ -180,7 +180,7 @@ Resources:
     Type: "AWS::IAM::ManagedPolicy"
     Properties:
       ManagedPolicyName: !Sub "CryptoTools-SecretsManager-${ProjectName}-release"
-      Path: /service-role/
+      Path: "/service-role/"
       PolicyDocument: !Sub |
         {
           "Version": "2012-10-17",
@@ -189,8 +189,7 @@ Resources:
               "Effect": "Allow",
               "Resource": [
                 "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Maven-GPG-Keys-GC6h0A",
-                "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Sonatype-Team-Account-0tWvZm",
-                "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Maven-GPG-Keys-Credentials-C0wCzI",
+                "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Sonatype-Team-Account-0tWvZm"
               ],
               "Action": "secretsmanager:GetSecretValue"
             }
