@@ -173,7 +173,7 @@ Resources:
     Type: "AWS::SSM::Parameter"
     Properties:
       Description: Parameter to store our account id so CodeBuild specs can access it
-      Name: /CodeBuild/AccountId
+      Name: /CodeBuild/Account
       Type: String
       Value: !Sub "${AWS::AccountId}"
   SecretsManagerPolicy:
@@ -209,8 +209,8 @@ Resources:
             {
               "Effect": "Allow",
               "Resource": [
-                "arn:aws:kms:*:${AWS::AccountId}:key/*",
-                "arn:aws:kms:*:${AWS::AccountId}:alias/*"
+                "arn:aws:kms:*:658956600833:key/*",
+                "arn:aws:kms:*:658956600833:alias/*"
               ],
               "Action": [
                 "kms:Encrypt",
