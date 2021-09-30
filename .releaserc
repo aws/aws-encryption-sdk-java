@@ -9,16 +9,21 @@
             "presetConfig": {
                 "types": [
                     {"type": "feat", "section": "Features"},
-                    {"type": "fix", "section": "Bug Fixes"},
+                    {"type": "fix", "section": "Fixes"},
                     {"type": "chore", "section": "Maintenance"},
                     {"type": "docs", "section": "Maintenance"},
-                    {"type": "revert", "section": "Bug Fixes"},
+                    {"type": "revert", "section": "Fixes"},
                     {"type": "style", "hidden": true},
                     {"type": "refactor", "hidden": true},
                     {"type": "perf", "hidden": true},
                     {"type": "test", "hidden": true}
                 ]
-            }
+            },
+            "releaseRules": [
+                {"type": "docs", "release": "patch"},
+                {"type": "revert", "release": "patch"},
+                {"type": "chore", "release": "patch"}
+            ]
           }],
           ["@semantic-release/release-notes-generator", {
             "preset": "conventionalcommits",
@@ -28,10 +33,10 @@
             "presetConfig": {
                 "types": [
                     {"type": "feat", "section": "Features"},
-                    {"type": "fix", "section": "Bug Fixes"},
+                    {"type": "fix", "section": "Fixes"},
                     {"type": "chore", "section": "Maintenance"},
                     {"type": "docs", "section": "Maintenance"},
-                    {"type": "revert", "section": "Bug Fixes"},
+                    {"type": "revert", "section": "Fixes"},
                     {"type": "style", "hidden": true},
                     {"type": "refactor", "hidden": true},
                     {"type": "perf", "hidden": true},
@@ -42,8 +47,12 @@
           ["@semantic-release/changelog", {
             "changelogFile": "./CHANGELOG.md"
           }],
+          ["@semantic-release/exec", {
+            "prepareCmd": "mvn versions:set -DnewVersion=${nextRelease/version} \
+                -DautoVersionSubmodules=true"
+          }]
           ["@semantic-release/git", {
-            "assets": ["./CHANGELOG.md"],
+            "assets": ["./CHANGELOG.md", "./pom.xml"],
             "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
           }],
           "@semantic-release/github"
