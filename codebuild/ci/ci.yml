@@ -7,7 +7,7 @@ batch:
   fast-fail: false
   build-graph:
     - identifier: static_analysis
-      buildspec: ci/static_analysis.yml
+      buildspec: ci/static-analysis.yml
       env:
         compute-type: BUILD_GENERAL1_MEDIUM
         image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
