@@ -18,14 +18,14 @@ batch:
         compute-type: BUILD_GENERAL1_LARGE
         variables:
           JAVA_ENV_VERSION: openjdk8
-        image: aws/codebuild/standard:5.0
+        image: aws/codebuild/standard:3.0
     - identifier: vectors_ci_openjdk11
       buildspec: codebuild/ci/vectors-ci.yml
       env:
         compute-type: BUILD_GENERAL1_LARGE
         variables:
           JAVA_ENV_VERSION: openjdk11
-        image: aws/codebuild/standard:5.0
+        image: aws/codebuild/standard:3.0
     - identifier: vectors_ci_corretto8
       buildspec: codebuild/ci/vectors-ci.yml
       env:
@@ -55,7 +55,7 @@ batch:
         variables:
           JAVA_ENV_VERSION: openjdk8
           JAVA_NUMERIC_VERSION: 8
-        image: aws/codebuild/standard:5.0
+        image: aws/codebuild/standard:3.0
     - identifier: validate_ci_openjdk11
       depend-on:
         - release_ci
@@ -65,7 +65,7 @@ batch:
         variables:
           JAVA_ENV_VERSION: openjdk11
           JAVA_NUMERIC_VERSION: 11
-        image: aws/codebuild/standard:5.0
+        image: aws/codebuild/standard:3.0
     - identifier: validate_ci_corretto8
       depend-on:
         - release_ci
