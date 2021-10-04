@@ -7,34 +7,34 @@ batch:
   fast-fail: false
   build-graph:
     - identifier: static_analysis
-      buildspec: ci/static-analysis.yml
+      buildspec: codebuild/ci/static-analysis.yml
       env:
         compute-type: BUILD_GENERAL1_MEDIUM
         image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
     ######### Start Vector tests #########
     - identifier: vectors_ci_openjdk8
-      buildspec: ci/vectors-ci.yml
+      buildspec: codebuild/ci/vectors-ci.yml
       env:
         compute-type: BUILD_GENERAL1_LARGE
         variables:
           JAVA_ENV_VERSION: openjdk8
         image: aws/codebuild/standard:5.0
     - identifier: vectors_ci_openjdk11
-      buildspec: ci/vectors-ci.yml
+      buildspec: codebuild/ci/vectors-ci.yml
       env:
         compute-type: BUILD_GENERAL1_LARGE
         variables:
           JAVA_ENV_VERSION: openjdk11
         image: aws/codebuild/standard:5.0
     - identifier: vectors_ci_corretto8
-      buildspec: ci/vectors-ci.yml
+      buildspec: codebuild/ci/vectors-ci.yml
       env:
         compute-type: BUILD_GENERAL1_LARGE
         variables:
           JAVA_ENV_VERSION: corretto8
         image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
     - identifier: vectors_ci_corretto11
-      buildspec: ci/vectors-ci.yml
+      buildspec: codebuild/ci/vectors-ci.yml
       env:
         compute-type: BUILD_GENERAL1_LARGE
         variables:
@@ -50,7 +50,7 @@ batch:
     - identifier: validate_ci_openjdk8
       depend-on:
         - release_ci
-      buildspec: ci/validate-ci.yml
+      buildspec: codebuild/ci/validate-ci.yml
       env:
         variables:
           JAVA_ENV_VERSION: openjdk8
@@ -59,7 +59,7 @@ batch:
     - identifier: validate_ci_openjdk11
       depend-on:
         - release_ci
-      buildspec: ci/validate-ci.yml
+      buildspec: codebuild/ci/validate-ci.yml
       env:
         compute-type: BUILD_GENERAL1_MEDIUM
         variables:
