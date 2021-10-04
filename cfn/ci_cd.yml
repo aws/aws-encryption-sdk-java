@@ -84,6 +84,7 @@ Resources:
         S3Logs:
           Status: DISABLED
           EncryptionDisabled: false
+
   CodeBuildProjectRelease:
     Type: "AWS::CodeBuild::Project"
     Properties:
@@ -128,6 +129,7 @@ Resources:
         S3Logs:
           Status: DISABLED
           EncryptionDisabled: false
+
   CodeBuildServiceRoleCI:
     Type: "AWS::IAM::Role"
     Properties:
@@ -144,6 +146,7 @@ Resources:
         - !Ref ParameterStorePolicy
         - "arn:aws:iam::aws:policy/AWSCodeArtifactReadOnlyAccess"
         - "arn:aws:iam::aws:policy/AWSCodeArtifactAdminAccess"
+
   CodeBuildServiceRoleRelease:
     Type: "AWS::IAM::Role"
     Properties:
@@ -160,6 +163,7 @@ Resources:
         - !Ref ParameterStorePolicy
         - "arn:aws:iam::aws:policy/AWSCodeArtifactReadOnlyAccess"
         - "arn:aws:iam::aws:policy/AWSCodeArtifactAdminAccess"
+
   CodeBuildBatchPolicy:
     Type: "AWS::IAM::ManagedPolicy"
     Properties:
@@ -185,6 +189,7 @@ Resources:
             }
           ]
         }
+
   CodeBuildBasePolicy:
     Type: "AWS::IAM::ManagedPolicy"
     Properties:
@@ -238,6 +243,7 @@ Resources:
             }
           ]
         }
+
   AccountIdParameter:
     Type: "AWS::SSM::Parameter"
     Properties:
@@ -245,6 +251,7 @@ Resources:
       Name: /CodeBuild/AccountIdentity
       Type: String
       Value: !Sub "${AWS::AccountId}"
+
   SecretsManagerPolicyCI:
     Type: "AWS::IAM::ManagedPolicy"
     Properties:
@@ -263,6 +270,7 @@ Resources:
             }
           ]
         }
+
   SecretsManagerPolicyRelease:
     Type: "AWS::IAM::ManagedPolicy"
     Properties:
@@ -282,6 +290,7 @@ Resources:
             }
           ]
         }
+
   CryptoToolsKMS:
     Type: "AWS::IAM::ManagedPolicy"
     Properties:
@@ -306,6 +315,7 @@ Resources:
             }
           ]
         }
+
   ParameterStorePolicy:
     Type: "AWS::IAM::ManagedPolicy"
     Properties:
