@@ -45,7 +45,7 @@ batch:
       buildspec: codebuild/ci/release-ci.yml
       env:
         compute-type: BUILD_GENERAL1_LARGE
-        image: aws/codebuild/standard:5.0
+        image: aws/codebuild/standard:3.0
     ######### Start JAR Smoke tests #########
     - identifier: validate_ci_openjdk8
       depend-on:
