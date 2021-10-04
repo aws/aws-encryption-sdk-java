@@ -8,4 +8,4 @@ phases:
   build:
     commands:
       - mvn -T 4 -ntp com.coveo:fmt-maven-plugin:check
-      - ../../util/test-conditions.sh
+      - ./util/test-conditions.sh
