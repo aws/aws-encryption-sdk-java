@@ -48,7 +48,7 @@
             "changelogFile": "./CHANGELOG.md"
           }],
           ["@semantic-release/exec", {
-            "prepareCmd": "mvn versions:set -DnewVersion=${nextRelease/version} \
+            "prepareCmd": "mvn versions:set -DnewVersion=${nextRelease.version} \
                 -DautoVersionSubmodules=true"
           }]
           ["@semantic-release/git", {
