@@ -1,0 +1,12 @@
+## Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+
+version: 0.2
+
+batch:
+  fast-fail: true
+  build-graph:
+
+# Release and Validate to CodeArtifact
+  - identifier: release_staging
+    buildspec: release-staging.yml

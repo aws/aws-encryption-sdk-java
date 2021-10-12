@@ -46,7 +46,7 @@ phases:
           -s $SETTINGS_FILE
 
 batch:
-  fast-fail: false
+  fast-fail: true
   build-graph:
     - identifier: release_to_staging
     - identifier: validate_staging_release_openjdk8
