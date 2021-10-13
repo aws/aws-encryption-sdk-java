@@ -17,13 +17,6 @@ phases:
       java: openjdk11
   pre_build:
     commands:
-      - git checkout $COMMIT_ID
-      - FOUND_VERSION=$(grep version pom.xml | head -n 1 | sed -n 's/[ \t]*<version>\(.*\)<\/version>/\1/p')
-      - |
-        if expr ${FOUND_VERSION} != ${VERSION}; then
-          echo "pom.xml version (${FOUND_VERSION}) does not match expected version (${VERSION}), stopping"
-          exit 1;
-        fi
       - export SETTINGS_FILE=$(pwd)/codebuild/release/settings.xml
       - export CODEARTIFACT_TOKEN=$(aws codeartifact get-authorization-token --domain $DOMAIN --domain-owner $ACCOUNT --query authorizationToken --output text --region ${REGION})
       - export CODEARTIFACT_REPO_URL=https://${DOMAIN}-${ACCOUNT}.d.codeartifact.${REGION}.amazonaws.com/maven/${REPOSITORY}
