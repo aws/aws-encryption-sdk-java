@@ -9,4 +9,4 @@ batch:
 
 # Release and Validate to CodeArtifact
   - identifier: release_staging
-    buildspec: release-staging.yml
+    buildspec: codebuild/release/release-staging.yml
