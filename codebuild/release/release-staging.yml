@@ -1,3 +1,6 @@
+## Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+
 version: 0.2
 
 env:
@@ -42,44 +45,3 @@ phases:
           -DaltDeploymentRepository=codeartifact::default::$CODEARTIFACT_REPO_URL \
           --no-transfer-progress \
           -s $SETTINGS_FILE
-
-batch:
-  fast-fail: true
-  build-graph:
-    - identifier: release_to_staging
-    - identifier: validate_staging_release_openjdk8
-      depend-on:
-        - release_to_staging
-      buildspec: codebuild/release/validate-staging.yml
-      env:
-        variables:
-          JAVA_ENV_VERSION: openjdk8
-          JAVA_NUMERIC_VERSION: 8
-        image: aws/codebuild/standard:3.0
-    - identifier: validate_staging_release_openjdk11
-      depend-on:
-        - release_to_staging
-      buildspec: codebuild/release/validate-staging.yml
-      env:
-        variables:
-          JAVA_ENV_VERSION: openjdk11
-          JAVA_NUMERIC_VERSION: 11
-        image: aws/codebuild/standard:3.0
-    - identifier: validate_staging_release_corretto8
-      depend-on:
-        - release_to_staging
-      buildspec: codebuild/release/validate-staging.yml
-      env:
-        variables:
-          JAVA_ENV_VERSION: corretto8
-          JAVA_NUMERIC_VERSION: 8
-        image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
-    - identifier: validate_staging_release_corretto11
-      depend-on:
-        - release_to_staging
-      buildspec: codebuild/release/validate-staging.yml
-      env:
-        variables:
-          JAVA_ENV_VERSION: corretto11
-          JAVA_NUMERIC_VERSION: 11
-        image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
