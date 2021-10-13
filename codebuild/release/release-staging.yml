@@ -14,7 +14,7 @@ env:
 phases:
   install:
     runtime-versions:
-      java: openjdk11
+      java: corretto11
   pre_build:
     commands:
       - export SETTINGS_FILE=$(pwd)/codebuild/release/settings.xml
