@@ -51,3 +51,13 @@ batch:
         JAVA_ENV_VERSION: corretto11
         JAVA_NUMERIC_VERSION: 11
       image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+
+# Version Project
+  - identifier: version
+    depend-on:
+      - release_staging
+      - validate_staging_release_openjdk_8
+      - validate_staging_release_openjdk11
+      - validate_staging_release_corretto8
+      - validate_staging_release_corretto11
+    buildspec: codebuild/release/version.yml
