@@ -56,7 +56,7 @@
           }],
           ["@semantic-release/git", {
             "assets": ["./CHANGELOG.md", "./pom.xml", "./README.md"],
-            "message": "AWS Encryption SDK ${nextRelease.version} Release -- 'date +"%Y-%m-%d"' \n\n${nextRelease.notes}"
+            "message": "AWS Encryption SDK ${nextRelease.version} Release -- `date +"%Y-%m-%d"` \n\n${nextRelease.notes}"
           }],
           #@semantic-release/github"
     ],
