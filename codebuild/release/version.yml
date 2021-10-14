@@ -15,3 +15,8 @@ phases:
       - npm --version
     runtime-versions:
       nodejs: 14
+  pre_build:
+    commands:
+      - git config --global user.name "aws-crypto-tools-ci-bot"
+      - git config --global user.email "no-reply@noemail.local"
+      - git checkout $BRANCH
