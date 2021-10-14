@@ -12,4 +12,6 @@ target/
 
 ## semantic-release
 package-lock.json
+package.json
 node_modules/
+pom.xml.versionsBackup

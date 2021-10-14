@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.3.3 -- 2021-08-26
+### 2.3.3 -- 2021-08-26
 
 ### Maintenance
 
@@ -23,7 +23,7 @@
 * CI: Compilation with OpenJDK11 and validation with other JDKs
 ([#293](https://github.com/aws/aws-encryption-sdk-java/pull/293))
 
-## 2.3.2 -- 2021-07-20
+### 2.3.2 -- 2021-07-20
 
 ### Maintenance
 
@@ -47,11 +47,11 @@
 * chore: Add support policy
 ([#274](https://github.com/aws/aws-encryption-sdk-java/pull/274))
 
-## 2.3.1 -- 2021-06-29
+### 2.3.1 -- 2021-06-29
 
 * fix: read project properties from package's own ClassLoader [(PR #269)](https://github.com/aws/aws-encryption-sdk-java/pull/269)
 
-## 2.3.0 -- 2021-06-16
+### 2.3.0 -- 2021-06-16
 
 * feat: AWS KMS multi-Region Key support
         
@@ -66,14 +66,14 @@
   for more details about how the AWS Encryption SDK interoperates
   with AWS KMS multi-Region keys.
 
-## 2.2.0 -- 2021-05-27
+### 2.2.0 -- 2021-05-27
 
 * feat: Improvements to the message decryption process. 
 
   See https://github.com/aws/aws-encryption-sdk-java/security/advisories/GHSA-55xh-53m6-936r
 
 
-## 2.0.0 -- 2020-09-24
+### 2.0.0 -- 2020-09-24
 
 * feat!: Updates to the AWS Encryption SDK. 4678ffa
 
@@ -84,11 +84,11 @@ Key committing suites are now default. CommitmentPolicy requires commitment by d
 
 See: https://docs.aws.amazon.com/encryption-sdk/latest/developer-guide/migration.html
 
-## 1.7.0 -- 2020-09-24
+### 1.7.0 -- 2020-09-24
 
 * feat: Updates to the AWS Encryption SDK. a6be12a
 
-## 1.6.2 -- 2020-05-26
+### 1.6.2 -- 2020-05-26
 
 ### Patches
 * Validate final frame length does not exceed the frame size in the message header [PR #166](https://github.com/aws/aws-encryption-sdk-java/pull/166)
@@ -98,7 +98,7 @@ See: https://docs.aws.amazon.com/encryption-sdk/latest/developer-guide/migration
 * Update AWS Java SDK version from 1.11.561 to 1.11.704. [PR #186](https://github.com/aws/aws-encryption-sdk-java/pull/186)
 * Upgrade Bouncy Castle from 1.61 to 1.65 [PR #179](https://github.com/aws/aws-encryption-sdk-java/pull/179)
 
-## 1.6.1 -- 2019-10-29
+### 1.6.1 -- 2019-10-29
 
 ### Deprecation Warnings
 * Deprecated `AwsCrypto.encryptString()` and `AwsCrypto.decryptString()`.
@@ -121,7 +121,7 @@ See: https://docs.aws.amazon.com/encryption-sdk/latest/developer-guide/migration
   [#131](https://github.com/aws/aws-encryption-sdk-java/pull/131),
   and [#132](https://github.com/aws/aws-encryption-sdk-java/pull/132).
 
-## 1.6.0 -- 2019-05-31
+### 1.6.0 -- 2019-05-31
 
 ### Minor Changes
 * Remove dependency on Apache Commons Codec 1.12.
@@ -129,7 +129,7 @@ See: https://docs.aws.amazon.com/encryption-sdk/latest/developer-guide/migration
 * Introduce and use utility methods for Base64 encoding/decoding so that
   switching the codec provider needs to be done only in one place next time.
 
-## 1.5.0 -- 2019-05-30
+### 1.5.0 -- 2019-05-30
 
 ### Minor Changes
 * Added dependency on Apache Commons Codec 1.12.
@@ -142,12 +142,12 @@ See: https://docs.aws.amazon.com/encryption-sdk/latest/developer-guide/migration
 * Upgrade Mockito from 2.23.4 to 2.28.1.
 * Upgrade Apache Commons Lang from 3.4 to 3.9.
 
-## 1.4.1 -- 2019-05-10
+### 1.4.1 -- 2019-05-10
 
 ### Patches
 * Cast ByteBuffer to Buffer prior to using some methods so that it works properly in Java 8.
 
-## 1.4.0 -- 2019-05-10
+### 1.4.0 -- 2019-05-10
 
 ### Minor Changes
 * Increased BouncyCastle dependency version to 1.61
@@ -156,7 +156,7 @@ See: https://docs.aws.amazon.com/encryption-sdk/latest/developer-guide/migration
 ### Maintenance
 * Increased Mockito test dependency version to 2.23.4
 
-## 1.3.6 -- 2018-12-10
+### 1.3.6 -- 2018-12-10
 
 ### Patches
 * Fixed typos in Exception messages (excryption -> encryption) #78
@@ -168,7 +168,7 @@ See: https://docs.aws.amazon.com/encryption-sdk/latest/developer-guide/migration
 * Added JML specs in #72
 * Ensure that KeyBlob treats field lengths as unsigned shorts #71
 
-## 1.3.5
+### 1.3.5
 
 ### Minor Changes
 
@@ -178,7 +178,7 @@ See: https://docs.aws.amazon.com/encryption-sdk/latest/developer-guide/migration
 region not servicable by that MKP, the exception will now be thrown on first
 use of the MK, rather than at getMasterKey time.
 
-## 1.3.4
+### 1.3.4
 
 ### Minor Changes
 
@@ -186,7 +186,7 @@ use of the MK, rather than at getMasterKey time.
 decrypting certain malformed ciphertexts. This may reduce performance slightly
 in some scenarios.
 
-## 1.3.3
+### 1.3.3
 
 ### Minor Changes
 * Move the `aws-encryption-sdk-java` repository from `awslabs` to `aws`.
@@ -194,7 +194,7 @@ in some scenarios.
 * Make `JceMasterKey` case insensitive
 * Fix bare aliases not using default region
 
-## 1.3.2
+### 1.3.2
 
 ### Minor Changes
 * Frame size restriction removed again
@@ -202,7 +202,7 @@ in some scenarios.
 * Fix estimateCipherText when used with cached data keys
 * Do not automatically set a default region in KmsMasterKeyProvider
 
-## 1.3.1
+### 1.3.1
 
 ### Minor changes
 
@@ -210,7 +210,7 @@ in some scenarios.
   This restriction was relaxed in 1.3.0, but due to compatibility concerns
   we'll put this restriction back in for the time being.
 
-## 1.3.0
+### 1.3.0
 
 ### Major changes
 
