@@ -8,7 +8,7 @@ env:
     NAMESPACE: com.amazonaws
     PACKAGE: aws-encryption-sdk-java
   parameter-store:
-    ACCOUNT: /CodeBuild/AccountId
+    ACCOUNT: /CodeBuild/AccountIdentity
   secrets-manager:
     GPG_KEY: Maven-GPG-Keys-Credentials:Keyname
     GPG_PASS: Maven-GPG-Keys-Credentials:Passphrase
