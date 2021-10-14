@@ -12,7 +12,11 @@ env:
 phases:
   install:
     commands:
-      - npm --version
+      - npm install --save-dev semantic-release
+      - npm install @semantic-release/changelog -d
+      - npm install @semantic-release/exec -d
+      - npm install @semantic-release/git -d
+      - npm install --save conventional-changelog
     runtime-versions:
       nodejs: 14
   pre_build:
