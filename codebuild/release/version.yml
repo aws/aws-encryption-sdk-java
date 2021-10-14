@@ -1,0 +1,17 @@
+## Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+
+version: 0.2
+
+env:
+  variables:
+    NODE_OPTIONS: "--max-old-space-size=4096"
+    BRANCH: "master"
+  git-credential-helper: "yes"
+
+phases:
+  install:
+    commands:
+      - npm --version
+    runtime-versions:
+      nodejs: 14

@@ -61,3 +61,5 @@ batch:
       - validate_staging_release_corretto8
       - validate_staging_release_corretto11
     buildspec: codebuild/release/version.yml
+    env:
+      image: aws/codebuild/standard:5.0
