@@ -24,3 +24,6 @@ phases:
       - git config --global user.name "aws-crypto-tools-ci-bot"
       - git config --global user.email "no-reply@noemail.local"
       - git checkout $BRANCH
+  build:
+    commands:
+      - npx semantic-release --no-ci
