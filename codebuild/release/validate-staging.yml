@@ -1,3 +1,6 @@
+## Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+
 version: 0.2
 
 env:
@@ -16,6 +19,7 @@ phases:
       java: $JAVA_ENV_VERSION
   pre_build:
     commands:
+      - VERSION_HASH="$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)-$CODEBUILD_RESOLVED_SOURCE_VERSION"
       - export SETTINGS_FILE=$(pwd)/codebuild/release/settings.xml
       - git clone https://github.com/aws-samples/busy-engineers-document-bucket.git
       - cd busy-engineers-document-bucket/exercises/java/encryption-context-complete
@@ -27,11 +31,12 @@ phases:
         mvn verify \
           -Pcodeartifact \
           -Dcheckstyle.skip \
-          -Desdk.version=$VERSION \
+          -Desdk.version=$VERSION_HASH \
           -Dmaven.compiler.target=$JAVA_NUMERIC_VERSION \
           -Dmaven.compiler.source=$JAVA_NUMERIC_VERSION \
           -Dcodeartifact.token=$CODEARTIFACT_TOKEN \
           -Dcodeartifact.url=$CODEARTIFACT_REPO_URL \
           --no-transfer-progress \
+          -T 4 \
           -s $SETTINGS_FILE
 
