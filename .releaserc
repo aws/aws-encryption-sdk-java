@@ -1,3 +1,5 @@
+## Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
 {
     "branches": ["master"],
     "plugins": [
@@ -9,16 +11,21 @@
             "presetConfig": {
                 "types": [
                     {"type": "feat", "section": "Features"},
-                    {"type": "fix", "section": "Bug Fixes"},
+                    {"type": "fix", "section": "Fixes"},
                     {"type": "chore", "section": "Maintenance"},
                     {"type": "docs", "section": "Maintenance"},
-                    {"type": "revert", "section": "Bug Fixes"},
+                    {"type": "revert", "section": "Fixes"},
                     {"type": "style", "hidden": true},
                     {"type": "refactor", "hidden": true},
                     {"type": "perf", "hidden": true},
                     {"type": "test", "hidden": true}
                 ]
-            }
+            },
+            "releaseRules": [
+                {"type": "docs", "release": "patch"},
+                {"type": "revert", "release": "patch"},
+                {"type": "chore", "release": "patch"}
+            ]
           }],
           ["@semantic-release/release-notes-generator", {
             "preset": "conventionalcommits",
@@ -28,10 +35,10 @@
             "presetConfig": {
                 "types": [
                     {"type": "feat", "section": "Features"},
-                    {"type": "fix", "section": "Bug Fixes"},
+                    {"type": "fix", "section": "Fixes"},
                     {"type": "chore", "section": "Maintenance"},
                     {"type": "docs", "section": "Maintenance"},
-                    {"type": "revert", "section": "Bug Fixes"},
+                    {"type": "revert", "section": "Fixes"},
                     {"type": "style", "hidden": true},
                     {"type": "refactor", "hidden": true},
                     {"type": "perf", "hidden": true},
@@ -40,13 +47,19 @@
             }
           }],
           ["@semantic-release/changelog", {
-            "changelogFile": "./CHANGELOG.md"
+            "changelogFile": "./CHANGELOG.md",
+            "changelogTitle": "# Changelog"
+          }],
+          ["@semantic-release/exec", {
+            "prepareCmd": "mvn versions:set -DnewVersion=${nextRelease.version} \
+                    -DautoVersionSubmodules=true && find README.md -type f \
+                    -exec sed -i '' 's/<version>.*<\\/version>/<version>${nextRelease.version}<\\/version>/g' {} \\;"
           }],
           ["@semantic-release/git", {
-            "assets": ["./CHANGELOG.md"],
-            "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+            "assets": ["./CHANGELOG.md", "./pom.xml", "./README.md"],
+            "message": "AWS Encryption SDK ${nextRelease.version} Release \n\n${nextRelease.notes}"
           }],
-          "@semantic-release/github"
+          #@semantic-release/github"
     ],
-    "repositoryUrl": "https://github.com/josecorella/test-semantic-release-pr",
+    "repositoryUrl": "https://github.com/aws/aws-encryption-sdk-java",
 }
