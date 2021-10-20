@@ -3,7 +3,19 @@
 
 version: 0.2
 
+env:
+  variables:
+    BRANCH: "master"
+  git-credential-helper: yes
+
 phases:
+  pre-build:
+    commands:
+      - git config --global user.name "aws-crypto-tools-ci-bot"
+      - git config --gloabl user.email "no-reply@noemail.local"
+      - git checkout $BRANCH
   build:
     commands:
       - mvn javadoc:javadoc
+      - ls ./target/site/apidocs
+      - git status
