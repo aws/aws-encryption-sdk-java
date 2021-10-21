@@ -1,0 +1,112 @@
+## Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+
+version: 0.2
+
+batch:
+  fast-fail: true
+  build-graph:
+
+# Release to CodeArtifact
+  - identifier: release_staging
+    buildspec: codebuild/release/release-staging.yml
+
+# Validate CodeArtifact with supported JDK and Corretto
+  - identifier: validate_staging_release_openjdk_8
+    depend-on:
+      - release_staging
+    buildspec: codebuild/release/validate-staging.yml
+    env:
+      variables:
+        JAVA_ENV_VERSION: openjdk8
+        JAVA_NUMERIC_VERSION: 8
+      image: aws/codebuild/standard:3.0
+
+  - identifier: validate_staging_release_openjdk11
+    depend-on:
+      - release_staging
+    buildspec: codebuild/release/validate-staging.yml
+    env:
+      variables:
+        JAVA_ENV_VERSION: openjdk11
+        JAVA_NUMERIC_VERSION: 11
+      image: aws/codebuild/standard:3.0
+
+  - identifier: validate_staging_release_corretto8
+    depend-on:
+      - release_staging
+    buildspec: codebuild/release/validate-staging.yml
+    env:
+      variables:
+        JAVA_ENV_VERSION: corretto8
+        JAVA_NUMERIC_VERSION: 8
+      image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+
+  - identifier: validate_staging_release_corretto11
+    depend-on:
+      - release_staging
+    buildspec: codebuild/release/validate-staging.yml
+    env:
+      variables:
+        JAVA_ENV_VERSION: corretto11
+        JAVA_NUMERIC_VERSION: 11
+      image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+
+# Version Project
+  - identifier: version
+    depend-on:
+      - release_staging
+      - validate_staging_release_openjdk_8
+      - validate_staging_release_openjdk11
+      - validate_staging_release_corretto8
+      - validate_staging_release_corretto11
+    buildspec: codebuild/release/version.yml
+    env:
+      image: aws/codebuild/standard:5.0
+
+# Publish to Maven Central
+  - identifier: publish
+    depend-on:
+      - version
+    buildspec: codebuild/release/release-prod.yml
+
+# Validate Maven Central with supported JDK and Corretto
+  - identifier: validate_prod_release_openjdk_8
+    depend-on:
+      - publish
+    buildspec: codebuild/release/validate-prod.yml
+    env:
+      variables:
+        JAVA_ENV_VERSION: openjdk8
+        JAVA_NUMERIC_VERSION: 8
+      image: aws/codebuild/standard:3.0
+
+  - identifier: validate_prod_release_openjdk11
+    depend-on:
+      - publish
+    buildspec: codebuild/release/validate-prod.yml
+    env:
+      variables:
+        JAVA_ENV_VERSION: openjdk11
+        JAVA_NUMERIC_VERSION: 11
+      image: aws/codebuild/standard:3.0
+
+  - identifier: validate_prod_release_corretto8
+    depend-on:
+      - publish
+    buildspec: codebuild/release/validate-prod.yml
+    env:
+      variables:
+        JAVA_ENV_VERSION: corretto8
+        JAVA_NUMERIC_VERSION: 8
+      image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+
+  - identifier: validate_prod_release_corretto11
+    depend-on:
+      - publish
+    buildspec: codebuild/release/validate-prod.yml
+    env:
+      variables:
+        JAVA_ENV_VERSION: corretto11
+        JAVA_NUMERIC_VERSION: 11
+      image: aws/codebuild/amazonlinux2-x86_64-standard:3.0

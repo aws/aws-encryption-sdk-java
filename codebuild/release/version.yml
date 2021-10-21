@@ -1,0 +1,29 @@
+## Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+
+version: 0.2
+
+env:
+  variables:
+    NODE_OPTIONS: "--max-old-space-size=4096"
+    BRANCH: "master"
+  git-credential-helper: "yes"
+
+phases:
+  install:
+    commands:
+      - npm install --save-dev semantic-release
+      - npm install @semantic-release/changelog -d
+      - npm install @semantic-release/exec -d
+      - npm install @semantic-release/git -d
+      - npm install --save conventional-changelog
+    runtime-versions:
+      nodejs: 14
+  pre_build:
+    commands:
+      - git config --global user.name "aws-crypto-tools-ci-bot"
+      - git config --global user.email "no-reply@noemail.local"
+      - git checkout $BRANCH
+  build:
+    commands:
+      - npx semantic-release --no-ci
