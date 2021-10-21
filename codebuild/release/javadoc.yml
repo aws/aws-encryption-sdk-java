@@ -6,16 +6,18 @@ version: 0.2
 env:
   variables:
     BRANCH: "master"
+    GH_PAGES: "gh-pages"
   git-credential-helper: yes
 
 phases:
-  pre-build:
+  pre_build:
     commands:
       - git config --global user.name "aws-crypto-tools-ci-bot"
-      - git config --gloabl user.email "no-reply@noemail.local"
+      - git config --global user.email "no-reply@noemail.local"
       - git checkout $BRANCH
   build:
     commands:
       - mvn javadoc:javadoc
-      - ls ./target/site/apidocs
-      - git status
+      - cp -r ./target/site/apidocs /tmp
+      - git checkout $GH_PAGES
+      - ls
