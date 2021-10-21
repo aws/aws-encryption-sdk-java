@@ -20,4 +20,7 @@ phases:
       - mvn javadoc:javadoc
       - cp -r ./target/site/apidocs /tmp
       - git checkout $GH_PAGES
-      - ls
+      - cp -r /tmp/apidocs/* .
+      - git add .
+      - git commit -m "docs: updating javadocs"
+      - git push
