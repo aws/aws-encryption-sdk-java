@@ -120,6 +120,8 @@ batch:
       - validate_prod_release_corretto11
     buildspec: codebuild/release/upload_artifacts.yml
     env:
+      # Changing to standard:5.0 because we are able to install gh cli on ubuntu but
+      # not on AmazonLinux
       image: aws/codebuild/standard:5.0
 
 # Generate and update new javadocs
