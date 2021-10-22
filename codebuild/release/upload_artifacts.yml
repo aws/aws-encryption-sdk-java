@@ -27,7 +27,7 @@ phases:
   build:
     commands:
       - gh version
-      - gh auth login --with-token < GH_TOKEN
+      - gh auth login --with-token < $GH_TOKEN
       - |
         mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.2:get \
           -DrepoUrl=https://aws.oss.sonatype.org \
