@@ -20,9 +20,6 @@ phases:
       - echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null
       - apt update
       - apt install gh
-        # add bot's creds
-      - git config --global user.name "aws-crypto-tools-ci-bot"
-      - git config --global user.email "no-reply@noemail.local"
       - git checkout $BRANCH
   build:
     commands:
@@ -40,5 +37,4 @@ phases:
         mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.2:get \
           -DrepoUrl=https://aws.oss.sonatype.org \
           -Dartifact=com.amazonaws:aws-encryption-sdk-java:${VERSION}:jar:javadoc
-      - ls ~/.m2/repository/com/amazonaws/aws-encryption-sdk-java/${VERSION}/*.jar
       - gh release upload v${VERSION} ~/.m2/repository/com/amazonaws/aws-encryption-sdk-java/${VERSION}/*.jar
