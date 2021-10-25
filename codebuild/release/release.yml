@@ -111,12 +111,23 @@ batch:
         JAVA_NUMERIC_VERSION: 11
       image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
 
-  - identifier: update_javadoc
+# Upload Artifacts
+  - identifier: upload_artifacts
     depend-on:
       - validate_prod_release_openjdk8
       - validate_prod_release_openjdk11
       - validate_prod_release_corretto8
       - validate_prod_release_corretto11
+    buildspec: codebuild/release/upload_artifacts.yml
+    env:
+      # Changing to standard:5.0 because we are able to install gh cli on ubuntu but
+      # not on AmazonLinux
+      image: aws/codebuild/standard:5.0
+
+# Generate and update new javadocs
+  - identifier: update_javadoc
+    depend-on:
+      - upload_artifacts
     buildspec: codebuild/release/javadoc.yml
     env:
       variables:
