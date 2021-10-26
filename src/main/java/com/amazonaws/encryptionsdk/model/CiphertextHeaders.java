@@ -505,9 +505,25 @@ public class CiphertextHeaders {
 
   /**
    * Deserialize the provided bytes starting at the specified offset to construct an instance of
+   * this class. Uses the default value for maxEncryptedDataKeys, which results in no limit.
+   *
+   * <p>This method parses the provided bytes for the individual fields in this class. This method
+   * also supports partial parsing where not all the bytes required for parsing the fields
+   * successfully are available.
+   *
+   * @param b the byte array to deserialize.
+   * @param off the offset in the byte array to use for deserialization.
+   * @return the number of bytes consumed in deserialization.
+   */
+  public int deserialize(final byte[] b, final int off) throws ParseException {
+    return deserialize(b, off, NO_MAX_ENCRYPTED_DATA_KEYS);
+  }
+
+  /**
+   * Deserialize the provided bytes starting at the specified offset to construct an instance of
    * this class.
    *
-   * <p>This method parses the provided bytes for the individual fields in this class. This methods
+   * <p>This method parses the provided bytes for the individual fields in this class. This method
    * also supports partial parsing where not all the bytes required for parsing the fields
    * successfully are available.
    *
@@ -833,6 +849,15 @@ public class CiphertextHeaders {
    */
   public void setSuiteData(byte[] suiteData) {
     suiteData_ = suiteData.clone();
+  }
+
+  /**
+   * Return max encrypted data keys. Package scope for unit testing.
+   *
+   * @return int
+   */
+  int getMaxEncryptedDataKeys() {
+    return maxEncryptedDataKeys_;
   }
 
   private static class PartialParseException extends Exception {

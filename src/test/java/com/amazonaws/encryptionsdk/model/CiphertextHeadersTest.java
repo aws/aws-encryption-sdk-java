@@ -51,6 +51,8 @@ public class CiphertextHeadersTest {
 
   @Test
   public void serializeDeserialize() {
+    int maxEncryptedDataKeys = 42;
+
     Map<String, String> encryptionContext = new HashMap<String, String>(1);
     encryptionContext.put("ENC", "CiphertextHeader Test");
 
@@ -59,10 +61,30 @@ public class CiphertextHeadersTest {
 
       final byte[] headerBytes = ciphertextHeaders.toByteArray();
       final CiphertextHeaders reconstructedHeaders = new CiphertextHeaders();
-      reconstructedHeaders.deserialize(
-          headerBytes, 0, CiphertextHeaders.NO_MAX_ENCRYPTED_DATA_KEYS);
+      reconstructedHeaders.deserialize(headerBytes, 0, maxEncryptedDataKeys);
       final byte[] reconstructedHeaderBytes = reconstructedHeaders.toByteArray();
 
+      assertEquals(reconstructedHeaders.getMaxEncryptedDataKeys(), maxEncryptedDataKeys);
+      assertArrayEquals(headerBytes, reconstructedHeaderBytes);
+    }
+  }
+
+  @Test
+  public void serializeDeserializeDefaultMaxEncryptedDataKeys() {
+    Map<String, String> encryptionContext = new HashMap<String, String>(1);
+    encryptionContext.put("ENC", "CiphertextHeader Test");
+
+    for (CryptoAlgorithm alg : testAlgs) {
+      final CiphertextHeaders ciphertextHeaders = createCiphertextHeaders(encryptionContext, alg);
+
+      final byte[] headerBytes = ciphertextHeaders.toByteArray();
+      final CiphertextHeaders reconstructedHeaders = new CiphertextHeaders();
+      reconstructedHeaders.deserialize(headerBytes, 0);
+      final byte[] reconstructedHeaderBytes = reconstructedHeaders.toByteArray();
+
+      assertEquals(
+          reconstructedHeaders.getMaxEncryptedDataKeys(),
+          CiphertextHeaders.NO_MAX_ENCRYPTED_DATA_KEYS);
       assertArrayEquals(headerBytes, reconstructedHeaderBytes);
     }
   }
