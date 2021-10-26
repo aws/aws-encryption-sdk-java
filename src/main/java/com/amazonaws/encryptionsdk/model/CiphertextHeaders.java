@@ -503,7 +503,6 @@ public class CiphertextHeaders {
     return 0;
   }
 
-
   /**
    * Deserialize the provided bytes starting at the specified offset to construct an instance of
    * this class. Uses the default value for maxEncryptedDataKeys, which results in no limit.
@@ -520,20 +519,20 @@ public class CiphertextHeaders {
     return deserialize(b, off, NO_MAX_ENCRYPTED_DATA_KEYS);
   }
 
-    /**
-     * Deserialize the provided bytes starting at the specified offset to construct an instance of
-     * this class.
-     *
-     * <p>This method parses the provided bytes for the individual fields in this class. This method
-     * also supports partial parsing where not all the bytes required for parsing the fields
-     * successfully are available.
-     *
-     * @param b the byte array to deserialize.
-     * @param off the offset in the byte array to use for deserialization.
-     * @param maxEncryptedDataKeys the maximum number of EDKs to deserialize; zero indicates no
-     *     maximum
-     * @return the number of bytes consumed in deserialization.
-     */
+  /**
+   * Deserialize the provided bytes starting at the specified offset to construct an instance of
+   * this class.
+   *
+   * <p>This method parses the provided bytes for the individual fields in this class. This method
+   * also supports partial parsing where not all the bytes required for parsing the fields
+   * successfully are available.
+   *
+   * @param b the byte array to deserialize.
+   * @param off the offset in the byte array to use for deserialization.
+   * @param maxEncryptedDataKeys the maximum number of EDKs to deserialize; zero indicates no
+   *     maximum
+   * @return the number of bytes consumed in deserialization.
+   */
   public int deserialize(final byte[] b, final int off, int maxEncryptedDataKeys)
       throws ParseException {
     if (b == null) {
@@ -853,8 +852,7 @@ public class CiphertextHeaders {
   }
 
   /**
-   * Return max encrypted data keys
-   * Package scope for unit testing.
+   * Return max encrypted data keys. Package scope for unit testing.
    *
    * @return int
    */

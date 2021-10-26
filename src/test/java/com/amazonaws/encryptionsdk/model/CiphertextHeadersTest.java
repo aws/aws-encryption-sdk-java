@@ -61,8 +61,7 @@ public class CiphertextHeadersTest {
 
       final byte[] headerBytes = ciphertextHeaders.toByteArray();
       final CiphertextHeaders reconstructedHeaders = new CiphertextHeaders();
-      reconstructedHeaders.deserialize(
-              headerBytes, 0, maxEncryptedDataKeys);
+      reconstructedHeaders.deserialize(headerBytes, 0, maxEncryptedDataKeys);
       final byte[] reconstructedHeaderBytes = reconstructedHeaders.toByteArray();
 
       assertEquals(reconstructedHeaders.getMaxEncryptedDataKeys(), maxEncryptedDataKeys);
@@ -83,7 +82,9 @@ public class CiphertextHeadersTest {
       reconstructedHeaders.deserialize(headerBytes, 0);
       final byte[] reconstructedHeaderBytes = reconstructedHeaders.toByteArray();
 
-      assertEquals(reconstructedHeaders.getMaxEncryptedDataKeys(), CiphertextHeaders.NO_MAX_ENCRYPTED_DATA_KEYS);
+      assertEquals(
+          reconstructedHeaders.getMaxEncryptedDataKeys(),
+          CiphertextHeaders.NO_MAX_ENCRYPTED_DATA_KEYS);
       assertArrayEquals(headerBytes, reconstructedHeaderBytes);
     }
   }
