@@ -13,29 +13,41 @@
 
 package com.amazonaws.encryptionsdk.jce;
 
+import static com.amazonaws.encryptionsdk.internal.RandomBytesGenerator.generate;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 import com.amazonaws.encryptionsdk.AwsCrypto;
-import com.amazonaws.encryptionsdk.CommitmentPolicy;
 import com.amazonaws.encryptionsdk.CryptoResult;
 import com.amazonaws.encryptionsdk.MasterKeyProvider;
 import com.amazonaws.encryptionsdk.exception.CannotUnwrapDataKeyException;
 import com.amazonaws.encryptionsdk.multi.MultipleProviderFactory;
-import org.junit.Before;
-import org.junit.Test;
-import sun.security.x509.*;
-
-import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.security.*;
+import java.security.GeneralSecurityException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.KeyStore;
 import java.security.KeyStore.PasswordProtection;
+import java.security.KeyStoreException;
+import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
-
-import static com.amazonaws.encryptionsdk.internal.RandomBytesGenerator.generate;
-import static org.junit.Assert.*;
+import javax.crypto.spec.SecretKeySpec;
+import org.junit.Before;
+import org.junit.Test;
+import sun.security.x509.AlgorithmId;
+import sun.security.x509.CertificateAlgorithmId;
+import sun.security.x509.CertificateSerialNumber;
+import sun.security.x509.CertificateValidity;
+import sun.security.x509.CertificateX509Key;
+import sun.security.x509.X500Name;
+import sun.security.x509.X509CertImpl;
+import sun.security.x509.X509CertInfo;
 
 /* These internal sun classes are included solely for test purposes as
 this test cannot use BouncyCastle cert generation, as there are incompatibilities
@@ -47,6 +59,7 @@ public class KeyStoreProviderTest {
   private static final byte[] PLAINTEXT = generate(1024);
   private static final char[] PASSWORD = "Password".toCharArray();
   private static final KeyStore.PasswordProtection PP = new PasswordProtection(PASSWORD);
+  private KeyStore ks;
 
   static {
     try {
@@ -56,8 +69,6 @@ public class KeyStoreProviderTest {
       throw new RuntimeException(ex);
     }
   }
-
-  private KeyStore ks;
 
   @Before
   public void setup() throws Exception {
@@ -71,10 +82,7 @@ public class KeyStoreProviderTest {
     final KeyStoreProvider mkp =
         new KeyStoreProvider(ks, PP, "KeyStore", "RSA/ECB/PKCS1Padding", "key1");
     final JceMasterKey mk1 = mkp.getMasterKey("key1");
-    final AwsCrypto crypto =
-        AwsCrypto.builder()
-            .withCommitmentPolicy(CommitmentPolicy.ForbidEncryptAllowDecrypt)
-            .build();
+    final AwsCrypto crypto = AwsCrypto.standard();
     final CryptoResult<byte[], JceMasterKey> ct = crypto.encryptData(mkp, PLAINTEXT);
     assertEquals(1, ct.getMasterKeyIds().size());
     final CryptoResult<byte[], JceMasterKey> result = crypto.decryptData(mkp, ct.getResult());
@@ -90,10 +98,7 @@ public class KeyStoreProviderTest {
     final KeyStoreProvider mkp =
         new KeyStoreProvider(ks, PP, "KeyStore", "RSA/ECB/OAEPWithSHA-1AndMGF1Padding", "key1");
     final JceMasterKey mk1 = mkp.getMasterKey("key1");
-    final AwsCrypto crypto =
-        AwsCrypto.builder()
-            .withCommitmentPolicy(CommitmentPolicy.ForbidEncryptAllowDecrypt)
-            .build();
+    final AwsCrypto crypto = AwsCrypto.standard();
     final CryptoResult<byte[], JceMasterKey> ct = crypto.encryptData(mkp, PLAINTEXT);
     assertEquals(1, ct.getMasterKeyIds().size());
     final CryptoResult<byte[], JceMasterKey> result = crypto.decryptData(mkp, ct.getResult());
@@ -109,10 +114,7 @@ public class KeyStoreProviderTest {
     final KeyStoreProvider mkp =
         new KeyStoreProvider(ks, PP, "KeyStore", "RSA/ECB/OAEPWithSHA-256AndMGF1Padding", "key1");
     final JceMasterKey mk1 = mkp.getMasterKey("key1");
-    final AwsCrypto crypto =
-        AwsCrypto.builder()
-            .withCommitmentPolicy(CommitmentPolicy.ForbidEncryptAllowDecrypt)
-            .build();
+    final AwsCrypto crypto = AwsCrypto.standard();
     final CryptoResult<byte[], JceMasterKey> ct = crypto.encryptData(mkp, PLAINTEXT);
     assertEquals(1, ct.getMasterKeyIds().size());
     final CryptoResult<byte[], JceMasterKey> result = crypto.decryptData(mkp, ct.getResult());
@@ -132,10 +134,7 @@ public class KeyStoreProviderTest {
     @SuppressWarnings("unused")
     final JceMasterKey mk1 = mkp.getMasterKey("key1");
     final JceMasterKey mk2 = mkp.getMasterKey("key2");
-    final AwsCrypto crypto =
-        AwsCrypto.builder()
-            .withCommitmentPolicy(CommitmentPolicy.ForbidEncryptAllowDecrypt)
-            .build();
+    final AwsCrypto crypto = AwsCrypto.standard();
     final CryptoResult<byte[], JceMasterKey> ct = crypto.encryptData(mkp, PLAINTEXT);
     assertEquals(2, ct.getMasterKeyIds().size());
     CryptoResult<byte[], JceMasterKey> result = crypto.decryptData(mkp, ct.getResult());
@@ -157,10 +156,7 @@ public class KeyStoreProviderTest {
     addPublicEntry("key1");
     final KeyStoreProvider mkp =
         new KeyStoreProvider(ks, PP, "KeyStore", "RSA/ECB/OAEPWithSHA-256AndMGF1Padding", "key1");
-    final AwsCrypto crypto =
-        AwsCrypto.builder()
-            .withCommitmentPolicy(CommitmentPolicy.ForbidEncryptAllowDecrypt)
-            .build();
+    final AwsCrypto crypto = AwsCrypto.standard();
     final CryptoResult<byte[], JceMasterKey> ct = crypto.encryptData(mkp, PLAINTEXT);
     assertEquals(1, ct.getMasterKeyIds().size());
     crypto.decryptData(mkp, ct.getResult());
@@ -176,10 +172,7 @@ public class KeyStoreProviderTest {
     @SuppressWarnings("unused")
     final JceMasterKey mk1 = mkp.getMasterKey("key1");
     final JceMasterKey mk2 = mkp.getMasterKey("key2");
-    final AwsCrypto crypto =
-        AwsCrypto.builder()
-            .withCommitmentPolicy(CommitmentPolicy.ForbidEncryptAllowDecrypt)
-            .build();
+    final AwsCrypto crypto = AwsCrypto.standard();
     final CryptoResult<byte[], JceMasterKey> ct = crypto.encryptData(mkp, PLAINTEXT);
     assertEquals(2, ct.getMasterKeyIds().size());
     CryptoResult<byte[], JceMasterKey> result = crypto.decryptData(mkp, ct.getResult());
@@ -207,10 +200,7 @@ public class KeyStoreProviderTest {
     @SuppressWarnings("unused")
     final JceMasterKey mk1 = mkp.getMasterKey("key1");
     final JceMasterKey mk2 = mkp.getMasterKey("key2");
-    final AwsCrypto crypto =
-        AwsCrypto.builder()
-            .withCommitmentPolicy(CommitmentPolicy.ForbidEncryptAllowDecrypt)
-            .build();
+    final AwsCrypto crypto = AwsCrypto.standard();
     final CryptoResult<byte[], JceMasterKey> ct = crypto.encryptData(mkp, PLAINTEXT);
     assertEquals(2, ct.getMasterKeyIds().size());
 
@@ -238,10 +228,7 @@ public class KeyStoreProviderTest {
             ks2, PP, "KeyStore", "RSA/ECB/OAEPWithSHA-256AndMGF1Padding", "escrowKey");
 
     final JceMasterKey mk1 = escrowProvider.getMasterKey("escrowKey");
-    final AwsCrypto crypto =
-        AwsCrypto.builder()
-            .withCommitmentPolicy(CommitmentPolicy.ForbidEncryptAllowDecrypt)
-            .build();
+    final AwsCrypto crypto = AwsCrypto.standard();
     final CryptoResult<byte[], JceMasterKey> ct = crypto.encryptData(escrowProvider, PLAINTEXT);
     assertEquals(1, ct.getMasterKeyIds().size());
 
@@ -271,10 +258,7 @@ public class KeyStoreProviderTest {
 
     assertEquals(jcep, multiProvider.getMasterKey("jce", "1"));
 
-    final AwsCrypto crypto =
-        AwsCrypto.builder()
-            .withCommitmentPolicy(CommitmentPolicy.ForbidEncryptAllowDecrypt)
-            .build();
+    final AwsCrypto crypto = AwsCrypto.standard();
     final CryptoResult<byte[], JceMasterKey> ct = crypto.encryptData(multiProvider, PLAINTEXT);
     assertEquals(2, ct.getMasterKeyIds().size());
     CryptoResult<byte[], JceMasterKey> result = crypto.decryptData(multiProvider, ct.getResult());

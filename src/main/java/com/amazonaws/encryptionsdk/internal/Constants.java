@@ -42,9 +42,11 @@ public final class Constants {
   public static final String SINGLE_BLOCK_STRING_ID = "AWSKMSEncryptionClient Single Block";
   /** Maximum length of the content that can be encrypted in GCM mode. */
   public static final long GCM_MAX_CONTENT_LEN = (1L << 36) - 32;
+
   public static final int MAX_NONCE_LENGTH = (1 << 8) - 1;
   /** Maximum value of an unsigned short. */
   public static final int UNSIGNED_SHORT_MAX_VAL = (1 << 16) - 1;
+
   public static final long MAX_FRAME_NUMBER = (1L << 32) - 1;
   public static final String EC_PUBLIC_KEY_FIELD = "aws-crypto-public-key";
 

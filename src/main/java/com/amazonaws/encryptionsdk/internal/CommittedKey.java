@@ -31,6 +31,7 @@ public final class CommittedKey {
    * prior to use.
    */
   private static byte[] COMMITKEY_LABEL = "COMMITKEY".getBytes(StandardCharsets.UTF_8);
+
   private final SecretKey key_;
   private final byte[] commitment_;
 

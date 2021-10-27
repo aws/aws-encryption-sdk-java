@@ -48,6 +48,8 @@ public class KmsMasterKeyProviderTest {
           + ":kms:us-east-1:"
           + ACCOUNT_ID
           + ":key/01234567-89ab-cdef-fedc-ba9876543210";
+  private static final CryptoAlgorithm ALGORITHM_SUITE =
+      CryptoAlgorithm.ALG_AES_256_GCM_IV12_TAG16_HKDF_SHA256;
   private static final EncryptedDataKey EDK_ID_1 =
       new KeyBlob(
           AWS_KMS_PROVIDER_ID,
@@ -102,8 +104,6 @@ public class KmsMasterKeyProviderTest {
           AWS_KMS_PROVIDER_ID,
           KEY_ID_5.getBytes(StandardCharsets.UTF_8),
           generate(ALGORITHM_SUITE.getDataKeyLength()));
-  private static final CryptoAlgorithm ALGORITHM_SUITE =
-      CryptoAlgorithm.ALG_AES_256_GCM_IV12_TAG16_HKDF_SHA256;
   private static final Map<String, String> ENCRYPTION_CONTEXT =
       Collections.singletonMap("myKey", "myValue");
   private static final EncryptedDataKey EDK_NON_ARN =

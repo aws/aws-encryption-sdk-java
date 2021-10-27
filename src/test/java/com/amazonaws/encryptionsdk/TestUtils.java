@@ -126,7 +126,7 @@ public class TestUtils {
    *
    * <p>Usage: {@code
    *
-   * <p>assertNullChecks( myAwsCrypto, "createDecryptingStream", CryptoMaterialsManager.class,
+   * <p><p>assertNullChecks( myAwsCrypto, "createDecryptingStream", CryptoMaterialsManager.class,
    * myCMM, InputStream.class, myIS ); }
    *
    * @param callee

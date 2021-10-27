@@ -35,9 +35,10 @@ public class FrameDecryptionHandlerTest {
   private final byte nonceLen_ = cryptoAlgorithm_.getNonceLen();
   private final byte[] dataKeyBytes_ = new byte[cryptoAlgorithm_.getKeyLength()];
   private final SecretKey dataKey_ = new SecretKeySpec(dataKeyBytes_, "AES");
+  private final int frameSize_ = AwsCrypto.getDefaultFrameSize();
+
   private final FrameDecryptionHandler frameDecryptionHandler_ =
       new FrameDecryptionHandler(dataKey_, nonceLen_, cryptoAlgorithm_, messageId_, frameSize_);
-  private final int frameSize_ = AwsCrypto.getDefaultFrameSize();
 
   @Before
   public void setup() {

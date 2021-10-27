@@ -14,13 +14,13 @@ import java.util.TreeSet;
  *
  * <p>Example usage: {@code
  *
- * <p>LocalCryptoMaterialsCache cache = new LocalCryptoMaterialsCache(500);
+ * <p><p>LocalCryptoMaterialsCache cache = new LocalCryptoMaterialsCache(500);
  *
- * <p>CachingCryptoMaterialsManager materialsManager = CachingCryptoMaterialsManager.builder()
+ * <p><p>CachingCryptoMaterialsManager materialsManager = CachingCryptoMaterialsManager.builder()
  * .setMaxAge(5, TimeUnit.MINUTES) .setCache(cache) .withMasterKeyProvider(myMasterKeyProvider)
  * .build();
  *
- * <p>byte[] data = new AwsCrypto().encryptData(materialsManager, plaintext).getResult(); }
+ * <p><p>byte[] data = new AwsCrypto().encryptData(materialsManager, plaintext).getResult(); }
  */
 public class LocalCryptoMaterialsCache implements CryptoMaterialsCache {
   // The maximum number of entries to implicitly prune per access due to TTL expiration. We limit

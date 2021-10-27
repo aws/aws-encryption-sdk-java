@@ -43,6 +43,7 @@ public final class Utils {
    */
   private static AtomicLong FALLBACK_COUNTER = new AtomicLong(0);
   private static WeakHashMap<Object, Long> FALLBACK_COMPARATOR_MAP = new WeakHashMap<>();
+
   private Utils() {
     // Prevent instantiation
   }

@@ -13,6 +13,7 @@ public final class KMSTestFixtures {
    */
   public static final String US_WEST_2_KEY_ID =
       "arn:aws:kms:us-west-2:658956600833:key/b3537ef1-d8dc-4780-9f5a-55776cbb2f7f";
+
   public static final String EU_CENTRAL_1_KEY_ID =
       "arn:aws:kms:eu-central-1:658956600833:key/75414c93-5285-4b57-99c9-30c1cf0a22c2";
   public static final String ACCOUNT_ID = "658956600833";

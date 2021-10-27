@@ -143,6 +143,10 @@ public class AwsCrypto {
     return new Builder(this);
   }
 
+  public static AwsCrypto standard() {
+    return AwsCrypto.builder().build();
+  }
+
   public CryptoAlgorithm getEncryptionAlgorithm() {
     return encryptionAlgorithm_;
   }
