@@ -1,0 +1,13 @@
+## Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 12
+      java: corretto11
+  build:
+    commands:
+      - mvn -T 4 -ntp com.coveo:fmt-maven-plugin:check
+      - ./util/test-conditions.sh
