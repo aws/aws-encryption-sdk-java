@@ -18,6 +18,12 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+import com.amazonaws.encryptionsdk.AwsCrypto;
+import com.amazonaws.encryptionsdk.CryptoResult;
+import com.amazonaws.encryptionsdk.MasterKeyProvider;
+import com.amazonaws.encryptionsdk.exception.CannotUnwrapDataKeyException;
+import com.amazonaws.encryptionsdk.CommitmentPolicy;
+import com.amazonaws.encryptionsdk.multi.MultipleProviderFactory;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
@@ -32,22 +38,9 @@ import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
-
 import javax.crypto.spec.SecretKeySpec;
-
 import org.junit.Before;
 import org.junit.Test;
-
-import com.amazonaws.encryptionsdk.AwsCrypto;
-import com.amazonaws.encryptionsdk.CryptoResult;
-import com.amazonaws.encryptionsdk.MasterKeyProvider;
-import com.amazonaws.encryptionsdk.exception.CannotUnwrapDataKeyException;
-import com.amazonaws.encryptionsdk.CommitmentPolicy;
-import com.amazonaws.encryptionsdk.multi.MultipleProviderFactory;
-
-/* These internal sun classes are included solely for test purposes as
-   this test cannot use BouncyCastle cert generation, as there are incompatibilities
-   between how standard BC and FIPS BC perform cert generation. */
 import sun.security.x509.AlgorithmId;
 import sun.security.x509.CertificateAlgorithmId;
 import sun.security.x509.CertificateSerialNumber;
@@ -56,6 +49,10 @@ import sun.security.x509.CertificateX509Key;
 import sun.security.x509.X500Name;
 import sun.security.x509.X509CertImpl;
 import sun.security.x509.X509CertInfo;
+
+/* These internal sun classes are included solely for test purposes as
+   this test cannot use BouncyCastle cert generation, as there are incompatibilities
+   between how standard BC and FIPS BC perform cert generation. */
 
 public class KeyStoreProviderTest {
     private static final SecureRandom RND = new SecureRandom();

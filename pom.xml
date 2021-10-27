@@ -138,6 +138,16 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <plugin>
+                <groupId>com.coveo</groupId>
+                <artifactId>fmt-maven-plugin</artifactId>
+                <version>2.10</version>
+                <!-- Configure no goals. -->
+                <!--Until our CI builds no longer depend on Java 8, skip this during build.-->
+                <!--We instead manually check this in Java 11 environments to block builds, -->
+                <!--And additionally check this explicitly through Github Actions.-->
+            </plugin>
         </plugins>
     </build>
 
