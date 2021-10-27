@@ -36,4 +36,3 @@ phases:
           --no-transfer-progress \
           -s $SETTINGS_FILE
       - ./look_4_version.sh $VERSION
-g

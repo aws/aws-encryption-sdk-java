@@ -6,7 +6,7 @@ version: 0.2
 env:
   variables:
     NODE_OPTIONS: "--max-old-space-size=4096"
-    BRANCH: "master"
+    BRANCH: "mainline-1.x"
   git-credential-helper: "yes"
 
 phases:
