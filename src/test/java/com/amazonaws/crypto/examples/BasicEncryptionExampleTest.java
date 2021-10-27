@@ -8,8 +8,8 @@ import org.junit.Test;
 
 public class BasicEncryptionExampleTest {
 
-    @Test
-    public void testEncryptAndDecrypt() {
-        BasicEncryptionExample.encryptAndDecrypt(KMSTestFixtures.TEST_KEY_IDS[0]);
-    }
+  @Test
+  public void testEncryptAndDecrypt() {
+    BasicEncryptionExample.encryptAndDecrypt(KMSTestFixtures.TEST_KEY_IDS[0]);
+  }
 }

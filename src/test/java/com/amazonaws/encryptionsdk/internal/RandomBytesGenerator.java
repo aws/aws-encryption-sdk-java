@@ -16,33 +16,32 @@ package com.amazonaws.encryptionsdk.internal;
 import java.security.SecureRandom;
 
 public class RandomBytesGenerator {
-    private static final SecureRandom RND = new SecureRandom();
+  private static final SecureRandom RND = new SecureRandom();
 
-    /* Some Providers (such as the FIPS certified Bouncy Castle) enforce a
-     * maximum number of bytes that may be requested from SecureRandom. If
-     * the requested len is larger than this value, the Secure Random will
-     * be called multiple times to achieve the requested total length. */
-    private static final int MAX_BYTES = 1 << 15;
+  /* Some Providers (such as the FIPS certified Bouncy Castle) enforce a
+   * maximum number of bytes that may be requested from SecureRandom. If
+   * the requested len is larger than this value, the Secure Random will
+   * be called multiple times to achieve the requested total length. */
+  private static final int MAX_BYTES = 1 << 15;
 
-    /**
-     * Generates a byte array of random data of the given length.
-     *
-     * @param len The length of the byte array.
-     * @return The byte array.
-     */
-    public static byte[] generate(final int len) {
-        final byte[] result = new byte[len];
-        int bytesGenerated = 0;
+  /**
+   * Generates a byte array of random data of the given length.
+   *
+   * @param len The length of the byte array.
+   * @return The byte array.
+   */
+  public static byte[] generate(final int len) {
+    final byte[] result = new byte[len];
+    int bytesGenerated = 0;
 
-        while (bytesGenerated < len) {
-            final int requestSize = Math.min(MAX_BYTES, len - bytesGenerated);
-            final byte[] request = new byte[requestSize];
-            RND.nextBytes(request);
-            System.arraycopy(request, 0, result, bytesGenerated, requestSize);
-            bytesGenerated += requestSize;
-        }
-
-        return result;
+    while (bytesGenerated < len) {
+      final int requestSize = Math.min(MAX_BYTES, len - bytesGenerated);
+      final byte[] request = new byte[requestSize];
+      RND.nextBytes(request);
+      System.arraycopy(request, 0, result, bytesGenerated, requestSize);
+      bytesGenerated += requestSize;
     }
 
+    return result;
+  }
 }

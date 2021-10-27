@@ -4,5 +4,5 @@
 package com.amazonaws.encryptionsdk;
 
 public enum CommitmentPolicy {
-    ForbidEncryptAllowDecrypt
+  ForbidEncryptAllowDecrypt
 }

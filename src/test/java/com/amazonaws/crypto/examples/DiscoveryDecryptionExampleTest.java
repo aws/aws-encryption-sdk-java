@@ -8,9 +8,9 @@ import org.junit.Test;
 
 public class DiscoveryDecryptionExampleTest {
 
-    @Test
-    public void testEncryptAndDecrypt() {
-        DiscoveryDecryptionExample.encryptAndDecrypt(KMSTestFixtures.TEST_KEY_IDS[0],
-                KMSTestFixtures.PARTITION, KMSTestFixtures.ACCOUNT_ID);
-    }
+  @Test
+  public void testEncryptAndDecrypt() {
+    DiscoveryDecryptionExample.encryptAndDecrypt(
+        KMSTestFixtures.TEST_KEY_IDS[0], KMSTestFixtures.PARTITION, KMSTestFixtures.ACCOUNT_ID);
+  }
 }

@@ -8,8 +8,9 @@ import org.junit.Test;
 
 public class MultipleCmkEncryptExampleTest {
 
-    @Test
-    public void testEncryptAndDecrypt() {
-        MultipleCmkEncryptExample.encryptAndDecrypt(KMSTestFixtures.TEST_KEY_IDS[0], KMSTestFixtures.TEST_KEY_IDS[1]);
-    }
+  @Test
+  public void testEncryptAndDecrypt() {
+    MultipleCmkEncryptExample.encryptAndDecrypt(
+        KMSTestFixtures.TEST_KEY_IDS[0], KMSTestFixtures.TEST_KEY_IDS[1]);
+  }
 }
