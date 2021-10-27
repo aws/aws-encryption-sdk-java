@@ -1,0 +1,40 @@
+## Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+
+version: 0.2
+
+env:
+  variables:
+    BRANCH: "master"
+  git-credential-helper: yes
+  secrets-manager:
+    GH_TOKEN: Github/aws-crypto-tools-ci-bot:personal\ access\ token
+
+phases:
+  pre_build:
+    commands:
+        # get new project version
+      - export VERSION=$(grep version pom.xml | head -n 1 | sed -n 's/[ \t]*<version>\(.*\)<\/version>/\1/p')
+        # install gh cli in order to upload artifacts
+      - curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | gpg --dearmor -o /usr/share/keyrings/githubcli-archive-keyring.gpg
+      - echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+      - apt update
+      - apt install gh
+      - git checkout $BRANCH
+  build:
+    commands:
+      - gh version
+      - gh auth login --with-token < $GH_TOKEN
+      - |
+        mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.2:get \
+          -DrepoUrl=https://aws.oss.sonatype.org \
+          -Dartifact=com.amazonaws:aws-encryption-sdk-java:${VERSION}:jar
+      - |
+        mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.2:get \
+          -DrepoUrl=https://aws.oss.sonatype.org \
+          -Dartifact=com.amazonaws:aws-encryption-sdk-java:${VERSION}:jar:sources
+      - |
+        mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.2:get \
+          -DrepoUrl=https://aws.oss.sonatype.org \
+          -Dartifact=com.amazonaws:aws-encryption-sdk-java:${VERSION}:jar:javadoc
+      - gh release upload v${VERSION} ~/.m2/repository/com/amazonaws/aws-encryption-sdk-java/${VERSION}/*.jar
