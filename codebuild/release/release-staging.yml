@@ -8,6 +8,7 @@ env:
     REGION: us-east-1
     DOMAIN: crypto-tools-internal
     REPOSITORY: java-esdk-staging
+    BRANCH: "mainline-1.x"
   parameter-store:
     ACCOUNT: /CodeBuild/AccountId
   secrets-manager:
@@ -20,6 +21,7 @@ phases:
       java: corretto11
   pre_build:
     commands:
+      - git checkout $BRANCH
       - export SETTINGS_FILE=$(pwd)/codebuild/release/settings.xml
       - export CODEARTIFACT_TOKEN=$(aws codeartifact get-authorization-token --domain $DOMAIN --domain-owner $ACCOUNT --query authorizationToken --output text --region ${REGION})
       - export CODEARTIFACT_REPO_URL=https://${DOMAIN}-${ACCOUNT}.d.codeartifact.${REGION}.amazonaws.com/maven/${REPOSITORY}

@@ -7,6 +7,7 @@ env:
     REGION: us-east-1
     DOMAIN: crypto-tools-internal
     REPOSITORY: java-esdk-ci
+    BRANCH: "mainline-1.x"
   parameter-store:
     ACCOUNT: /CodeBuild/AccountId
 
@@ -18,6 +19,7 @@ phases:
       java: $JAVA_ENV_VERSION
   pre_build:
     commands:
+      - git checkout $BRANCH
       - VERSION_HASH="$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)-$CODEBUILD_RESOLVED_SOURCE_VERSION"
       - export SETTINGS_FILE=$(pwd)/codebuild/ci/settings.xml
       - git clone https://github.com/aws-samples/busy-engineers-document-bucket.git
