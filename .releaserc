@@ -60,5 +60,5 @@
             "message": "AWS Encryption SDK ${nextRelease.version} Release \n\n${nextRelease.notes}"
           }],
     ],
-    "repositoryUrl": "https://github.com/aws/aws-encryption-sdk-java/tree/mainline-1.x",
+    "repositoryUrl": "https://github.com/aws/aws-encryption-sdk-java",
 }
