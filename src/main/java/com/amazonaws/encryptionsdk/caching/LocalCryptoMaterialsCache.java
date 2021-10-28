@@ -11,9 +11,9 @@ import javax.annotation.concurrent.GuardedBy;
 /**
  * A simple implementation of the {@link CryptoMaterialsCache} using a basic LRU cache.
  *
- * Example usage:
- * {@code
+ * <p>Example usage:
  *
+ * <pre>{@code
  * LocalCryptoMaterialsCache cache = new LocalCryptoMaterialsCache(500);
  *
  * CachingCryptoMaterialsManager materialsManager = CachingCryptoMaterialsManager.builder()
@@ -23,7 +23,7 @@ import javax.annotation.concurrent.GuardedBy;
  *      .build();
  *
  * byte[] data = new AwsCrypto().encryptData(materialsManager, plaintext).getResult();
- * }
+ * }</pre>
  */
 public class LocalCryptoMaterialsCache implements CryptoMaterialsCache {
   // The maximum number of entries to implicitly prune per access due to TTL expiration. We limit
