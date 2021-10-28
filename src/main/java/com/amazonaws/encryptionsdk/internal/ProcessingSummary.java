@@ -1,11 +1,11 @@
 /*
  * Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"). You may not use this file except
  * in compliance with the License. A copy of the License is located at
- * 
+ *
  * http://aws.amazon.com/apache2.0
- * 
+ *
  * or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
@@ -14,21 +14,21 @@
 package com.amazonaws.encryptionsdk.internal;
 
 public class ProcessingSummary {
-    public static final ProcessingSummary ZERO = new ProcessingSummary(0, 0);
+  public static final ProcessingSummary ZERO = new ProcessingSummary(0, 0);
 
-    private final int bytesWritten;
-    private final int bytesProcessed;
+  private final int bytesWritten;
+  private final int bytesProcessed;
 
-    public ProcessingSummary(final int bytesWritten, final int bytesProcessed) {
-        this.bytesWritten = bytesWritten;
-        this.bytesProcessed = bytesProcessed;
-    }
+  public ProcessingSummary(final int bytesWritten, final int bytesProcessed) {
+    this.bytesWritten = bytesWritten;
+    this.bytesProcessed = bytesProcessed;
+  }
 
-    public int getBytesProcessed() {
-        return bytesProcessed;
-    }
+  public int getBytesProcessed() {
+    return bytesProcessed;
+  }
 
-    public int getBytesWritten() {
-        return bytesWritten;
-    }
+  public int getBytesWritten() {
+    return bytesWritten;
+  }
 }

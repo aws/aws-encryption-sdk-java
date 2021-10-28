@@ -10,18 +10,19 @@ import com.amazonaws.encryptionsdk.CommitmentPolicy;
 import org.junit.Test;
 
 public class EncryptionMaterialsRequestTest {
-    @Test
-    public void testConstructWithoutCommitmentPolicy() {
-        EncryptionMaterialsRequest req = EncryptionMaterialsRequest.newBuilder().build();
-        assertNotNull(req);
-    }
+  @Test
+  public void testConstructWithoutCommitmentPolicy() {
+    EncryptionMaterialsRequest req = EncryptionMaterialsRequest.newBuilder().build();
+    assertNotNull(req);
+  }
 
-    @Test
-    public void testConstructWithCommitmentPolicy() {
-        EncryptionMaterialsRequest req = EncryptionMaterialsRequest.newBuilder()
-                .setCommitmentPolicy(CommitmentPolicy.ForbidEncryptAllowDecrypt)
-                .build();
-        assertNotNull(req);
-        assertEquals(CommitmentPolicy.ForbidEncryptAllowDecrypt, req.getCommitmentPolicy());
-    }
+  @Test
+  public void testConstructWithCommitmentPolicy() {
+    EncryptionMaterialsRequest req =
+        EncryptionMaterialsRequest.newBuilder()
+            .setCommitmentPolicy(CommitmentPolicy.ForbidEncryptAllowDecrypt)
+            .build();
+    assertNotNull(req);
+    assertEquals(CommitmentPolicy.ForbidEncryptAllowDecrypt, req.getCommitmentPolicy());
+  }
 }

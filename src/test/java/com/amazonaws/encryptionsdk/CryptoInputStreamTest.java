@@ -13,7 +13,10 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
-import javax.crypto.spec.SecretKeySpec;
+import com.amazonaws.encryptionsdk.exception.BadCiphertextException;
+import com.amazonaws.encryptionsdk.internal.TestIOUtils;
+import com.amazonaws.encryptionsdk.jce.JceMasterKey;
+import com.amazonaws.encryptionsdk.model.EncryptionMaterialsRequest;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -26,7 +29,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
-
+import javax.crypto.spec.SecretKeySpec;
 import org.bouncycastle.util.Arrays;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,660 +38,627 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.mockito.ArgumentCaptor;
 
-import com.amazonaws.encryptionsdk.exception.BadCiphertextException;
-import com.amazonaws.encryptionsdk.internal.TestIOUtils;
-import com.amazonaws.encryptionsdk.jce.JceMasterKey;
-import com.amazonaws.encryptionsdk.model.EncryptionMaterialsRequest;
-
 @RunWith(Enclosed.class)
 public class CryptoInputStreamTest {
-    private static final SecureRandom RND = new SecureRandom();
-    private static final MasterKey<JceMasterKey> customerMasterKey;
-    private static final CommitmentPolicy commitmentPolicy = TestUtils.DEFAULT_TEST_COMMITMENT_POLICY;
+  private static final SecureRandom RND = new SecureRandom();
+  private static final MasterKey<JceMasterKey> customerMasterKey;
+  private static final CommitmentPolicy commitmentPolicy = TestUtils.DEFAULT_TEST_COMMITMENT_POLICY;
 
-    static {
-        byte[] rawKey = new byte[16];
-        RND.nextBytes(rawKey);
+  static {
+    byte[] rawKey = new byte[16];
+    RND.nextBytes(rawKey);
 
-        customerMasterKey = JceMasterKey.getInstance(
-                new SecretKeySpec(rawKey, "AES"),
-                "mockProvider",
-                "mockKey",
-                "AES/GCM/NoPadding"
-        );
+    customerMasterKey =
+        JceMasterKey.getInstance(
+            new SecretKeySpec(rawKey, "AES"), "mockProvider", "mockKey", "AES/GCM/NoPadding");
+  }
+
+  private static void testRoundTrip(
+      int dataSize, Consumer<AwsCrypto> customizer, Callback onEncrypt, Callback onDecrypt)
+      throws Exception {
+    AwsCrypto awsCrypto =
+        AwsCrypto.builder()
+            .withCommitmentPolicy(CommitmentPolicy.ForbidEncryptAllowDecrypt)
+            .build();
+    customizer.accept(awsCrypto);
+
+    byte[] plaintext = insecureRandomBytes(dataSize);
+
+    ByteArrayInputStream inputStream = new ByteArrayInputStream(plaintext);
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    onEncrypt.process(awsCrypto, inputStream, outputStream);
+
+    inputStream = new ByteArrayInputStream(outputStream.toByteArray());
+    outputStream = new ByteArrayOutputStream();
+
+    onDecrypt.process(awsCrypto, inputStream, outputStream);
+
+    assertArrayEquals(getSha256Hash(plaintext), getSha256Hash(outputStream.toByteArray()));
+  }
+
+  private interface Callback {
+    void process(AwsCrypto crypto, InputStream inStream, OutputStream outStream) throws Exception;
+  }
+
+  private static Callback encryptWithContext(Map<String, String> encryptionContext) {
+    return (awsCrypto, inStream, outStream) -> {
+      final InputStream cryptoStream =
+          awsCrypto.createEncryptingStream(customerMasterKey, inStream, encryptionContext);
+
+      TestIOUtils.copyInStreamToOutStream(cryptoStream, outStream);
+    };
+  }
+
+  private static Callback encryptWithoutContext() {
+    return (awsCrypto, inStream, outStream) -> {
+      final InputStream cryptoStream =
+          awsCrypto.createEncryptingStream(customerMasterKey, inStream);
+
+      TestIOUtils.copyInStreamToOutStream(cryptoStream, outStream);
+    };
+  }
+
+  private static Callback basicDecrypt(int readLen) {
+    return (awsCrypto, inStream, outStream) -> {
+      final InputStream cryptoStream =
+          awsCrypto.createDecryptingStream(customerMasterKey, inStream);
+
+      TestIOUtils.copyInStreamToOutStream(cryptoStream, outStream, readLen);
+    };
+  }
+
+  private static Callback basicDecrypt() {
+    return (awsCrypto, inStream, outStream) -> {
+      final InputStream cryptoStream =
+          awsCrypto.createDecryptingStream(customerMasterKey, inStream);
+
+      TestIOUtils.copyInStreamToOutStream(cryptoStream, outStream);
+    };
+  }
+
+  @RunWith(Parameterized.class)
+  public static class ParameterizedEncryptDecryptTest {
+    private final CryptoAlgorithm cryptoAlg;
+    private final int byteSize, frameSize, readLen;
+
+    public ParameterizedEncryptDecryptTest(
+        CryptoAlgorithm cryptoAlg, int byteSize, int frameSize, int readLen) {
+      this.cryptoAlg = cryptoAlg;
+      this.byteSize = byteSize;
+      this.frameSize = frameSize;
+      this.readLen = readLen;
     }
 
-    private static void testRoundTrip(
-            int dataSize,
-            Consumer<AwsCrypto> customizer,
-            Callback onEncrypt,
-            Callback onDecrypt
-    ) throws Exception {
-        AwsCrypto awsCrypto = AwsCrypto.builder().withCommitmentPolicy(CommitmentPolicy.ForbidEncryptAllowDecrypt).build();
-        customizer.accept(awsCrypto);
+    @Parameterized.Parameters(
+        name = "{index}: encryptDecrypt(algorithm={0}, byteSize={1}, frameSize={2}, readLen={3})")
+    public static Collection<Object[]> encryptDecryptParams() {
+      ArrayList<Object[]> testCases = new ArrayList<>();
 
-        byte[] plaintext = insecureRandomBytes(dataSize);
+      // We'll run more exhaustive tests on the first algorithm, then go lighter weight on the rest.
+      boolean firstAlgorithm = true;
 
-        ByteArrayInputStream inputStream = new ByteArrayInputStream(plaintext);
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        onEncrypt.process(awsCrypto, inputStream, outputStream);
-
-        inputStream = new ByteArrayInputStream(outputStream.toByteArray());
-        outputStream = new ByteArrayOutputStream();
-
-        onDecrypt.process(awsCrypto, inputStream, outputStream);
-
-        assertArrayEquals(getSha256Hash(plaintext), getSha256Hash(outputStream.toByteArray()));
-    }
-
-    private interface Callback {
-        void process(AwsCrypto crypto, InputStream inStream, OutputStream outStream) throws Exception;
-    }
-
-    private static Callback encryptWithContext(Map<String, String> encryptionContext) {
-        return (awsCrypto, inStream, outStream) -> {
-            final InputStream cryptoStream = awsCrypto.createEncryptingStream(
-                    customerMasterKey,
-                    inStream,
-                    encryptionContext);
-
-            TestIOUtils.copyInStreamToOutStream(cryptoStream, outStream);
-        };
-    }
-
-    private static Callback encryptWithoutContext() {
-        return (awsCrypto, inStream, outStream) -> {
-            final InputStream cryptoStream = awsCrypto.createEncryptingStream(
-                    customerMasterKey,
-                    inStream
-            );
-
-            TestIOUtils.copyInStreamToOutStream(cryptoStream, outStream);
-        };
-    }
-
-    private static Callback basicDecrypt(int readLen) {
-        return (awsCrypto, inStream, outStream) -> {
-            final InputStream cryptoStream = awsCrypto.createDecryptingStream(
-                    customerMasterKey,
-                    inStream);
-
-            TestIOUtils.copyInStreamToOutStream(cryptoStream, outStream, readLen);
-        };
-    }
-
-    private static Callback basicDecrypt() {
-        return (awsCrypto, inStream, outStream) -> {
-            final InputStream cryptoStream = awsCrypto.createDecryptingStream(
-                    customerMasterKey,
-                    inStream);
-
-            TestIOUtils.copyInStreamToOutStream(cryptoStream, outStream);
-        };
-    }
-
-    @RunWith(Parameterized.class)
-    public static class ParameterizedEncryptDecryptTest {
-        private final CryptoAlgorithm cryptoAlg;
-        private final int byteSize, frameSize, readLen;
-
-        public ParameterizedEncryptDecryptTest(
-                CryptoAlgorithm cryptoAlg, int byteSize, int frameSize, int readLen
-        ) {
-            this.cryptoAlg = cryptoAlg;
-            this.byteSize = byteSize;
-            this.frameSize = frameSize;
-            this.readLen = readLen;
+      for (final CryptoAlgorithm cryptoAlg : EnumSet.allOf(CryptoAlgorithm.class)) {
+        // Only test with crypto algs without commitment, since those
+        // are the only ones we can encrypt with
+        if (cryptoAlg.getMessageFormatVersion() != 1) {
+          continue;
         }
 
-        @Parameterized.Parameters(name = "{index}: encryptDecrypt(algorithm={0}, byteSize={1}, frameSize={2}, readLen={3})")
-        public static Collection<Object[]> encryptDecryptParams() {
-            ArrayList<Object[]> testCases = new ArrayList<>();
+        final int[] frameSizeToTest = TestUtils.getFrameSizesToTest(cryptoAlg);
 
-            // We'll run more exhaustive tests on the first algorithm, then go lighter weight on the rest.
-            boolean firstAlgorithm = true;
+        // Our bytesToTest and readLenVals arrays tend to have the bigger numbers towards the end -
+        // we'll chop off
+        // the last few as they take the longest and don't really add that much more coverage.
+        int skipLastNSizes;
+        if (!FastTestsOnlySuite.isFastTestSuiteActive()) {
+          skipLastNSizes = 0;
+        } else if (firstAlgorithm) {
+          // We'll run more tests for the first algorithm in the list - but not go quite so far as
+          // running the
+          // 1MB tests.
+          skipLastNSizes = 1;
+        } else {
+          skipLastNSizes = 2;
+        }
 
-            for (final CryptoAlgorithm cryptoAlg : EnumSet.allOf(CryptoAlgorithm.class)) {
-                // Only test with crypto algs without commitment, since those
-                // are the only ones we can encrypt with
-                if (cryptoAlg.getMessageFormatVersion() != 1) {
-                    continue;
-                }
+        // iterate over frame size to test
+        for (final int frameSize : frameSizeToTest) {
+          int[] bytesToTest = {
+            0,
+            1,
+            frameSize - 1,
+            frameSize,
+            frameSize + 1,
+            (int) (frameSize * 1.5),
+            frameSize * 2,
+            1000000
+          };
 
-                final int[] frameSizeToTest = TestUtils.getFrameSizesToTest(cryptoAlg);
+          bytesToTest = Arrays.copyOfRange(bytesToTest, 0, bytesToTest.length - skipLastNSizes);
 
-                // Our bytesToTest and readLenVals arrays tend to have the bigger numbers towards the end - we'll chop off
-                // the last few as they take the longest and don't really add that much more coverage.
-                int skipLastNSizes;
-                if (!FastTestsOnlySuite.isFastTestSuiteActive()) {
-                    skipLastNSizes = 0;
-                } else if (firstAlgorithm) {
-                    // We'll run more tests for the first algorithm in the list - but not go quite so far as running the
-                    // 1MB tests.
-                    skipLastNSizes = 1;
-                } else {
-                    skipLastNSizes = 2;
-                }
+          // iterate over byte size to test
+          for (final int byteSize : bytesToTest) {
+            int[] readLenVals = {1, byteSize - 1, byteSize, byteSize + 1, byteSize * 2, 1000000};
 
-                // iterate over frame size to test
-                for (final int frameSize : frameSizeToTest) {
-                    int[] bytesToTest = {
-                            0, 1, frameSize - 1, frameSize, frameSize + 1, (int) (frameSize * 1.5),
-                            frameSize * 2, 1000000
-                    };
+            readLenVals = Arrays.copyOfRange(readLenVals, 0, readLenVals.length - skipLastNSizes);
 
-                    bytesToTest = Arrays.copyOfRange(bytesToTest, 0, bytesToTest.length - skipLastNSizes);
-
-                    // iterate over byte size to test
-                    for (final int byteSize : bytesToTest) {
-                        int[] readLenVals = {1, byteSize - 1, byteSize, byteSize + 1, byteSize * 2, 1000000};
-
-                        readLenVals = Arrays.copyOfRange(readLenVals, 0, readLenVals.length - skipLastNSizes);
-
-                        // iterate over read lengths to test
-                        for (final int readLen : readLenVals) {
-                            if (byteSize >= 0 && readLen > 0) {
-                                testCases.add(new Object[]{cryptoAlg, byteSize, frameSize, readLen});
-                            }
-                        }
-                    }
-                }
-
-                firstAlgorithm = false;
+            // iterate over read lengths to test
+            for (final int readLen : readLenVals) {
+              if (byteSize >= 0 && readLen > 0) {
+                testCases.add(new Object[] {cryptoAlg, byteSize, frameSize, readLen});
+              }
             }
-
-            return testCases;
+          }
         }
 
-        @Test
-        public void encryptDecrypt() throws Exception {
-            testRoundTrip(
-                    byteSize,
-                    awsCrypto -> {
-                        awsCrypto.setEncryptionAlgorithm(cryptoAlg);
-                        awsCrypto.setEncryptionFrameSize(frameSize);
-                    },
-                    encryptWithoutContext(),
-                    basicDecrypt(readLen)
-            );
-        }
+        firstAlgorithm = false;
+      }
+
+      return testCases;
     }
 
-    public static class NonParameterized {
-        private AwsCrypto encryptionClient_;
+    @Test
+    public void encryptDecrypt() throws Exception {
+      testRoundTrip(
+          byteSize,
+          awsCrypto -> {
+            awsCrypto.setEncryptionAlgorithm(cryptoAlg);
+            awsCrypto.setEncryptionFrameSize(frameSize);
+          },
+          encryptWithoutContext(),
+          basicDecrypt(readLen));
+    }
+  }
 
-        @Before
-        public void setup() throws IOException {
-            encryptionClient_ = AwsCrypto.builder().withCommitmentPolicy(CommitmentPolicy.ForbidEncryptAllowDecrypt).build();
-        }
+  public static class NonParameterized {
+    private AwsCrypto encryptionClient_;
 
-        @Test
-        public void doEncryptDecryptWithoutEncContext() throws Exception {
-            testRoundTrip(
-                    1_000_000,
-                    awsCrypto -> {
-                    },
-                    encryptWithoutContext(),
-                    basicDecrypt()
-            );
-        }
+    @Before
+    public void setup() throws IOException {
+      encryptionClient_ =
+          AwsCrypto.builder()
+              .withCommitmentPolicy(CommitmentPolicy.ForbidEncryptAllowDecrypt)
+              .build();
+    }
 
-        @Test
-        public void encryptBytesDecryptStream() throws Exception {
-            Map<String, String> encryptionContext = new HashMap<>(1);
-            encryptionContext.put("ENC", "encryptBytesDecryptStream");
+    @Test
+    public void doEncryptDecryptWithoutEncContext() throws Exception {
+      testRoundTrip(1_000_000, awsCrypto -> {}, encryptWithoutContext(), basicDecrypt());
+    }
 
-            testRoundTrip(
-                    1_000_000,
-                    awsCrypto -> {
-                    },
-                    (AwsCrypto awsCrypto, InputStream inStream, OutputStream outStream) -> {
-                        ByteArrayOutputStream inbuf = new ByteArrayOutputStream();
-                        TestIOUtils.copyInStreamToOutStream(inStream, inbuf);
+    @Test
+    public void encryptBytesDecryptStream() throws Exception {
+      Map<String, String> encryptionContext = new HashMap<>(1);
+      encryptionContext.put("ENC", "encryptBytesDecryptStream");
 
-                        CryptoResult<byte[], ?> ciphertext = awsCrypto.encryptData(
-                                customerMasterKey,
-                                inbuf.toByteArray(),
-                                encryptionContext
-                        );
+      testRoundTrip(
+          1_000_000,
+          awsCrypto -> {},
+          (AwsCrypto awsCrypto, InputStream inStream, OutputStream outStream) -> {
+            ByteArrayOutputStream inbuf = new ByteArrayOutputStream();
+            TestIOUtils.copyInStreamToOutStream(inStream, inbuf);
 
-                        outStream.write(ciphertext.getResult());
-                    },
-                    basicDecrypt()
-            );
+            CryptoResult<byte[], ?> ciphertext =
+                awsCrypto.encryptData(customerMasterKey, inbuf.toByteArray(), encryptionContext);
 
-        }
+            outStream.write(ciphertext.getResult());
+          },
+          basicDecrypt());
+    }
 
-        @Test
-        public void encryptStreamDecryptBytes() throws Exception {
-            Map<String, String> encryptionContext = new HashMap<>(1);
-            encryptionContext.put("ENC", "encryptStreamDecryptBytes");
+    @Test
+    public void encryptStreamDecryptBytes() throws Exception {
+      Map<String, String> encryptionContext = new HashMap<>(1);
+      encryptionContext.put("ENC", "encryptStreamDecryptBytes");
 
-            testRoundTrip(
-                    1_000_000,
-                    awsCrypto -> {
-                    },
-                    encryptWithContext(encryptionContext),
-                    (AwsCrypto awsCrypto, InputStream inStream, OutputStream outStream) -> {
-                        ByteArrayOutputStream inbuf = new ByteArrayOutputStream();
-                        TestIOUtils.copyInStreamToOutStream(inStream, inbuf);
+      testRoundTrip(
+          1_000_000,
+          awsCrypto -> {},
+          encryptWithContext(encryptionContext),
+          (AwsCrypto awsCrypto, InputStream inStream, OutputStream outStream) -> {
+            ByteArrayOutputStream inbuf = new ByteArrayOutputStream();
+            TestIOUtils.copyInStreamToOutStream(inStream, inbuf);
 
-                        CryptoResult<byte[], ?> ciphertext = awsCrypto.decryptData(
-                                customerMasterKey,
-                                inbuf.toByteArray()
-                        );
+            CryptoResult<byte[], ?> ciphertext =
+                awsCrypto.decryptData(customerMasterKey, inbuf.toByteArray());
 
-                        outStream.write(ciphertext.getResult());
-                    }
-            );
+            outStream.write(ciphertext.getResult());
+          });
+    }
 
-        }
+    @Test
+    public void encryptOSDecryptIS() throws Exception {
+      Map<String, String> encryptionContext = new HashMap<>(1);
+      encryptionContext.put("ENC", "encryptOSDecryptIS");
 
-        @Test
-        public void encryptOSDecryptIS() throws Exception {
-            Map<String, String> encryptionContext = new HashMap<>(1);
-            encryptionContext.put("ENC", "encryptOSDecryptIS");
+      testRoundTrip(
+          1_000_000,
+          awsCrypto -> {},
+          (awsCrypto, inStream, outStream) -> {
+            OutputStream cryptoOS =
+                awsCrypto.createEncryptingStream(customerMasterKey, outStream, encryptionContext);
+            TestIOUtils.copyInStreamToOutStream(inStream, cryptoOS);
+          },
+          basicDecrypt());
+    }
 
-            testRoundTrip(
-                    1_000_000,
-                    awsCrypto -> {
-                    },
-                    (awsCrypto, inStream, outStream) -> {
-                        OutputStream cryptoOS
-                                = awsCrypto.createEncryptingStream(customerMasterKey, outStream, encryptionContext);
-                        TestIOUtils.copyInStreamToOutStream(inStream, cryptoOS);
-                    },
-                    basicDecrypt()
-            );
+    private void singleByteCopyLoop(InputStream is, OutputStream os) throws Exception {
+      int rv;
+      while (-1 != (rv = is.read())) {
+        os.write(rv);
+      }
 
-        }
+      is.close();
+      os.close();
+    }
 
-        private void singleByteCopyLoop(InputStream is, OutputStream os) throws Exception {
-            int rv;
-            while (-1 != (rv = is.read())) {
-                os.write(rv);
-            }
+    @Test
+    public void singleByteRead() throws Exception {
+      Map<String, String> encryptionContext = new HashMap<>(1);
+      encryptionContext.put("ENC", "singleByteRead");
 
-            is.close();
-            os.close();
-        }
+      testRoundTrip(
+          1_000_000,
+          awsCrypto -> {},
+          (awsCrypto, inStream, outStream) -> {
+            InputStream is =
+                awsCrypto.createEncryptingStream(customerMasterKey, inStream, encryptionContext);
+            singleByteCopyLoop(is, outStream);
+          },
+          (awsCrypto, inStream, outStream) -> {
+            InputStream is = awsCrypto.createDecryptingStream(customerMasterKey, inStream);
+            singleByteCopyLoop(is, outStream);
+          });
+    }
 
-        @Test
-        public void singleByteRead() throws Exception {
-            Map<String, String> encryptionContext = new HashMap<>(1);
-            encryptionContext.put("ENC", "singleByteRead");
+    @SuppressWarnings({"ConstantConditions", "ResultOfMethodCallIgnored"})
+    @Test(expected = NullPointerException.class)
+    public void whenNullBufferPassed_andNoOffsetArgs_readThrowsNPE()
+        throws BadCiphertextException, IOException {
+      final Map<String, String> encryptionContext = new HashMap<>(1);
+      encryptionContext.put("ENC", "nullReadBuffer");
 
-            testRoundTrip(
-                    1_000_000,
-                    awsCrypto -> {
-                    },
-                    (awsCrypto, inStream, outStream) -> {
-                        InputStream is = awsCrypto.createEncryptingStream(customerMasterKey, inStream,
-                                                                          encryptionContext);
-                        singleByteCopyLoop(is, outStream);
-                    },
-                    (awsCrypto, inStream, outStream) -> {
-                        InputStream is = awsCrypto.createDecryptingStream(customerMasterKey, inStream);
-                        singleByteCopyLoop(is, outStream);
-                    }
-            );
-        }
+      final InputStream inStream = new ByteArrayInputStream(TestUtils.insecureRandomBytes(2048));
+      final InputStream encryptionInStream =
+          encryptionClient_.createEncryptingStream(customerMasterKey, inStream, encryptionContext);
 
-        @SuppressWarnings({"ConstantConditions", "ResultOfMethodCallIgnored"})
-        @Test(expected = NullPointerException.class)
-        public void whenNullBufferPassed_andNoOffsetArgs_readThrowsNPE() throws BadCiphertextException, IOException {
-            final Map<String, String> encryptionContext = new HashMap<>(1);
-            encryptionContext.put("ENC", "nullReadBuffer");
+      encryptionInStream.read(null);
+    }
 
-            final InputStream inStream = new ByteArrayInputStream(TestUtils.insecureRandomBytes(2048));
-            final InputStream encryptionInStream = encryptionClient_.createEncryptingStream(
-                    customerMasterKey,
-                    inStream,
-                    encryptionContext);
+    @SuppressWarnings({"ConstantConditions", "ResultOfMethodCallIgnored"})
+    @Test(expected = NullPointerException.class)
+    public void whenNullBufferPassed_andOffsetArgsPassed_readThrowsNPE()
+        throws BadCiphertextException, IOException {
+      final Map<String, String> encryptionContext = new HashMap<>(1);
+      encryptionContext.put("ENC", "nullReadBuffer2");
 
-            encryptionInStream.read(null);
-        }
+      final InputStream inStream = new ByteArrayInputStream(TestUtils.insecureRandomBytes(2048));
+      final InputStream encryptionInStream =
+          encryptionClient_.createEncryptingStream(customerMasterKey, inStream, encryptionContext);
 
-        @SuppressWarnings({"ConstantConditions", "ResultOfMethodCallIgnored"})
-        @Test(expected = NullPointerException.class)
-        public void whenNullBufferPassed_andOffsetArgsPassed_readThrowsNPE() throws BadCiphertextException, IOException {
-            final Map<String, String> encryptionContext = new HashMap<>(1);
-            encryptionContext.put("ENC", "nullReadBuffer2");
+      encryptionInStream.read(null, 0, 0);
+    }
 
-            final InputStream inStream = new ByteArrayInputStream(TestUtils.insecureRandomBytes(2048));
-            final InputStream encryptionInStream = encryptionClient_.createEncryptingStream(
-                    customerMasterKey,
-                    inStream,
-                    encryptionContext);
+    @Test
+    public void zeroReadLen() throws BadCiphertextException, IOException {
+      final Map<String, String> encryptionContext = new HashMap<>(1);
+      encryptionContext.put("ENC", "zeroReadLen");
 
-            encryptionInStream.read(null, 0, 0);
-        }
+      final InputStream inStream = new ByteArrayInputStream(TestUtils.insecureRandomBytes(2048));
+      final InputStream encryptionInStream =
+          encryptionClient_.createEncryptingStream(customerMasterKey, inStream, encryptionContext);
 
-        @Test
-        public void zeroReadLen() throws BadCiphertextException, IOException {
-            final Map<String, String> encryptionContext = new HashMap<>(1);
-            encryptionContext.put("ENC", "zeroReadLen");
+      final byte[] tempBytes = new byte[0];
+      final int readLen = encryptionInStream.read(tempBytes);
+      assertEquals(readLen, 0);
+    }
 
-            final InputStream inStream = new ByteArrayInputStream(TestUtils.insecureRandomBytes(2048));
-            final InputStream encryptionInStream = encryptionClient_.createEncryptingStream(
-                    customerMasterKey,
-                    inStream,
-                    encryptionContext);
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    @Test(expected = IllegalArgumentException.class)
+    public void negativeReadLen() throws BadCiphertextException, IOException {
+      final Map<String, String> encryptionContext = new HashMap<>(1);
+      encryptionContext.put("ENC", "negativeReadLen");
 
-            final byte[] tempBytes = new byte[0];
-            final int readLen = encryptionInStream.read(tempBytes);
-            assertEquals(readLen, 0);
-        }
+      final InputStream inStream = new ByteArrayInputStream(TestUtils.insecureRandomBytes(2048));
+      final InputStream encryptionInStream =
+          encryptionClient_.createEncryptingStream(customerMasterKey, inStream, encryptionContext);
 
-        @SuppressWarnings("ResultOfMethodCallIgnored")
-        @Test(expected = IllegalArgumentException.class)
-        public void negativeReadLen() throws BadCiphertextException, IOException {
-            final Map<String, String> encryptionContext = new HashMap<>(1);
-            encryptionContext.put("ENC", "negativeReadLen");
+      final byte[] tempBytes = new byte[1];
+      encryptionInStream.read(tempBytes, 0, -1);
+    }
 
-            final InputStream inStream = new ByteArrayInputStream(TestUtils.insecureRandomBytes(2048));
-            final InputStream encryptionInStream = encryptionClient_.createEncryptingStream(
-                    customerMasterKey,
-                    inStream,
-                    encryptionContext);
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    @Test(expected = IllegalArgumentException.class)
+    public void negativeReadOffset() throws BadCiphertextException, IOException {
+      final Map<String, String> encryptionContext = new HashMap<>(1);
+      encryptionContext.put("ENC", "negativeReadOffset");
 
-            final byte[] tempBytes = new byte[1];
-            encryptionInStream.read(tempBytes, 0, -1);
-        }
+      final InputStream inStream = new ByteArrayInputStream(TestUtils.insecureRandomBytes(2048));
+      final InputStream encryptionInStream =
+          encryptionClient_.createEncryptingStream(customerMasterKey, inStream, encryptionContext);
 
-        @SuppressWarnings("ResultOfMethodCallIgnored")
-        @Test(expected = IllegalArgumentException.class)
-        public void negativeReadOffset() throws BadCiphertextException, IOException {
-            final Map<String, String> encryptionContext = new HashMap<>(1);
-            encryptionContext.put("ENC", "negativeReadOffset");
+      byte[] tempBytes = new byte[1];
+      encryptionInStream.read(tempBytes, -1, tempBytes.length);
+    }
 
-            final InputStream inStream = new ByteArrayInputStream(TestUtils.insecureRandomBytes(2048));
-            final InputStream encryptionInStream = encryptionClient_.createEncryptingStream(
-                    customerMasterKey,
-                    inStream,
-                    encryptionContext);
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    @Test(expected = ArrayIndexOutOfBoundsException.class)
+    public void invalidReadOffset() throws BadCiphertextException, IOException {
+      final Map<String, String> encryptionContext = new HashMap<>(1);
+      encryptionContext.put("ENC", "invalidReadOffset");
 
-            byte[] tempBytes = new byte[1];
-            encryptionInStream.read(tempBytes, -1, tempBytes.length);
-        }
+      final InputStream inStream = new ByteArrayInputStream(TestUtils.insecureRandomBytes(2048));
+      final InputStream encryptionInStream =
+          encryptionClient_.createEncryptingStream(customerMasterKey, inStream, encryptionContext);
 
-        @SuppressWarnings("ResultOfMethodCallIgnored")
-        @Test(expected = ArrayIndexOutOfBoundsException.class)
-        public void invalidReadOffset() throws BadCiphertextException, IOException {
-            final Map<String, String> encryptionContext = new HashMap<>(1);
-            encryptionContext.put("ENC", "invalidReadOffset");
+      final byte[] tempBytes = new byte[100];
+      encryptionInStream.read(tempBytes, tempBytes.length + 1, tempBytes.length);
+    }
 
-            final InputStream inStream = new ByteArrayInputStream(TestUtils.insecureRandomBytes(2048));
-            final InputStream encryptionInStream = encryptionClient_.createEncryptingStream(
-                    customerMasterKey,
-                    inStream,
-                    encryptionContext);
+    @Test
+    public void noOpStream() throws IOException {
+      final Map<String, String> encryptionContext = new HashMap<>(1);
+      encryptionContext.put("ENC", "noOpStream");
 
-            final byte[] tempBytes = new byte[100];
-            encryptionInStream.read(tempBytes, tempBytes.length + 1, tempBytes.length);
-        }
+      final InputStream inStream = new ByteArrayInputStream(TestUtils.insecureRandomBytes(2048));
+      final InputStream encryptionInStream =
+          encryptionClient_.createEncryptingStream(customerMasterKey, inStream, encryptionContext);
 
-        @Test
-        public void noOpStream() throws IOException {
-            final Map<String, String> encryptionContext = new HashMap<>(1);
-            encryptionContext.put("ENC", "noOpStream");
+      encryptionInStream.close();
+    }
 
-            final InputStream inStream = new ByteArrayInputStream(TestUtils.insecureRandomBytes(2048));
-            final InputStream encryptionInStream = encryptionClient_.createEncryptingStream(
-                    customerMasterKey,
-                    inStream,
-                    encryptionContext);
+    @Test
+    public void decryptEmptyFile() throws IOException {
+      final InputStream inStream = new ByteArrayInputStream(new byte[0]);
+      final InputStream decryptionInStream =
+          encryptionClient_.createDecryptingStream(customerMasterKey, inStream);
+      final ByteArrayOutputStream outStream = new ByteArrayOutputStream();
 
-            encryptionInStream.close();
-        }
+      TestIOUtils.copyInStreamToOutStream(decryptionInStream, outStream);
 
-        @Test
-        public void decryptEmptyFile() throws IOException {
-            final InputStream inStream = new ByteArrayInputStream(new byte[0]);
-            final InputStream decryptionInStream = encryptionClient_.createDecryptingStream(
-                    customerMasterKey,
-                    inStream);
-            final ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+      assertEquals(0, outStream.size());
+    }
 
-            TestIOUtils.copyInStreamToOutStream(decryptionInStream, outStream);
+    @Test
+    public void checkEncContext() throws Exception {
+      Map<String, String> setEncryptionContext = new HashMap<>(1);
+      setEncryptionContext.put("ENC", "checkEncContext");
 
-            assertEquals(0, outStream.size());
-        }
+      testRoundTrip(
+          4096,
+          awsCrypto -> {},
+          encryptWithContext(setEncryptionContext),
+          (crypto, inStream, outStream) -> {
+            CryptoInputStream<?> cis = crypto.createDecryptingStream(customerMasterKey, inStream);
+            TestIOUtils.copyInStreamToOutStream(cis, outStream);
 
-        @Test
-        public void checkEncContext() throws Exception {
-            Map<String, String> setEncryptionContext = new HashMap<>(1);
-            setEncryptionContext.put("ENC", "checkEncContext");
+            // Note that the crypto result might have additional entries in its context, so only
+            // check that
+            // the entries we set were present, not that the entire map is equal
+            CryptoResult<? extends CryptoInputStream<?>, ?> cryptoResult = cis.getCryptoResult();
+            setEncryptionContext.forEach(
+                (k, v) -> assertEquals(v, cryptoResult.getEncryptionContext().get(k)));
+          });
+    }
 
-            testRoundTrip(
-                    4096,
-                    awsCrypto -> {
-                    },
-                    encryptWithContext(setEncryptionContext),
-                    (crypto, inStream, outStream) -> {
-                        CryptoInputStream<?> cis = crypto.createDecryptingStream(customerMasterKey, inStream);
-                        TestIOUtils.copyInStreamToOutStream(cis, outStream);
+    @Test
+    public void checkKeyId() throws Exception {
+      testRoundTrip(
+          4096,
+          awsCrypto -> {},
+          encryptWithoutContext(),
+          (crypto, inStream, outStream) -> {
+            CryptoInputStream<?> cis = crypto.createDecryptingStream(customerMasterKey, inStream);
+            TestIOUtils.copyInStreamToOutStream(cis, outStream);
 
-                        // Note that the crypto result might have additional entries in its context, so only check that
-                        // the entries we set were present, not that the entire map is equal
-                        CryptoResult<? extends CryptoInputStream<?>, ?> cryptoResult = cis.getCryptoResult();
-                        setEncryptionContext.forEach(
-                                (k, v) -> assertEquals(v, cryptoResult.getEncryptionContext().get(k))
-                        );
-                    }
-            );
-        }
+            CryptoResult<? extends CryptoInputStream<?>, ?> cryptoResult = cis.getCryptoResult();
+            final String returnedKeyId = cryptoResult.getMasterKeys().get(0).getKeyId();
 
-        @Test
-        public void checkKeyId() throws Exception {
-            testRoundTrip(
-                    4096,
-                    awsCrypto -> {
-                    },
-                    encryptWithoutContext(),
-                    (crypto, inStream, outStream) -> {
-                        CryptoInputStream<?> cis = crypto.createDecryptingStream(customerMasterKey, inStream);
-                        TestIOUtils.copyInStreamToOutStream(cis, outStream);
+            assertEquals("mockKey", returnedKeyId);
+          });
+    }
 
-                        CryptoResult<? extends CryptoInputStream<?>, ?> cryptoResult = cis.getCryptoResult();
-                        final String returnedKeyId = cryptoResult.getMasterKeys().get(0).getKeyId();
+    @Test
+    public void checkAvailable() throws IOException {
+      final int byteSize = 128;
+      final byte[] inBytes = TestIOUtils.generateRandomPlaintext(byteSize);
+      final InputStream inStream = new ByteArrayInputStream(inBytes);
 
-                        assertEquals("mockKey", returnedKeyId);
-                    }
-            );
-        }
+      final int frameSize = AwsCrypto.getDefaultFrameSize();
+      encryptionClient_.setEncryptionFrameSize(frameSize);
 
-        @Test
-        public void checkAvailable() throws IOException {
-            final int byteSize = 128;
-            final byte[] inBytes = TestIOUtils.generateRandomPlaintext(byteSize);
-            final InputStream inStream = new ByteArrayInputStream(inBytes);
+      Map<String, String> setEncryptionContext = new HashMap<>(1);
+      setEncryptionContext.put("ENC", "Streaming Test");
 
-            final int frameSize = AwsCrypto.getDefaultFrameSize();
-            encryptionClient_.setEncryptionFrameSize(frameSize);
+      // encryption
+      final InputStream encryptionInStream =
+          encryptionClient_.createEncryptingStream(
+              customerMasterKey, inStream, setEncryptionContext);
 
-            Map<String, String> setEncryptionContext = new HashMap<>(1);
-            setEncryptionContext.put("ENC", "Streaming Test");
+      assertEquals(byteSize, encryptionInStream.available());
+    }
 
-            // encryption
-            final InputStream encryptionInStream = encryptionClient_.createEncryptingStream(
-                    customerMasterKey,
-                    inStream,
-                    setEncryptionContext);
+    @Test
+    public void whenGetResultCalledTooEarly_noExceptionThrown() throws Exception {
+      testRoundTrip(
+          1024,
+          awsCrypto -> {},
+          (awsCrypto, inStream, outStream) -> {
+            final CryptoInputStream<?> cryptoStream =
+                awsCrypto.createEncryptingStream(customerMasterKey, inStream);
 
-            assertEquals(byteSize, encryptionInStream.available());
-        }
+            // can invoke at any time on encrypt
+            cryptoStream.getCryptoResult();
 
-        @Test
-        public void whenGetResultCalledTooEarly_noExceptionThrown() throws Exception {
-            testRoundTrip(1024,
-                          awsCrypto -> {},
-                          (awsCrypto, inStream, outStream) -> {
-                              final CryptoInputStream<?> cryptoStream = awsCrypto.createEncryptingStream(
-                                      customerMasterKey, inStream
-                              );
-
-                              // can invoke at any time on encrypt
-                              cryptoStream.getCryptoResult();
-
-                              TestIOUtils.copyInStreamToOutStream(cryptoStream, outStream);
-
-                              cryptoStream.getCryptoResult();
-                          },
-                          (awsCrypto, inStream, outStream) -> {
-                              final CryptoInputStream<?> cryptoStream = awsCrypto.createDecryptingStream(
-                                      customerMasterKey, inStream
-                              );
-
-                              // this will implicitly read the crypto headers
-                              cryptoStream.getCryptoResult();
-
-                              TestIOUtils.copyInStreamToOutStream(cryptoStream, outStream);
-
-                              // still works
-                              cryptoStream.getCryptoResult();
-                          }
-            );
-        }
-
-        @Test(expected = BadCiphertextException.class)
-        public void whenGetResultInvokedOnEmptyStream_exceptionThrown() throws IOException {
-            final CryptoInputStream<?> cryptoStream = encryptionClient_.createDecryptingStream(
-                    customerMasterKey,
-                    new ByteArrayInputStream(new byte[0])
-            );
+            TestIOUtils.copyInStreamToOutStream(cryptoStream, outStream);
 
             cryptoStream.getCryptoResult();
-        }
+          },
+          (awsCrypto, inStream, outStream) -> {
+            final CryptoInputStream<?> cryptoStream =
+                awsCrypto.createDecryptingStream(customerMasterKey, inStream);
 
-        @Test()
-        public void encryptUsingCryptoMaterialsManager() throws Exception {
-            RecordingMaterialsManager cmm = new RecordingMaterialsManager(customerMasterKey);
+            // this will implicitly read the crypto headers
+            cryptoStream.getCryptoResult();
 
-            testRoundTrip(
-                    1024,
-                    awsCrypto -> {},
-                    (crypto, inStream, outStream) -> {
-                        final CryptoInputStream<?> cryptoStream = crypto.createEncryptingStream(cmm, inStream);
+            TestIOUtils.copyInStreamToOutStream(cryptoStream, outStream);
 
-                        TestIOUtils.copyInStreamToOutStream(cryptoStream, outStream);
-
-                        assertEquals("bar", cryptoStream.getCryptoResult().getEncryptionContext().get("foo"));
-                    },
-                    basicDecrypt()
-            );
-        }
-
-        @Test
-        public void decryptUsingCryptoMaterialsManager() throws Exception {
-            RecordingMaterialsManager cmm = new RecordingMaterialsManager(customerMasterKey);
-
-            testRoundTrip(
-                    1024,
-                    awsCrypto -> {},
-                    encryptWithoutContext(),
-                    (crypto, inStream, outStream) -> {
-                        final CryptoInputStream<?> cryptoStream = crypto.createDecryptingStream(cmm, inStream);
-
-                        assertFalse(cmm.didDecrypt);
-
-                        TestIOUtils.copyInStreamToOutStream(cryptoStream, outStream);
-
-                        assertTrue(cmm.didDecrypt);
-                    }
-            );
-        }
-
-        @Test
-        public void whenStreamSizeSetEarly_streamSizePassedToCMM() throws Exception {
-            CryptoMaterialsManager cmm = spy(new DefaultCryptoMaterialsManager(customerMasterKey));
-
-            CryptoInputStream<?> is
-                    = AwsCrypto.builder().withCommitmentPolicy(CommitmentPolicy.ForbidEncryptAllowDecrypt).build().createEncryptingStream(cmm, new ByteArrayInputStream(new byte[1]));
-
-            is.setMaxInputLength(1);
-
-            is.read();
-
-            ArgumentCaptor<EncryptionMaterialsRequest> captor = ArgumentCaptor.forClass(EncryptionMaterialsRequest.class);
-            verify(cmm).getMaterialsForEncrypt(captor.capture());
-
-            assertEquals(1L, captor.getValue().getPlaintextSize());
-        }
-
-        @Test
-        public void whenStreamSizeSetEarly_andExceeded_exceptionThrown() throws Exception {
-            CryptoMaterialsManager cmm = spy(new DefaultCryptoMaterialsManager(customerMasterKey));
-
-            CryptoInputStream<?> is
-                    = AwsCrypto.builder().withCommitmentPolicy(CommitmentPolicy.ForbidEncryptAllowDecrypt).build().createEncryptingStream(cmm, new ByteArrayInputStream(new byte[2]));
-
-            is.setMaxInputLength(1);
-
-            assertThrows(()->is.read(new byte[65536]));
-        }
-        @Test
-        public void whenStreamSizeSetLate_andExceeded_exceptionThrown() throws Exception {
-            CryptoMaterialsManager cmm = spy(new DefaultCryptoMaterialsManager(customerMasterKey));
-
-            CryptoInputStream<?> is
-                    = AwsCrypto.builder().withCommitmentPolicy(CommitmentPolicy.ForbidEncryptAllowDecrypt).build().createEncryptingStream(cmm, new ByteArrayInputStream(new byte[2]));
-
-            assertThrows(() -> {
-                is.read();
-                is.setMaxInputLength(1);
-                is.read(new byte[65536]);
-            });
-        }
-
-        @Test
-        public void whenStreamSizeSet_afterBeingExceeded_exceptionThrown() throws Exception {
-            CryptoMaterialsManager cmm = spy(new DefaultCryptoMaterialsManager(customerMasterKey));
-
-            CryptoInputStream<?> is
-                    = AwsCrypto.builder().withCommitmentPolicy(CommitmentPolicy.ForbidEncryptAllowDecrypt).build().createEncryptingStream(cmm, new ByteArrayInputStream(new byte[1024*1024]));
-
-            assertThrows(() -> {
-                is.read();
-                is.setMaxInputLength(1);
-            });
-        }
-
-        @Test
-        public void whenStreamSizeNegative_setSizeThrows() throws Exception {
-            CryptoInputStream<?> is
-                    = AwsCrypto.builder().withCommitmentPolicy(CommitmentPolicy.ForbidEncryptAllowDecrypt).build().createEncryptingStream(customerMasterKey, new ByteArrayInputStream(new byte[0]));
-
-            assertThrows(() -> is.setMaxInputLength(-1));
-        }
-
-        @Test
-        public void whenStreamSizeSet_roundTripSucceeds() throws Exception {
-            testRoundTrip(
-                    1024,
-                    awsCrypto -> {},
-                    (awsCrypto, inStream, outStream) -> {
-                        final CryptoInputStream<?>  cryptoStream = awsCrypto.createEncryptingStream(
-                                customerMasterKey,
-                                inStream
-                        );
-
-                        // we happen to know inStream is a ByteArrayInputStream which will give an accurate number
-                        // of bytes remaining on .available()
-                        cryptoStream.setMaxInputLength(inStream.available());
-
-                        TestIOUtils.copyInStreamToOutStream(cryptoStream, outStream);
-                    },
-                    (awsCrypto, inStream, outStream) -> {
-                        final CryptoInputStream<?> cryptoStream = awsCrypto.createDecryptingStream(
-                                customerMasterKey,
-                                inStream);
-
-                        cryptoStream.setMaxInputLength(inStream.available());
-
-                        TestIOUtils.copyInStreamToOutStream(cryptoStream, outStream);
-                    }
-            );
-        }
+            // still works
+            cryptoStream.getCryptoResult();
+          });
     }
+
+    @Test(expected = BadCiphertextException.class)
+    public void whenGetResultInvokedOnEmptyStream_exceptionThrown() throws IOException {
+      final CryptoInputStream<?> cryptoStream =
+          encryptionClient_.createDecryptingStream(
+              customerMasterKey, new ByteArrayInputStream(new byte[0]));
+
+      cryptoStream.getCryptoResult();
+    }
+
+    @Test()
+    public void encryptUsingCryptoMaterialsManager() throws Exception {
+      RecordingMaterialsManager cmm = new RecordingMaterialsManager(customerMasterKey);
+
+      testRoundTrip(
+          1024,
+          awsCrypto -> {},
+          (crypto, inStream, outStream) -> {
+            final CryptoInputStream<?> cryptoStream = crypto.createEncryptingStream(cmm, inStream);
+
+            TestIOUtils.copyInStreamToOutStream(cryptoStream, outStream);
+
+            assertEquals("bar", cryptoStream.getCryptoResult().getEncryptionContext().get("foo"));
+          },
+          basicDecrypt());
+    }
+
+    @Test
+    public void decryptUsingCryptoMaterialsManager() throws Exception {
+      RecordingMaterialsManager cmm = new RecordingMaterialsManager(customerMasterKey);
+
+      testRoundTrip(
+          1024,
+          awsCrypto -> {},
+          encryptWithoutContext(),
+          (crypto, inStream, outStream) -> {
+            final CryptoInputStream<?> cryptoStream = crypto.createDecryptingStream(cmm, inStream);
+
+            assertFalse(cmm.didDecrypt);
+
+            TestIOUtils.copyInStreamToOutStream(cryptoStream, outStream);
+
+            assertTrue(cmm.didDecrypt);
+          });
+    }
+
+    @Test
+    public void whenStreamSizeSetEarly_streamSizePassedToCMM() throws Exception {
+      CryptoMaterialsManager cmm = spy(new DefaultCryptoMaterialsManager(customerMasterKey));
+
+      CryptoInputStream<?> is =
+          AwsCrypto.builder()
+              .withCommitmentPolicy(CommitmentPolicy.ForbidEncryptAllowDecrypt)
+              .build()
+              .createEncryptingStream(cmm, new ByteArrayInputStream(new byte[1]));
+
+      is.setMaxInputLength(1);
+
+      is.read();
+
+      ArgumentCaptor<EncryptionMaterialsRequest> captor =
+          ArgumentCaptor.forClass(EncryptionMaterialsRequest.class);
+      verify(cmm).getMaterialsForEncrypt(captor.capture());
+
+      assertEquals(1L, captor.getValue().getPlaintextSize());
+    }
+
+    @Test
+    public void whenStreamSizeSetEarly_andExceeded_exceptionThrown() throws Exception {
+      CryptoMaterialsManager cmm = spy(new DefaultCryptoMaterialsManager(customerMasterKey));
+
+      CryptoInputStream<?> is =
+          AwsCrypto.builder()
+              .withCommitmentPolicy(CommitmentPolicy.ForbidEncryptAllowDecrypt)
+              .build()
+              .createEncryptingStream(cmm, new ByteArrayInputStream(new byte[2]));
+
+      is.setMaxInputLength(1);
+
+      assertThrows(() -> is.read(new byte[65536]));
+    }
+
+    @Test
+    public void whenStreamSizeSetLate_andExceeded_exceptionThrown() throws Exception {
+      CryptoMaterialsManager cmm = spy(new DefaultCryptoMaterialsManager(customerMasterKey));
+
+      CryptoInputStream<?> is =
+          AwsCrypto.builder()
+              .withCommitmentPolicy(CommitmentPolicy.ForbidEncryptAllowDecrypt)
+              .build()
+              .createEncryptingStream(cmm, new ByteArrayInputStream(new byte[2]));
+
+      assertThrows(
+          () -> {
+            is.read();
+            is.setMaxInputLength(1);
+            is.read(new byte[65536]);
+          });
+    }
+
+    @Test
+    public void whenStreamSizeSet_afterBeingExceeded_exceptionThrown() throws Exception {
+      CryptoMaterialsManager cmm = spy(new DefaultCryptoMaterialsManager(customerMasterKey));
+
+      CryptoInputStream<?> is =
+          AwsCrypto.builder()
+              .withCommitmentPolicy(CommitmentPolicy.ForbidEncryptAllowDecrypt)
+              .build()
+              .createEncryptingStream(cmm, new ByteArrayInputStream(new byte[1024 * 1024]));
+
+      assertThrows(
+          () -> {
+            is.read();
+            is.setMaxInputLength(1);
+          });
+    }
+
+    @Test
+    public void whenStreamSizeNegative_setSizeThrows() throws Exception {
+      CryptoInputStream<?> is =
+          AwsCrypto.builder()
+              .withCommitmentPolicy(CommitmentPolicy.ForbidEncryptAllowDecrypt)
+              .build()
+              .createEncryptingStream(customerMasterKey, new ByteArrayInputStream(new byte[0]));
+
+      assertThrows(() -> is.setMaxInputLength(-1));
+    }
+
+    @Test
+    public void whenStreamSizeSet_roundTripSucceeds() throws Exception {
+      testRoundTrip(
+          1024,
+          awsCrypto -> {},
+          (awsCrypto, inStream, outStream) -> {
+            final CryptoInputStream<?> cryptoStream =
+                awsCrypto.createEncryptingStream(customerMasterKey, inStream);
+
+            // we happen to know inStream is a ByteArrayInputStream which will give an accurate
+            // number
+            // of bytes remaining on .available()
+            cryptoStream.setMaxInputLength(inStream.available());
+
+            TestIOUtils.copyInStreamToOutStream(cryptoStream, outStream);
+          },
+          (awsCrypto, inStream, outStream) -> {
+            final CryptoInputStream<?> cryptoStream =
+                awsCrypto.createDecryptingStream(customerMasterKey, inStream);
+
+            cryptoStream.setMaxInputLength(inStream.available());
+
+            TestIOUtils.copyInStreamToOutStream(cryptoStream, outStream);
+          });
+    }
+  }
 }
