@@ -3,4 +3,4 @@
     url = https://github.com/awslabs/private-aws-encryption-sdk-test-vectors-staging.git
 [submodule "aws-encryption-sdk-specification"]
 	path = aws-encryption-sdk-specification
-	url = git@github.com:awslabs/aws-encryption-sdk-specification.git
+	url = https://github.com/awslabs/aws-encryption-sdk-specification.git
