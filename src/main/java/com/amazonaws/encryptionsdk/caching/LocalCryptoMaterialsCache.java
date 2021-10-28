@@ -13,13 +13,13 @@ import javax.annotation.concurrent.GuardedBy;
  *
  * <p>Example usage: {@code
  *
- * <p><p><p>LocalCryptoMaterialsCache cache = new LocalCryptoMaterialsCache(500);
+ * <p><p><p><p>LocalCryptoMaterialsCache cache = new LocalCryptoMaterialsCache(500);
  *
- * <p><p><p>CachingCryptoMaterialsManager materialsManager = CachingCryptoMaterialsManager.builder()
- * .setMaxAge(5, TimeUnit.MINUTES) .setCache(cache) .withMasterKeyProvider(myMasterKeyProvider)
- * .build();
+ * <p><p><p><p>CachingCryptoMaterialsManager materialsManager =
+ * CachingCryptoMaterialsManager.builder() .setMaxAge(5, TimeUnit.MINUTES) .setCache(cache)
+ * .withMasterKeyProvider(myMasterKeyProvider) .build();
  *
- * <p><p><p>byte[] data = new AwsCrypto().encryptData(materialsManager, plaintext).getResult(); }
+ * <p><p><p><p>byte[] data = new AwsCrypto().encryptData(materialsManager, plaintext).getResult(); }
  */
 public class LocalCryptoMaterialsCache implements CryptoMaterialsCache {
   // The maximum number of entries to implicitly prune per access due to TTL expiration. We limit
