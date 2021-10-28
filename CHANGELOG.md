@@ -1,20 +1,5 @@
 # Changelog
 
-### [1.9.1](https://github.com/aws/aws-encryption-sdk-java/compare/v1.9.0...v1.9.1) (2021-10-28)
-
-
-### Fixes
-
-* "AWS Encryption SDK 1.9.1 Release" ([#389](https://github.com/aws/aws-encryption-sdk-java/issues/389)) ([f58051d](https://github.com/aws/aws-encryption-sdk-java/commit/f58051d92ef7ed86ed2c198f286baf9abefe5537))
-
-
-### Maintenance
-
-* Add back removed CiphertextHeaders.deserialize method ([#383](https://github.com/aws/aws-encryption-sdk-java/issues/383)) ([468625d](https://github.com/aws/aws-encryption-sdk-java/commit/468625d03490ed007b5bfc2c20d04cd4973d798e))
-* add corretto11 ([#390](https://github.com/aws/aws-encryption-sdk-java/issues/390)) ([f3140a7](https://github.com/aws/aws-encryption-sdk-java/commit/f3140a7acebded80e07fedc5bc174fe223ec9d25))
-* CI formatting ([#388](https://github.com/aws/aws-encryption-sdk-java/issues/388)) ([129c2c0](https://github.com/aws/aws-encryption-sdk-java/commit/129c2c058fcbfd4b0cf10b2a5ec63dd7f4640a81))
-* update mainline-1.x with new release process ([#385](https://github.com/aws/aws-encryption-sdk-java/issues/385)) ([c55c2d2](https://github.com/aws/aws-encryption-sdk-java/commit/c55c2d205427f62a4c22444bc675cf12d6212e0c))
-
 ## 1.9.0 -- 2021-05-27
 
 * feat: Improvements to the message decryption process. 
