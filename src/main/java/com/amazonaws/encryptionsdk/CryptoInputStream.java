@@ -13,16 +13,15 @@
 
 package com.amazonaws.encryptionsdk;
 
+import static com.amazonaws.encryptionsdk.internal.Utils.assertNonNull;
+
 import com.amazonaws.encryptionsdk.caching.CachingCryptoMaterialsManager;
 import com.amazonaws.encryptionsdk.exception.BadCiphertextException;
 import com.amazonaws.encryptionsdk.internal.MessageCryptoHandler;
 import com.amazonaws.encryptionsdk.internal.Utils;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-
-import static com.amazonaws.encryptionsdk.internal.Utils.assertNonNull;
 
 /**
  * A CryptoInputStream is a subclass of java.io.InputStream. It performs cryptographic

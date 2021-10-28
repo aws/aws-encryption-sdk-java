@@ -13,17 +13,16 @@
 
 package com.amazonaws.encryptionsdk.internal;
 
-import com.amazonaws.encryptionsdk.exception.AwsCryptoException;
-import org.junit.Test;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
+import com.amazonaws.encryptionsdk.exception.AwsCryptoException;
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
 public class EncContextSerializerTest {
 

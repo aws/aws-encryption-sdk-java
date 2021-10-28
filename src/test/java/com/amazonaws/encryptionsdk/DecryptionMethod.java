@@ -2,7 +2,6 @@ package com.amazonaws.encryptionsdk;
 
 import com.amazonaws.encryptionsdk.internal.SignaturePolicy;
 import com.amazonaws.encryptionsdk.internal.TestIOUtils;
-
 import java.io.*;
 
 enum DecryptionMethod {

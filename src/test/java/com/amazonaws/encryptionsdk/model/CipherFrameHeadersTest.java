@@ -13,18 +13,17 @@
 
 package com.amazonaws.encryptionsdk.model;
 
+import static org.junit.Assert.*;
+
 import com.amazonaws.encryptionsdk.TestUtils;
 import com.amazonaws.encryptionsdk.exception.AwsCryptoException;
 import com.amazonaws.encryptionsdk.exception.BadCiphertextException;
 import com.amazonaws.encryptionsdk.internal.Constants;
 import com.amazonaws.encryptionsdk.internal.RandomBytesGenerator;
 import com.amazonaws.encryptionsdk.internal.TestIOUtils;
-import org.junit.Test;
-
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-
-import static org.junit.Assert.*;
+import org.junit.Test;
 
 public class CipherFrameHeadersTest {
   final int nonceLen_ = TestUtils.DEFAULT_TEST_CRYPTO_ALG.getNonceLen();

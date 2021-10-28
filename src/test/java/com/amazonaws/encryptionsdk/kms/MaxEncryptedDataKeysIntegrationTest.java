@@ -3,6 +3,9 @@
 
 package com.amazonaws.encryptionsdk.kms;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.mockito.Mockito.*;
+
 import com.amazonaws.encryptionsdk.AwsCrypto;
 import com.amazonaws.encryptionsdk.CommitmentPolicy;
 import com.amazonaws.encryptionsdk.CryptoAlgorithm;
@@ -10,14 +13,10 @@ import com.amazonaws.encryptionsdk.TestUtils;
 import com.amazonaws.encryptionsdk.exception.AwsCryptoException;
 import com.amazonaws.services.kms.AWSKMS;
 import com.amazonaws.services.kms.AWSKMSClientBuilder;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.junit.Assert.assertArrayEquals;
-import static org.mockito.Mockito.*;
+import org.junit.Before;
+import org.junit.Test;
 
 public class MaxEncryptedDataKeysIntegrationTest {
   private static final byte[] PLAINTEXT = {1, 2, 3, 4};

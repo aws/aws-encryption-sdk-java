@@ -3,11 +3,11 @@
 
 package com.amazonaws.crypto.examples;
 
+import static org.junit.Assert.*;
+
 import com.amazonaws.encryptionsdk.ParsedCiphertext;
 import com.amazonaws.encryptionsdk.kms.KMSTestFixtures;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
 
 public class SimpleDataKeyCachingExampleTest {
   private static final int MAX_ENTRY_AGE = 100;

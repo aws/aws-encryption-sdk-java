@@ -8,9 +8,6 @@ import com.amazonaws.encryptionsdk.internal.CommittedKey;
 import com.amazonaws.encryptionsdk.internal.Constants;
 import com.amazonaws.encryptionsdk.internal.HmacKeyDerivationFunction;
 import com.amazonaws.encryptionsdk.model.CiphertextHeaders;
-
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.security.InvalidKeyException;
@@ -19,6 +16,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
  * Describes the cryptographic algorithms available for use in this library.

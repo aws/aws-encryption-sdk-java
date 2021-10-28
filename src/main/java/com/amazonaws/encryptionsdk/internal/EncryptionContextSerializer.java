@@ -14,7 +14,6 @@
 package com.amazonaws.encryptionsdk.internal;
 
 import com.amazonaws.encryptionsdk.exception.AwsCryptoException;
-
 import java.nio.*;
 import java.nio.charset.*;
 import java.util.*;

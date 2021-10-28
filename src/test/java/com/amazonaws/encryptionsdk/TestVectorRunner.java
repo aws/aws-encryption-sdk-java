@@ -3,6 +3,8 @@
 
 package com.amazonaws.encryptionsdk;
 
+import static java.lang.String.format;
+
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.encryptionsdk.internal.SignaturePolicy;
 import com.amazonaws.encryptionsdk.jce.JceMasterKey;
@@ -11,15 +13,6 @@ import com.amazonaws.encryptionsdk.multi.MultipleProviderFactory;
 import com.amazonaws.util.IOUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.bouncycastle.util.encoders.Base64;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.JarURLConnection;
@@ -31,8 +24,14 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
-
-import static java.lang.String.format;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import org.bouncycastle.util.encoders.Base64;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
 public class TestVectorRunner {

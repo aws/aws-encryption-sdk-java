@@ -3,6 +3,12 @@
 
 package com.amazonaws.encryptionsdk.kms;
 
+import static com.amazonaws.encryptionsdk.TestUtils.assertThrows;
+import static com.amazonaws.encryptionsdk.internal.RandomBytesGenerator.generate;
+import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.AmazonWebServiceRequest;
 import com.amazonaws.RequestClientOptions;
@@ -16,21 +22,14 @@ import com.amazonaws.encryptionsdk.kms.KmsMasterKeyProvider.RegionalClientSuppli
 import com.amazonaws.encryptionsdk.model.KeyBlob;
 import com.amazonaws.services.kms.model.DecryptRequest;
 import com.amazonaws.services.kms.model.DecryptResult;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.mockito.ArgumentCaptor;
-
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-
-import static com.amazonaws.encryptionsdk.TestUtils.assertThrows;
-import static com.amazonaws.encryptionsdk.internal.RandomBytesGenerator.generate;
-import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 @RunWith(Enclosed.class)
 public class KmsMasterKeyProviderTest {

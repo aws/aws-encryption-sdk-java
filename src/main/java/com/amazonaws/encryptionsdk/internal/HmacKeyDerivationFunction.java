@@ -14,16 +14,16 @@
  */
 package com.amazonaws.encryptionsdk.internal;
 
-import javax.crypto.Mac;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
+import static org.apache.commons.lang3.Validate.isTrue;
+
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.util.Arrays;
-
-import static org.apache.commons.lang3.Validate.isTrue;
+import javax.crypto.Mac;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
  * HMAC-based Key Derivation Function. Adapted from Hkdf.java in aws-dynamodb-encryption-java

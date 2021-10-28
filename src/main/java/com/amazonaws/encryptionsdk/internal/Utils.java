@@ -3,9 +3,6 @@
 
 package com.amazonaws.encryptionsdk.internal;
 
-import org.apache.commons.lang3.ArrayUtils;
-import org.bouncycastle.util.encoders.Base64;
-
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.nio.Buffer;
@@ -16,6 +13,8 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import org.apache.commons.lang3.ArrayUtils;
+import org.bouncycastle.util.encoders.Base64;
 
 /** Internal utility methods. */
 public final class Utils {

@@ -6,7 +6,6 @@ package com.amazonaws.encryptionsdk.model;
 import com.amazonaws.encryptionsdk.CommitmentPolicy;
 import com.amazonaws.encryptionsdk.CryptoAlgorithm;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import java.util.*;
 
 /**

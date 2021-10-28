@@ -4,12 +4,11 @@
 package com.amazonaws.encryptionsdk.internal;
 
 import com.amazonaws.encryptionsdk.CryptoAlgorithm;
-
+import java.nio.charset.StandardCharsets;
+import java.security.NoSuchAlgorithmException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import javax.management.openmbean.InvalidKeyException;
-import java.nio.charset.StandardCharsets;
-import java.security.NoSuchAlgorithmException;
 
 public final class CommittedKey {
 

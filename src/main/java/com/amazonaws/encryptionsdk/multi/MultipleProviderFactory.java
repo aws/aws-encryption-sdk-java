@@ -18,7 +18,6 @@ import com.amazonaws.encryptionsdk.exception.AwsCryptoException;
 import com.amazonaws.encryptionsdk.exception.NoSuchMasterKeyException;
 import com.amazonaws.encryptionsdk.exception.UnsupportedProviderException;
 import com.amazonaws.encryptionsdk.internal.Utils;
-
 import java.util.*;
 
 /**

@@ -9,7 +9,6 @@ import com.amazonaws.encryptionsdk.internal.*;
 import com.amazonaws.encryptionsdk.model.CiphertextHeaders;
 import com.amazonaws.encryptionsdk.model.EncryptionMaterials;
 import com.amazonaws.encryptionsdk.model.EncryptionMaterialsRequest;
-
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;

@@ -1,15 +1,14 @@
 package com.amazonaws.encryptionsdk.multi;
 
-import com.amazonaws.encryptionsdk.*;
-import com.amazonaws.encryptionsdk.internal.StaticMasterKey;
-import com.amazonaws.encryptionsdk.jce.JceMasterKey;
-import org.junit.Test;
-
-import javax.crypto.spec.SecretKeySpec;
-
 import static com.amazonaws.encryptionsdk.internal.RandomBytesGenerator.generate;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+
+import com.amazonaws.encryptionsdk.*;
+import com.amazonaws.encryptionsdk.internal.StaticMasterKey;
+import com.amazonaws.encryptionsdk.jce.JceMasterKey;
+import javax.crypto.spec.SecretKeySpec;
+import org.junit.Test;
 
 public class MultipleMasterKeyTest {
   private static final String WRAPPING_ALG = "AES/GCM/NoPadding";

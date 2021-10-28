@@ -13,18 +13,17 @@
 
 package com.amazonaws.encryptionsdk.internal;
 
+import static org.junit.Assert.assertTrue;
+
 import com.amazonaws.encryptionsdk.CryptoAlgorithm;
 import com.amazonaws.encryptionsdk.TestUtils;
 import com.amazonaws.encryptionsdk.exception.BadCiphertextException;
-import org.junit.Test;
-
+import java.util.Arrays;
+import java.util.EnumSet;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import java.util.Arrays;
-import java.util.EnumSet;
-
-import static org.junit.Assert.assertTrue;
+import org.junit.Test;
 
 public class CipherHandlerTest {
   private final int contentLen_ = 1024; // 1KB

@@ -13,11 +13,6 @@
 
 package com.amazonaws.encryptionsdk.internal;
 
-import org.apache.commons.lang3.ArrayUtils;
-
-import javax.crypto.Cipher;
-import javax.crypto.spec.OAEPParameterSpec;
-import javax.crypto.spec.PSource;
 import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.PrivateKey;
@@ -28,6 +23,10 @@ import java.util.Map;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.crypto.Cipher;
+import javax.crypto.spec.OAEPParameterSpec;
+import javax.crypto.spec.PSource;
+import org.apache.commons.lang3.ArrayUtils;
 
 /** A JceKeyCipher based on RSA. */
 class RsaJceKeyCipher extends JceKeyCipher {

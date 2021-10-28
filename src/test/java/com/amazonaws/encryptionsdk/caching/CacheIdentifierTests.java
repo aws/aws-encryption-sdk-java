@@ -1,5 +1,11 @@
 package com.amazonaws.encryptionsdk.caching;
 
+import static com.amazonaws.encryptionsdk.CryptoAlgorithm.ALG_AES_128_GCM_IV12_TAG16_HKDF_SHA256;
+import static com.amazonaws.encryptionsdk.CryptoAlgorithm.ALG_AES_256_GCM_IV12_TAG16_HKDF_SHA384_ECDSA_P384;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+
 import com.amazonaws.encryptionsdk.CommitmentPolicy;
 import com.amazonaws.encryptionsdk.CryptoAlgorithm;
 import com.amazonaws.encryptionsdk.CryptoMaterialsManager;
@@ -8,18 +14,11 @@ import com.amazonaws.encryptionsdk.internal.Utils;
 import com.amazonaws.encryptionsdk.model.DecryptionMaterialsRequest;
 import com.amazonaws.encryptionsdk.model.EncryptionMaterialsRequest;
 import com.amazonaws.encryptionsdk.model.KeyBlob;
-import org.bouncycastle.util.encoders.Hex;
-import org.junit.Test;
-
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-
-import static com.amazonaws.encryptionsdk.CryptoAlgorithm.ALG_AES_128_GCM_IV12_TAG16_HKDF_SHA256;
-import static com.amazonaws.encryptionsdk.CryptoAlgorithm.ALG_AES_256_GCM_IV12_TAG16_HKDF_SHA384_ECDSA_P384;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
+import org.bouncycastle.util.encoders.Hex;
+import org.junit.Test;
 
 public class CacheIdentifierTests {
 

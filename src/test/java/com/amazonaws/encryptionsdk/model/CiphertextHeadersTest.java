@@ -3,6 +3,9 @@
 
 package com.amazonaws.encryptionsdk.model;
 
+import static com.amazonaws.encryptionsdk.TestUtils.assertThrows;
+import static org.junit.Assert.*;
+
 import com.amazonaws.encryptionsdk.AwsCrypto;
 import com.amazonaws.encryptionsdk.CryptoAlgorithm;
 import com.amazonaws.encryptionsdk.TestUtils;
@@ -11,13 +14,9 @@ import com.amazonaws.encryptionsdk.exception.BadCiphertextException;
 import com.amazonaws.encryptionsdk.internal.Constants;
 import com.amazonaws.encryptionsdk.internal.EncryptionContextSerializer;
 import com.amazonaws.encryptionsdk.internal.RandomBytesGenerator;
-import org.junit.Test;
-
 import java.nio.ByteBuffer;
 import java.util.*;
-
-import static com.amazonaws.encryptionsdk.TestUtils.assertThrows;
-import static org.junit.Assert.*;
+import org.junit.Test;
 
 public class CiphertextHeadersTest {
   final CryptoAlgorithm cryptoAlgo_ = TestUtils.DEFAULT_TEST_CRYPTO_ALG;

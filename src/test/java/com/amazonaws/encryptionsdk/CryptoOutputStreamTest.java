@@ -3,32 +3,31 @@
 
 package com.amazonaws.encryptionsdk;
 
+import static com.amazonaws.encryptionsdk.AwsCrypto.getDefaultFrameSize;
+import static com.amazonaws.encryptionsdk.FastTestsOnlySuite.isFastTestSuiteActive;
+import static com.amazonaws.encryptionsdk.TestUtils.*;
+import static com.amazonaws.encryptionsdk.TestUtils.assertThrows;
+import static com.amazonaws.encryptionsdk.internal.TestIOUtils.getSha256Hash;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+
 import com.amazonaws.encryptionsdk.exception.BadCiphertextException;
 import com.amazonaws.encryptionsdk.internal.TestIOUtils;
 import com.amazonaws.encryptionsdk.jce.JceMasterKey;
 import com.amazonaws.encryptionsdk.model.EncryptionMaterialsRequest;
+import java.io.*;
+import java.security.SecureRandom;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import javax.crypto.spec.SecretKeySpec;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.mockito.ArgumentCaptor;
-
-import javax.crypto.spec.SecretKeySpec;
-import java.io.*;
-import java.security.SecureRandom;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
-
-import static com.amazonaws.encryptionsdk.AwsCrypto.getDefaultFrameSize;
-import static com.amazonaws.encryptionsdk.FastTestsOnlySuite.isFastTestSuiteActive;
-import static com.amazonaws.encryptionsdk.TestUtils.assertThrows;
-import static com.amazonaws.encryptionsdk.TestUtils.*;
-import static com.amazonaws.encryptionsdk.internal.TestIOUtils.getSha256Hash;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
 
 @RunWith(Enclosed.class)
 public class CryptoOutputStreamTest {

@@ -14,7 +14,6 @@
 package com.amazonaws.encryptionsdk;
 
 import com.amazonaws.encryptionsdk.model.CiphertextHeaders;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

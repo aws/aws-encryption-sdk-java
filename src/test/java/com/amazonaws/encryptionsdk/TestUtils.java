@@ -3,9 +3,11 @@
 
 package com.amazonaws.encryptionsdk;
 
-import com.amazonaws.encryptionsdk.jce.JceMasterKey;
+import static java.lang.String.format;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import javax.crypto.spec.SecretKeySpec;
+import com.amazonaws.encryptionsdk.jce.JceMasterKey;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,10 +17,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static java.lang.String.format;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import javax.crypto.spec.SecretKeySpec;
 
 public class TestUtils {
   public static final CryptoAlgorithm DEFAULT_TEST_CRYPTO_ALG =
@@ -126,7 +125,7 @@ public class TestUtils {
    *
    * <p>Usage: {@code
    *
-   * <p><p>assertNullChecks( myAwsCrypto, "createDecryptingStream", CryptoMaterialsManager.class,
+   * <p><p><p>assertNullChecks( myAwsCrypto, "createDecryptingStream", CryptoMaterialsManager.class,
    * myCMM, InputStream.class, myIS ); }
    *
    * @param callee

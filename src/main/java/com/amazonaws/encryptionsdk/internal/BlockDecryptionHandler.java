@@ -17,10 +17,9 @@ import com.amazonaws.encryptionsdk.CryptoAlgorithm;
 import com.amazonaws.encryptionsdk.exception.AwsCryptoException;
 import com.amazonaws.encryptionsdk.exception.BadCiphertextException;
 import com.amazonaws.encryptionsdk.model.CipherBlockHeaders;
-
+import java.util.Arrays;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
-import java.util.Arrays;
 
 /**
  * The block decryption handler is an implementation of CryptoHandler that provides methods to

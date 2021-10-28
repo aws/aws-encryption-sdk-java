@@ -21,9 +21,6 @@ import com.amazonaws.encryptionsdk.exception.AwsCryptoException;
 import com.amazonaws.encryptionsdk.exception.UnsupportedProviderException;
 import com.amazonaws.encryptionsdk.internal.JceKeyCipher;
 import com.amazonaws.encryptionsdk.internal.Utils;
-
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.PrivateKey;
@@ -32,6 +29,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
  * Represents a {@link MasterKey} backed by one (or more) JCE {@link Key}s. Instances of this should

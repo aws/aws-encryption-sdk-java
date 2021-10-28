@@ -14,7 +14,6 @@
 package com.amazonaws.encryptionsdk;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;

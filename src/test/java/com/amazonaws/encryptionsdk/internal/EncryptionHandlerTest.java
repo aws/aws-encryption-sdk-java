@@ -3,19 +3,18 @@
 
 package com.amazonaws.encryptionsdk.internal;
 
+import static com.amazonaws.encryptionsdk.TestUtils.assertThrows;
+import static java.util.Collections.emptyList;
+import static org.junit.Assert.*;
+
 import com.amazonaws.encryptionsdk.*;
 import com.amazonaws.encryptionsdk.exception.AwsCryptoException;
 import com.amazonaws.encryptionsdk.model.EncryptionMaterials;
 import com.amazonaws.encryptionsdk.model.EncryptionMaterialsRequest;
-import org.junit.Test;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
-import static com.amazonaws.encryptionsdk.TestUtils.assertThrows;
-import static java.util.Collections.emptyList;
-import static org.junit.Assert.*;
+import org.junit.Test;
 
 public class EncryptionHandlerTest {
   private final CryptoAlgorithm cryptoAlgorithm_ =

@@ -7,7 +7,6 @@ import com.amazonaws.encryptionsdk.model.DecryptionMaterials;
 import com.amazonaws.encryptionsdk.model.DecryptionMaterialsRequest;
 import com.amazonaws.encryptionsdk.model.EncryptionMaterials;
 import com.amazonaws.encryptionsdk.model.EncryptionMaterialsRequest;
-
 import java.util.Collections;
 
 public class RecordingMaterialsManager implements CryptoMaterialsManager {

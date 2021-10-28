@@ -13,15 +13,14 @@
 
 package com.amazonaws.encryptionsdk.model;
 
-import com.amazonaws.encryptionsdk.CryptoAlgorithm;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
+import com.amazonaws.encryptionsdk.CryptoAlgorithm;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
 public class DecryptionMaterialsRequestTest {
   @Test

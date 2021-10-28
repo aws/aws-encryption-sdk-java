@@ -16,10 +16,9 @@ package com.amazonaws.encryptionsdk.internal;
 import com.amazonaws.encryptionsdk.CryptoAlgorithm;
 import com.amazonaws.encryptionsdk.exception.BadCiphertextException;
 import com.amazonaws.encryptionsdk.model.CipherBlockHeaders;
-
+import java.io.ByteArrayOutputStream;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
-import java.io.ByteArrayOutputStream;
 
 /**
  * The block encryption handler is an implementation of {@link MessageCryptoHandler} that provides

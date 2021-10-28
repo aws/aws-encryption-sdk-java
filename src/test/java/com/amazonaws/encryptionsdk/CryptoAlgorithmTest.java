@@ -3,6 +3,10 @@
 
 package com.amazonaws.encryptionsdk;
 
+import static com.amazonaws.encryptionsdk.TestUtils.assertThrows;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import com.amazonaws.encryptionsdk.exception.BadCiphertextException;
 import com.amazonaws.encryptionsdk.internal.EncryptionHandler;
 import com.amazonaws.encryptionsdk.internal.StaticMasterKey;
@@ -10,17 +14,12 @@ import com.amazonaws.encryptionsdk.internal.Utils;
 import com.amazonaws.encryptionsdk.model.CiphertextHeaders;
 import com.amazonaws.encryptionsdk.model.EncryptionMaterials;
 import com.amazonaws.encryptionsdk.model.EncryptionMaterialsRequest;
-import org.junit.Test;
-
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 import java.security.InvalidKeyException;
 import java.util.Collections;
 import java.util.Map;
-
-import static com.amazonaws.encryptionsdk.TestUtils.assertThrows;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import org.junit.Test;
 
 public class CryptoAlgorithmTest {
   @Test

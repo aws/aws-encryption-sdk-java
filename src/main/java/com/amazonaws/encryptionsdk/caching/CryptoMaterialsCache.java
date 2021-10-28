@@ -3,7 +3,6 @@ package com.amazonaws.encryptionsdk.caching;
 import com.amazonaws.encryptionsdk.internal.Utils;
 import com.amazonaws.encryptionsdk.model.DecryptionMaterials;
 import com.amazonaws.encryptionsdk.model.EncryptionMaterials;
-
 import java.util.Objects;
 
 /**

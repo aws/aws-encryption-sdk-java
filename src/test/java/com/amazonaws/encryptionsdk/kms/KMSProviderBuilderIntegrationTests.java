@@ -3,6 +3,11 @@
 
 package com.amazonaws.encryptionsdk.kms;
 
+import static com.amazonaws.encryptionsdk.TestUtils.assertThrows;
+import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
 import com.amazonaws.AbortedException;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Request;
@@ -20,10 +25,6 @@ import com.amazonaws.handlers.RequestHandler2;
 import com.amazonaws.http.exception.HttpRequestTimeoutException;
 import com.amazonaws.services.kms.AWSKMS;
 import com.amazonaws.services.kms.AWSKMSClientBuilder;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,11 +32,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static com.amazonaws.encryptionsdk.TestUtils.assertThrows;
-import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
 public class KMSProviderBuilderIntegrationTests {
 

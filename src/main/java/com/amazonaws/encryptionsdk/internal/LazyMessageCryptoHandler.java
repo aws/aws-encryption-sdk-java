@@ -2,11 +2,10 @@ package com.amazonaws.encryptionsdk.internal;
 
 import com.amazonaws.encryptionsdk.MasterKey;
 import com.amazonaws.encryptionsdk.model.CiphertextHeaders;
-
-import javax.annotation.concurrent.NotThreadSafe;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import javax.annotation.concurrent.NotThreadSafe;
 
 /**
  * A {@link MessageCryptoHandler} that delegates to another MessageCryptoHandler, which is created

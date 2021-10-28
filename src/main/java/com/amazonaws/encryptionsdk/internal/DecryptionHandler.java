@@ -7,14 +7,13 @@ import com.amazonaws.encryptionsdk.*;
 import com.amazonaws.encryptionsdk.exception.AwsCryptoException;
 import com.amazonaws.encryptionsdk.exception.BadCiphertextException;
 import com.amazonaws.encryptionsdk.model.*;
-
-import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
 import java.security.*;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
 
 /**
  * This class implements the CryptoHandler interface by providing methods for the decryption of

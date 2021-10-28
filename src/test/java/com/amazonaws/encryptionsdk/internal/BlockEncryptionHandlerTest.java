@@ -13,17 +13,16 @@
 
 package com.amazonaws.encryptionsdk.internal;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+
 import com.amazonaws.encryptionsdk.CryptoAlgorithm;
 import com.amazonaws.encryptionsdk.TestUtils;
 import com.amazonaws.encryptionsdk.model.CipherBlockHeaders;
-import org.junit.Before;
-import org.junit.Test;
-
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import org.junit.Before;
+import org.junit.Test;
 
 public class BlockEncryptionHandlerTest {
   private final CryptoAlgorithm cryptoAlgorithm_ = TestUtils.DEFAULT_TEST_CRYPTO_ALG;

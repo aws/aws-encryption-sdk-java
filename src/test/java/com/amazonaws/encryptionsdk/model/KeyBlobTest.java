@@ -13,22 +13,21 @@
 
 package com.amazonaws.encryptionsdk.model;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+
 import com.amazonaws.encryptionsdk.CryptoAlgorithm;
 import com.amazonaws.encryptionsdk.DataKey;
 import com.amazonaws.encryptionsdk.exception.AwsCryptoException;
 import com.amazonaws.encryptionsdk.internal.Constants;
 import com.amazonaws.encryptionsdk.internal.RandomBytesGenerator;
 import com.amazonaws.encryptionsdk.internal.StaticMasterKey;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import org.junit.Before;
+import org.junit.Test;
 
 public class KeyBlobTest {
   private static CryptoAlgorithm ALGORITHM = CryptoAlgorithm.ALG_AES_128_GCM_IV12_TAG16_NO_KDF;

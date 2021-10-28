@@ -1,11 +1,12 @@
 package com.amazonaws.encryptionsdk.caching;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 import com.amazonaws.encryptionsdk.DataKey;
 import com.amazonaws.encryptionsdk.caching.CryptoMaterialsCache.UsageStats;
 import com.amazonaws.encryptionsdk.model.DecryptionMaterials;
 import com.amazonaws.encryptionsdk.model.EncryptionMaterials;
-import org.junit.Test;
-
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -13,9 +14,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.function.Supplier;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import org.junit.Test;
 
 public class LocalCryptoMaterialsCacheThreadStormTest {
 

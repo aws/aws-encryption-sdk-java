@@ -17,7 +17,6 @@ import com.amazonaws.encryptionsdk.*;
 import com.amazonaws.encryptionsdk.exception.AwsCryptoException;
 import com.amazonaws.encryptionsdk.exception.NoSuchMasterKeyException;
 import com.amazonaws.encryptionsdk.exception.UnsupportedProviderException;
-
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.KeyStore.*;

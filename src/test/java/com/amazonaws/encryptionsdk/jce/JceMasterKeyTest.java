@@ -1,10 +1,9 @@
 package com.amazonaws.encryptionsdk.jce;
 
-import org.junit.Test;
-
+import java.security.*;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import java.security.*;
+import org.junit.Test;
 
 public class JceMasterKeyTest {
 

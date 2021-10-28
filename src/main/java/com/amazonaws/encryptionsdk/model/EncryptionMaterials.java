@@ -2,10 +2,9 @@ package com.amazonaws.encryptionsdk.model;
 
 import com.amazonaws.encryptionsdk.CryptoAlgorithm;
 import com.amazonaws.encryptionsdk.MasterKey;
-
-import javax.crypto.SecretKey;
 import java.security.PrivateKey;
 import java.util.*;
+import javax.crypto.SecretKey;
 
 /**
  * Contains the cryptographic materials needed for an encryption operation.

@@ -3,24 +3,23 @@ package com.amazonaws.encryptionsdk.caching;
 import com.amazonaws.encryptionsdk.internal.Utils;
 import com.amazonaws.encryptionsdk.model.DecryptionMaterials;
 import com.amazonaws.encryptionsdk.model.EncryptionMaterials;
-
-import javax.annotation.concurrent.GuardedBy;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.TreeSet;
+import javax.annotation.concurrent.GuardedBy;
 
 /**
  * A simple implementation of the {@link CryptoMaterialsCache} using a basic LRU cache.
  *
  * <p>Example usage: {@code
  *
- * <p><p>LocalCryptoMaterialsCache cache = new LocalCryptoMaterialsCache(500);
+ * <p><p><p>LocalCryptoMaterialsCache cache = new LocalCryptoMaterialsCache(500);
  *
- * <p><p>CachingCryptoMaterialsManager materialsManager = CachingCryptoMaterialsManager.builder()
+ * <p><p><p>CachingCryptoMaterialsManager materialsManager = CachingCryptoMaterialsManager.builder()
  * .setMaxAge(5, TimeUnit.MINUTES) .setCache(cache) .withMasterKeyProvider(myMasterKeyProvider)
  * .build();
  *
- * <p><p>byte[] data = new AwsCrypto().encryptData(materialsManager, plaintext).getResult(); }
+ * <p><p><p>byte[] data = new AwsCrypto().encryptData(materialsManager, plaintext).getResult(); }
  */
 public class LocalCryptoMaterialsCache implements CryptoMaterialsCache {
   // The maximum number of entries to implicitly prune per access due to TTL expiration. We limit

@@ -3,6 +3,12 @@
 
 package com.amazonaws.encryptionsdk;
 
+import static com.amazonaws.encryptionsdk.multi.MultipleProviderFactory.buildMultiProvider;
+import static java.util.Collections.singletonMap;
+import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
 import com.amazonaws.encryptionsdk.exception.AwsCryptoException;
 import com.amazonaws.encryptionsdk.exception.CannotUnwrapDataKeyException;
 import com.amazonaws.encryptionsdk.exception.NoSuchMasterKeyException;
@@ -14,18 +20,11 @@ import com.amazonaws.encryptionsdk.model.DecryptionMaterials;
 import com.amazonaws.encryptionsdk.model.DecryptionMaterialsRequest;
 import com.amazonaws.encryptionsdk.model.EncryptionMaterials;
 import com.amazonaws.encryptionsdk.model.EncryptionMaterialsRequest;
-import org.junit.Test;
-
 import java.nio.charset.StandardCharsets;
 import java.security.Signature;
 import java.util.*;
 import java.util.function.Consumer;
-
-import static com.amazonaws.encryptionsdk.multi.MultipleProviderFactory.buildMultiProvider;
-import static java.util.Collections.singletonMap;
-import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import org.junit.Test;
 
 public class DefaultCryptoMaterialsManagerTest {
   private static final MasterKey<?> mk1 = new StaticMasterKey("mk1");

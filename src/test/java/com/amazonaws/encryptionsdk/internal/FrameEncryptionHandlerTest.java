@@ -13,21 +13,20 @@
 
 package com.amazonaws.encryptionsdk.internal;
 
+import static com.amazonaws.encryptionsdk.TestUtils.assertThrows;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+
 import com.amazonaws.encryptionsdk.AwsCrypto;
 import com.amazonaws.encryptionsdk.CryptoAlgorithm;
 import com.amazonaws.encryptionsdk.TestUtils;
 import com.amazonaws.encryptionsdk.model.CipherFrameHeaders;
+import java.lang.reflect.Field;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.Before;
 import org.junit.Test;
-
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-import java.lang.reflect.Field;
-
-import static com.amazonaws.encryptionsdk.TestUtils.assertThrows;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
 
 public class FrameEncryptionHandlerTest {
   private final CryptoAlgorithm cryptoAlgorithm_ = TestUtils.DEFAULT_TEST_CRYPTO_ALG;

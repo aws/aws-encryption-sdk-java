@@ -3,19 +3,18 @@
 
 package com.amazonaws.encryptionsdk;
 
+import static com.amazonaws.encryptionsdk.TestUtils.assertThrows;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.spy;
+
 import com.amazonaws.encryptionsdk.exception.AwsCryptoException;
 import com.amazonaws.encryptionsdk.exception.BadCiphertextException;
 import com.amazonaws.encryptionsdk.internal.StaticMasterKey;
 import com.amazonaws.encryptionsdk.model.CiphertextHeaders;
 import com.amazonaws.encryptionsdk.multi.MultipleProviderFactory;
+import java.util.*;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.*;
-
-import static com.amazonaws.encryptionsdk.TestUtils.assertThrows;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.spy;
 
 public class ParsedCiphertextTest extends CiphertextHeaders {
   private static final int MESSAGE_FORMAT_MAX_EDKS = (1 << 16) - 1;

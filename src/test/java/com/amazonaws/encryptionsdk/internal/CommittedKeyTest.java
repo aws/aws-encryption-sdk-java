@@ -3,20 +3,19 @@
 
 package com.amazonaws.encryptionsdk.internal;
 
-import com.amazonaws.encryptionsdk.CryptoAlgorithm;
-import com.amazonaws.encryptionsdk.TestUtils;
-import org.bouncycastle.util.Arrays;
-import org.junit.Test;
-
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.nio.charset.StandardCharsets;
-
 import static com.amazonaws.encryptionsdk.TestUtils.assertThrows;
 import static com.amazonaws.encryptionsdk.TestUtils.insecureRandomBytes;
 import static org.junit.Assert.*;
+
+import com.amazonaws.encryptionsdk.CryptoAlgorithm;
+import com.amazonaws.encryptionsdk.TestUtils;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.nio.charset.StandardCharsets;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import org.bouncycastle.util.Arrays;
+import org.junit.Test;
 
 public class CommittedKeyTest {
 

@@ -16,13 +16,12 @@ package com.amazonaws.encryptionsdk.internal;
 import com.amazonaws.encryptionsdk.CryptoAlgorithm;
 import com.amazonaws.encryptionsdk.exception.AwsCryptoException;
 import com.amazonaws.encryptionsdk.exception.BadCiphertextException;
-
+import java.security.GeneralSecurityException;
+import java.security.spec.AlgorithmParameterSpec;
 import javax.annotation.concurrent.NotThreadSafe;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
-import java.security.GeneralSecurityException;
-import java.security.spec.AlgorithmParameterSpec;
 
 /**
  * This class provides a cryptographic cipher handler powered by an underlying block cipher. The

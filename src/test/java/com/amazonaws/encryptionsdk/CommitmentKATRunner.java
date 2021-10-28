@@ -3,30 +3,29 @@
 
 package com.amazonaws.encryptionsdk;
 
-import com.amazonaws.encryptionsdk.exception.BadCiphertextException;
-import com.amazonaws.encryptionsdk.internal.Utils;
-import com.amazonaws.encryptionsdk.kms.KmsMasterKeyProvider;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
-
-import javax.crypto.spec.SecretKeySpec;
-import java.io.File;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-
 import static com.amazonaws.encryptionsdk.TestUtils.assertThrows;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import com.amazonaws.encryptionsdk.exception.BadCiphertextException;
+import com.amazonaws.encryptionsdk.internal.Utils;
+import com.amazonaws.encryptionsdk.kms.KmsMasterKeyProvider;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import javax.crypto.spec.SecretKeySpec;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(Parameterized.class)
 public class CommitmentKATRunner {

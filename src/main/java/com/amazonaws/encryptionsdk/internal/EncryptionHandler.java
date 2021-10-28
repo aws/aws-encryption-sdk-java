@@ -9,18 +9,17 @@ import com.amazonaws.encryptionsdk.MasterKey;
 import com.amazonaws.encryptionsdk.exception.AwsCryptoException;
 import com.amazonaws.encryptionsdk.exception.BadCiphertextException;
 import com.amazonaws.encryptionsdk.model.*;
-import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1Integer;
-import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERSequence;
-
-import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.security.*;
 import java.security.interfaces.ECPrivateKey;
 import java.util.List;
 import java.util.Map;
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERSequence;
 
 /**
  * This class implements the CryptoHandler interface by providing methods for the encryption of

@@ -13,20 +13,19 @@
 
 package com.amazonaws.encryptionsdk.internal;
 
+import static org.junit.Assert.assertTrue;
+
 import com.amazonaws.encryptionsdk.AwsCrypto;
 import com.amazonaws.encryptionsdk.CryptoAlgorithm;
 import com.amazonaws.encryptionsdk.TestUtils;
 import com.amazonaws.encryptionsdk.exception.AwsCryptoException;
 import com.amazonaws.encryptionsdk.exception.BadCiphertextException;
-import org.junit.Before;
-import org.junit.Test;
-
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
-
-import static org.junit.Assert.assertTrue;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import org.junit.Before;
+import org.junit.Test;
 
 public class FrameDecryptionHandlerTest {
   private static final SecureRandom RND = new SecureRandom();

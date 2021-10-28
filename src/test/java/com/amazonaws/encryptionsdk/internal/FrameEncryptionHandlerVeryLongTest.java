@@ -1,16 +1,15 @@
 package com.amazonaws.encryptionsdk.internal;
 
+import static org.junit.Assert.fail;
+
 import com.amazonaws.encryptionsdk.CryptoAlgorithm;
 import com.amazonaws.encryptionsdk.model.CipherFrameHeaders;
-import org.bouncycastle.util.encoders.Hex;
-import org.junit.Test;
-
-import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
-
-import static org.junit.Assert.fail;
+import javax.crypto.spec.SecretKeySpec;
+import org.bouncycastle.util.encoders.Hex;
+import org.junit.Test;
 
 /*
  * This test exhaustively encrypts a 2^32 frame message, which takes approximately 2-3 hours on my hardware. Because of

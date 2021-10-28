@@ -16,10 +16,6 @@ package com.amazonaws.encryptionsdk.internal;
 import com.amazonaws.encryptionsdk.EncryptedDataKey;
 import com.amazonaws.encryptionsdk.exception.AwsCryptoException;
 import com.amazonaws.encryptionsdk.model.KeyBlob;
-import org.apache.commons.lang3.ArrayUtils;
-
-import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
@@ -27,6 +23,9 @@ import java.security.Key;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Map;
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import org.apache.commons.lang3.ArrayUtils;
 
 /** Abstract class for encrypting and decrypting JCE data keys. */
 public abstract class JceKeyCipher {

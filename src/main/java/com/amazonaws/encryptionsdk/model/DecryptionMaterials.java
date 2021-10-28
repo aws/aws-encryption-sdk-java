@@ -1,7 +1,6 @@
 package com.amazonaws.encryptionsdk.model;
 
 import com.amazonaws.encryptionsdk.DataKey;
-
 import java.security.PublicKey;
 
 public final class DecryptionMaterials {

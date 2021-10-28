@@ -3,6 +3,15 @@
 
 package com.amazonaws.encryptionsdk.kms;
 
+import static com.amazonaws.encryptionsdk.multi.MultipleProviderFactory.buildMultiProvider;
+import static com.amazonaws.regions.Region.getRegion;
+import static com.amazonaws.regions.Regions.fromName;
+import static java.util.Collections.singletonList;
+import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.notNull;
+import static org.mockito.Mockito.*;
+
 import com.amazonaws.AmazonWebServiceRequest;
 import com.amazonaws.RequestClientOptions;
 import com.amazonaws.encryptionsdk.AwsCrypto;
@@ -16,21 +25,11 @@ import com.amazonaws.services.kms.model.CreateAliasRequest;
 import com.amazonaws.services.kms.model.DecryptRequest;
 import com.amazonaws.services.kms.model.EncryptRequest;
 import com.amazonaws.services.kms.model.GenerateDataKeyRequest;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import static com.amazonaws.encryptionsdk.multi.MultipleProviderFactory.buildMultiProvider;
-import static com.amazonaws.regions.Region.getRegion;
-import static com.amazonaws.regions.Regions.fromName;
-import static java.util.Collections.singletonList;
-import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.notNull;
-import static org.mockito.Mockito.*;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
 public class KMSProviderBuilderMockTests {
   @Test

@@ -12,10 +12,10 @@
  */
 package com.amazonaws.encryptionsdk.internal;
 
+import static org.junit.Assert.assertArrayEquals;
+
 import com.amazonaws.util.StringUtils;
 import org.junit.Test;
-
-import static org.junit.Assert.assertArrayEquals;
 
 public class HmacKeyDerivationFunctionTest {
   private static final testCase[] testCases =

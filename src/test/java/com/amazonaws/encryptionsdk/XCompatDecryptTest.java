@@ -3,19 +3,13 @@
 
 package com.amazonaws.encryptionsdk;
 
+import static org.junit.Assert.assertArrayEquals;
+
 import com.amazonaws.encryptionsdk.internal.Utils;
 import com.amazonaws.encryptionsdk.jce.JceMasterKey;
 import com.amazonaws.encryptionsdk.multi.MultipleProviderFactory;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.lang3.StringUtils;
-import org.bouncycastle.util.io.pem.PemReader;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
-
-import javax.crypto.spec.SecretKeySpec;
 import java.io.File;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
@@ -25,8 +19,13 @@ import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.*;
-
-import static org.junit.Assert.assertArrayEquals;
+import javax.crypto.spec.SecretKeySpec;
+import org.apache.commons.lang3.StringUtils;
+import org.bouncycastle.util.io.pem.PemReader;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(Parameterized.class)
 public class XCompatDecryptTest {

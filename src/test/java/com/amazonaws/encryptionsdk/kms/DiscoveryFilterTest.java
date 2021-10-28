@@ -3,14 +3,13 @@
 
 package com.amazonaws.encryptionsdk.kms;
 
-import org.junit.Test;
+import static com.amazonaws.encryptionsdk.TestUtils.assertThrows;
+import static org.junit.Assert.assertNotNull;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-
-import static com.amazonaws.encryptionsdk.TestUtils.assertThrows;
-import static org.junit.Assert.assertNotNull;
+import org.junit.Test;
 
 public class DiscoveryFilterTest {
   @Test

@@ -14,7 +14,6 @@
 package com.amazonaws.encryptionsdk.internal;
 
 import com.amazonaws.encryptionsdk.exception.ParseException;
-
 import java.io.DataOutput;
 import java.io.IOException;
 

@@ -13,14 +13,14 @@
 
 package com.amazonaws.encryptionsdk.internal;
 
-import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.GCMParameterSpec;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.util.Map;
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
 
 /** A JceKeyCipher based on the Advanced Encryption Standard in Galois/Counter Mode. */
 class AesGcmJceKeyCipher extends JceKeyCipher {

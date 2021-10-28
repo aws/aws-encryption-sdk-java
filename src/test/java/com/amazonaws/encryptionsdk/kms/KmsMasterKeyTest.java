@@ -3,6 +3,12 @@
 
 package com.amazonaws.encryptionsdk.kms;
 
+import static com.amazonaws.encryptionsdk.TestUtils.assertThrows;
+import static com.amazonaws.encryptionsdk.internal.RandomBytesGenerator.generate;
+import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.isA;
+import static org.mockito.Mockito.*;
+
 import com.amazonaws.AmazonWebServiceRequest;
 import com.amazonaws.RequestClientOptions;
 import com.amazonaws.encryptionsdk.*;
@@ -11,11 +17,6 @@ import com.amazonaws.encryptionsdk.internal.VersionInfo;
 import com.amazonaws.encryptionsdk.model.KeyBlob;
 import com.amazonaws.services.kms.AWSKMS;
 import com.amazonaws.services.kms.model.*;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -23,12 +24,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
-
-import static com.amazonaws.encryptionsdk.TestUtils.assertThrows;
-import static com.amazonaws.encryptionsdk.internal.RandomBytesGenerator.generate;
-import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.isA;
-import static org.mockito.Mockito.*;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
 public class KmsMasterKeyTest {
 

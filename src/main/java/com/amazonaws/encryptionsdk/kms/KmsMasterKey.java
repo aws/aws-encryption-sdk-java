@@ -23,9 +23,6 @@ import com.amazonaws.encryptionsdk.exception.UnsupportedProviderException;
 import com.amazonaws.encryptionsdk.internal.VersionInfo;
 import com.amazonaws.services.kms.AWSKMS;
 import com.amazonaws.services.kms.model.*;
-
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -33,6 +30,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
  * Represents a single Customer Master Key (CMK) and is used to encrypt/decrypt data with {@link

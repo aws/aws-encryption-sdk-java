@@ -15,7 +15,6 @@ package com.amazonaws.encryptionsdk.internal;
 
 import com.amazonaws.encryptionsdk.MasterKey;
 import com.amazonaws.encryptionsdk.model.CiphertextHeaders;
-
 import java.util.List;
 import java.util.Map;
 

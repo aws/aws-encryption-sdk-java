@@ -18,7 +18,6 @@ import com.amazonaws.encryptionsdk.exception.BadCiphertextException;
 import com.amazonaws.encryptionsdk.exception.ParseException;
 import com.amazonaws.encryptionsdk.internal.Constants;
 import com.amazonaws.encryptionsdk.internal.PrimitivesParser;
-
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 

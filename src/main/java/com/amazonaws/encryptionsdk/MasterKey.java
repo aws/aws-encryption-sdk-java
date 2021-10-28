@@ -15,7 +15,6 @@ package com.amazonaws.encryptionsdk;
 
 import com.amazonaws.encryptionsdk.exception.NoSuchMasterKeyException;
 import com.amazonaws.encryptionsdk.exception.UnsupportedProviderException;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;

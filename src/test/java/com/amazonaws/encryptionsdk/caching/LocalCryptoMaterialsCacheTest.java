@@ -1,18 +1,17 @@
 package com.amazonaws.encryptionsdk.caching;
 
+import static com.amazonaws.encryptionsdk.TestUtils.assertThrows;
+import static org.junit.Assert.*;
+
 import com.amazonaws.encryptionsdk.caching.CryptoMaterialsCache.UsageStats;
 import com.amazonaws.encryptionsdk.model.DecryptionMaterials;
 import com.amazonaws.encryptionsdk.model.EncryptionMaterials;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Optional;
-
-import static com.amazonaws.encryptionsdk.TestUtils.assertThrows;
-import static org.junit.Assert.*;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 public class LocalCryptoMaterialsCacheTest {
   public static final String PARTTION_NAME = "foo";

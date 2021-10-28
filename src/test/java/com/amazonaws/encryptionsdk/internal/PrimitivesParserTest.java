@@ -13,13 +13,12 @@
 
 package com.amazonaws.encryptionsdk.internal;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
 public class PrimitivesParserTest {
 

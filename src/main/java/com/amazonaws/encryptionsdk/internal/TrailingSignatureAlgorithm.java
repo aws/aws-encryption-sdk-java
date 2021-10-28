@@ -1,19 +1,18 @@
 package com.amazonaws.encryptionsdk.internal;
 
-import com.amazonaws.encryptionsdk.CryptoAlgorithm;
-
-import java.math.BigInteger;
-import java.security.*;
-import java.security.interfaces.ECPublicKey;
-import java.security.spec.*;
-import java.util.Arrays;
-
 import static com.amazonaws.encryptionsdk.internal.Utils.bigIntegerToByteArray;
 import static com.amazonaws.encryptionsdk.internal.Utils.encodeBase64String;
 import static java.math.BigInteger.ONE;
 import static java.math.BigInteger.ZERO;
 import static org.apache.commons.lang3.Validate.isInstanceOf;
 import static org.apache.commons.lang3.Validate.notNull;
+
+import com.amazonaws.encryptionsdk.CryptoAlgorithm;
+import java.math.BigInteger;
+import java.security.*;
+import java.security.interfaces.ECPublicKey;
+import java.security.spec.*;
+import java.util.Arrays;
 
 /**
  * Provides a consistent interface across various trailing signature algorithms.

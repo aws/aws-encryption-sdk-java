@@ -3,6 +3,13 @@
 
 package com.amazonaws.encryptionsdk;
 
+import static com.amazonaws.encryptionsdk.FastTestsOnlySuite.isFastTestSuiteActive;
+import static com.amazonaws.encryptionsdk.TestUtils.assertThrows;
+import static java.util.Collections.singletonMap;
+import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
 import com.amazonaws.encryptionsdk.caching.CachingCryptoMaterialsManager;
 import com.amazonaws.encryptionsdk.caching.LocalCryptoMaterialsCache;
 import com.amazonaws.encryptionsdk.exception.AwsCryptoException;
@@ -14,20 +21,12 @@ import com.amazonaws.encryptionsdk.jce.JceMasterKey;
 import com.amazonaws.encryptionsdk.model.*;
 import com.amazonaws.encryptionsdk.multi.MultipleProviderFactory;
 import com.amazonaws.util.IOUtils;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-
-import static com.amazonaws.encryptionsdk.FastTestsOnlySuite.isFastTestSuiteActive;
-import static com.amazonaws.encryptionsdk.TestUtils.assertThrows;
-import static java.util.Collections.singletonMap;
-import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import org.junit.Before;
+import org.junit.Test;
 
 public class AwsCryptoTest {
   private static final CommitmentPolicy commitmentPolicy = TestUtils.DEFAULT_TEST_COMMITMENT_POLICY;

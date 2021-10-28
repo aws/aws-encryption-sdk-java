@@ -3,6 +3,9 @@
 
 package com.amazonaws.encryptionsdk.internal;
 
+import static com.amazonaws.encryptionsdk.TestUtils.assertThrows;
+import static org.junit.Assert.*;
+
 import com.amazonaws.encryptionsdk.*;
 import com.amazonaws.encryptionsdk.exception.AwsCryptoException;
 import com.amazonaws.encryptionsdk.exception.BadCiphertextException;
@@ -12,16 +15,12 @@ import com.amazonaws.encryptionsdk.model.CiphertextType;
 import com.amazonaws.encryptionsdk.model.EncryptionMaterials;
 import com.amazonaws.encryptionsdk.model.EncryptionMaterialsRequest;
 import com.amazonaws.encryptionsdk.multi.MultipleProviderFactory;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
-import static com.amazonaws.encryptionsdk.TestUtils.assertThrows;
-import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
 
 public class DecryptionHandlerTest {
   private final CommitmentPolicy commitmentPolicy = TestUtils.DEFAULT_TEST_COMMITMENT_POLICY;

@@ -1,5 +1,11 @@
 package com.amazonaws.encryptionsdk.caching;
 
+import static com.amazonaws.encryptionsdk.TestUtils.assertThrows;
+import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
+
 import com.amazonaws.encryptionsdk.CryptoAlgorithm;
 import com.amazonaws.encryptionsdk.CryptoMaterialsManager;
 import com.amazonaws.encryptionsdk.caching.CryptoMaterialsCache.EncryptCacheEntry;
@@ -9,21 +15,14 @@ import com.amazonaws.encryptionsdk.model.DecryptionMaterials;
 import com.amazonaws.encryptionsdk.model.DecryptionMaterialsRequest;
 import com.amazonaws.encryptionsdk.model.EncryptionMaterials;
 import com.amazonaws.encryptionsdk.model.EncryptionMaterialsRequest;
+import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
+import javax.crypto.spec.SecretKeySpec;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-
-import javax.crypto.spec.SecretKeySpec;
-import java.util.Arrays;
-import java.util.concurrent.TimeUnit;
-
-import static com.amazonaws.encryptionsdk.TestUtils.assertThrows;
-import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
 
 public class CachingCryptoMaterialsManagerTest {
   private static final String PARTITION_ID = "partition ID";

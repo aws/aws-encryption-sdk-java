@@ -1,5 +1,6 @@
 package com.amazonaws.encryptionsdk;
 
+import java.util.concurrent.TimeUnit;
 import org.junit.ClassRule;
 import org.junit.experimental.categories.Categories;
 import org.junit.rules.TestRule;
@@ -11,8 +12,6 @@ import org.junit.runners.Suite;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.RunnerBuilder;
 import org.junit.runners.model.Statement;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * This test suite is intended to assist in rapid development; it filters out some of the slower,

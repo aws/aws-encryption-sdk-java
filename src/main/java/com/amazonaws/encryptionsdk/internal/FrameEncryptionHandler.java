@@ -17,11 +17,10 @@ import com.amazonaws.encryptionsdk.CryptoAlgorithm;
 import com.amazonaws.encryptionsdk.exception.AwsCryptoException;
 import com.amazonaws.encryptionsdk.exception.BadCiphertextException;
 import com.amazonaws.encryptionsdk.model.CipherFrameHeaders;
-
-import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
 
 /**
  * The frame encryption handler is a subclass of the encryption handler and thereby provides an

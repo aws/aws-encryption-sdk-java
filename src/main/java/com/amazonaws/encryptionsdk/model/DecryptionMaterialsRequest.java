@@ -1,7 +1,6 @@
 package com.amazonaws.encryptionsdk.model;
 
 import com.amazonaws.encryptionsdk.CryptoAlgorithm;
-
 import java.util.*;
 
 public final class DecryptionMaterialsRequest {

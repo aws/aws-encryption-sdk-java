@@ -17,7 +17,6 @@ import com.amazonaws.encryptionsdk.caching.CachingCryptoMaterialsManager;
 import com.amazonaws.encryptionsdk.exception.BadCiphertextException;
 import com.amazonaws.encryptionsdk.internal.MessageCryptoHandler;
 import com.amazonaws.encryptionsdk.internal.Utils;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;

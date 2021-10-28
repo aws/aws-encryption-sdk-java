@@ -13,6 +13,10 @@
 
 package com.amazonaws.encryptionsdk.kms;
 
+import static com.amazonaws.encryptionsdk.CryptoAlgorithm.ALG_AES_128_GCM_IV12_TAG16_NO_KDF;
+import static com.amazonaws.encryptionsdk.internal.RandomBytesGenerator.generate;
+import static org.junit.Assert.*;
+
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.encryptionsdk.*;
@@ -21,15 +25,10 @@ import com.amazonaws.encryptionsdk.multi.MultipleProviderFactory;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.kms.AWSKMS;
-import org.junit.Test;
-
-import javax.crypto.spec.SecretKeySpec;
 import java.util.Arrays;
 import java.util.Collections;
-
-import static com.amazonaws.encryptionsdk.CryptoAlgorithm.ALG_AES_128_GCM_IV12_TAG16_NO_KDF;
-import static com.amazonaws.encryptionsdk.internal.RandomBytesGenerator.generate;
-import static org.junit.Assert.*;
+import javax.crypto.spec.SecretKeySpec;
+import org.junit.Test;
 
 public class LegacyKMSMasterKeyProviderTests {
   private static final String WRAPPING_ALG = "AES/GCM/NoPadding";

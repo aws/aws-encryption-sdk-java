@@ -1,12 +1,12 @@
 package com.amazonaws.encryptionsdk.caching;
 
+import static org.junit.Assert.*;
+
 import com.amazonaws.encryptionsdk.model.DecryptionMaterials;
 import com.amazonaws.encryptionsdk.model.DecryptionMaterialsRequest;
 import com.amazonaws.encryptionsdk.model.EncryptionMaterials;
 import com.amazonaws.encryptionsdk.model.EncryptionMaterialsRequest;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
 
 public class NullCryptoMaterialsCacheTest {
   @Test
