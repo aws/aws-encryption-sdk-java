@@ -8,11 +8,11 @@ version: 0.2
 batch:
   fast-fail: false
   build-graph:
-    #- identifier: static_analysis
-    #  buildspec: codebuild/ci/static-analysis.yml
-    #  env:
-    #    compute-type: BUILD_GENERAL1_MEDIUM
-    #    image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+    - identifier: static_analysis
+      buildspec: codebuild/ci/static-analysis.yml
+      env:
+        compute-type: BUILD_GENERAL1_MEDIUM
+        image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
     ######### Start Vector tests #########
     - identifier: vectors_ci_openjdk8
       buildspec: codebuild/ci/vectors-ci.yml
