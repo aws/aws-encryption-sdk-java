@@ -26,8 +26,5 @@ phases:
       - git checkout $BRANCH
   build:
     commands:
-      - ls
-      - find README.md
-      - cat README.md
       - npx semantic-release --branches $BRANCH --no-ci
  
