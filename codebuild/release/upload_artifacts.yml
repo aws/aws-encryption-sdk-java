@@ -37,4 +37,4 @@ phases:
         mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.2:get \
           -DrepoUrl=https://aws.oss.sonatype.org \
           -Dartifact=com.amazonaws:aws-encryption-sdk-java:${VERSION}:jar:javadoc
-      - gh release upload v${VERSION} ~/.m2/repository/com/amazonaws/aws-encryption-sdk-java/${VERSION}/*.jar
+      - gh release create v${VERSION} ~/.m2/repository/com/amazonaws/aws-encryption-sdk-java/${VERSION}/*.jar -d -F CHANGELOG.md -t "AWS Encryption SDK ${VERSION} Release -- $(date +%Y-%m-%d)"

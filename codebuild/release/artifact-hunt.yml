@@ -1,0 +1,20 @@
+## Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+
+version: 0.2
+
+env:
+  variables:
+    BRANCH: "master"
+
+phases:
+  install:
+    runtime-versions:
+      java: corretto11
+  pre_build:
+    commands:
+      - git checkout $BRANCH
+      - export VERSION=$(grep version pom.xml | head -n 1 | sed -n 's/[ \t]*<version>\(.*\)<\/version>/\1/p')
+  build:
+    commands:
+      - ./look_4_version.sh $VERSION

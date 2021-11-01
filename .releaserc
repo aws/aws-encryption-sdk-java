@@ -53,13 +53,12 @@
           ["@semantic-release/exec", {
             "prepareCmd": "mvn versions:set -DnewVersion=${nextRelease.version} \
                     -DautoVersionSubmodules=true && find README.md -type f \
-                    -exec sed -i '' 's/<version>.*<\\/version>/<version>${nextRelease.version}<\\/version>/g' {} \\;"
+                    -exec sed -i 's/<version>.*<\\/version>/<version>${nextRelease.version}<\\/version>/g' {} \\;"
           }],
           ["@semantic-release/git", {
             "assets": ["./CHANGELOG.md", "./pom.xml", "./README.md"],
-            "message": "AWS Encryption SDK ${nextRelease.version} Release \n\n${nextRelease.notes}"
+            "message": "AWS Encryption SDK ${nextRelease.version} Release -- $(date +%Y-%m-%d) \n\n${nextRelease.notes}"
           }],
-          #@semantic-release/github"
     ],
     "repositoryUrl": "https://github.com/aws/aws-encryption-sdk-java",
 }
