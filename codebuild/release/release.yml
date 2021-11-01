@@ -70,10 +70,16 @@ batch:
       - version
     buildspec: codebuild/release/release-prod.yml
 
+# Search for published Artifact
+  - identifier: artifact_hunt
+    depend-on:
+      - publish
+    buildspec: codebuild/release/artifact-hunt.yml
+
 # Validate Maven Central with supported JDK and Corretto
   - identifier: validate_prod_release_openjdk8
     depend-on:
-      - publish
+      - artifact_hunt
     buildspec: codebuild/release/validate-prod.yml
     env:
       variables:
@@ -83,7 +89,7 @@ batch:
 
   - identifier: validate_prod_release_openjdk11
     depend-on:
-      - publish
+      - artifact_hunt
     buildspec: codebuild/release/validate-prod.yml
     env:
       variables:
@@ -93,7 +99,7 @@ batch:
 
   - identifier: validate_prod_release_corretto8
     depend-on:
-      - publish
+      - artifact_hunt
     buildspec: codebuild/release/validate-prod.yml
     env:
       variables:
@@ -103,7 +109,7 @@ batch:
 
   - identifier: validate_prod_release_corretto11
     depend-on:
-      - publish
+      - artifact_hunt
     buildspec: codebuild/release/validate-prod.yml
     env:
       variables:

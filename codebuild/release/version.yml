@@ -26,4 +26,4 @@ phases:
       - git checkout $BRANCH
   build:
     commands:
-      - npx semantic-release --no-ci
+      - npx semantic-release --branches $BRANCH --no-ci
