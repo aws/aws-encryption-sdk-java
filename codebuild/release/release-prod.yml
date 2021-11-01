@@ -38,4 +38,3 @@ phases:
           -Dsonatype.password="$SONA_PASSWORD" \
           --no-transfer-progress \
           -s $SETTINGS_FILE
-      - ./look_4_version.sh $VERSION
