@@ -1,0 +1,26 @@
+## Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+
+version: 0.2
+
+env:
+  variables:
+    BRANCH: "master"
+    GH_PAGES: "gh-pages"
+  git-credential-helper: yes
+
+phases:
+  pre_build:
+    commands:
+      - git config --global user.name "aws-crypto-tools-ci-bot"
+      - git config --global user.email "no-reply@noemail.local"
+      - git checkout $BRANCH
+  build:
+    commands:
+      - mvn javadoc:javadoc
+      - cp -r ./target/site/apidocs /tmp
+      - git checkout $GH_PAGES
+      - cp -r /tmp/apidocs/* .
+      - git add .
+      - git commit -m "docs: updating javadocs"
+      - git push

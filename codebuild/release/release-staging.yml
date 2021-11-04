@@ -1,3 +1,6 @@
+## Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+
 version: 0.2
 
 env:
@@ -14,16 +17,9 @@ env:
 phases:
   install:
     runtime-versions:
-      java: openjdk11
+      java: corretto11
   pre_build:
     commands:
-      - git checkout $COMMIT_ID
-      - FOUND_VERSION=$(grep version pom.xml | head -n 1 | sed -n 's/[ \t]*<version>\(.*\)<\/version>/\1/p')
-      - |
-        if expr ${FOUND_VERSION} != ${VERSION}; then
-          echo "pom.xml version (${FOUND_VERSION}) does not match expected version (${VERSION}), stopping"
-          exit 1;
-        fi
       - export SETTINGS_FILE=$(pwd)/codebuild/release/settings.xml
       - export CODEARTIFACT_TOKEN=$(aws codeartifact get-authorization-token --domain $DOMAIN --domain-owner $ACCOUNT --query authorizationToken --output text --region ${REGION})
       - export CODEARTIFACT_REPO_URL=https://${DOMAIN}-${ACCOUNT}.d.codeartifact.${REGION}.amazonaws.com/maven/${REPOSITORY}
@@ -31,6 +27,11 @@ phases:
       - tar -xvf ~/mvn_gpg.tgz -C ~
   build:
     commands:
+      - VERSION_HASH="$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)-$CODEBUILD_RESOLVED_SOURCE_VERSION"
+#      See https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-env-vars.html
+      - echo "Setting version in POM to $VERSION_HASH"
+      - mvn versions:set -DnewVersion="$VERSION_HASH" --no-transfer-progress
+      - echo "Version is now $(grep version pom.xml | head -n 1 | sed -n 's/[ \t]*<version>\(.*\)<\/version>/\1/p')"
       - |
         mvn deploy \
           -PpublishingCodeArtifact \
@@ -44,44 +45,3 @@ phases:
           -DaltDeploymentRepository=codeartifact::default::$CODEARTIFACT_REPO_URL \
           --no-transfer-progress \
           -s $SETTINGS_FILE
-
-batch:
-  fast-fail: false
-  build-graph:
-    - identifier: release_to_staging
-    - identifier: validate_staging_release_openjdk8
-      depend-on:
-        - release_to_staging
-      buildspec: codebuild/release/validate-staging.yml
-      env:
-        variables:
-          JAVA_ENV_VERSION: openjdk8
-          JAVA_NUMERIC_VERSION: 8
-        image: aws/codebuild/standard:3.0
-    - identifier: validate_staging_release_openjdk11
-      depend-on:
-        - release_to_staging
-      buildspec: codebuild/release/validate-staging.yml
-      env:
-        variables:
-          JAVA_ENV_VERSION: openjdk11
-          JAVA_NUMERIC_VERSION: 11
-        image: aws/codebuild/standard:3.0
-    - identifier: validate_staging_release_corretto8
-      depend-on:
-        - release_to_staging
-      buildspec: codebuild/release/validate-staging.yml
-      env:
-        variables:
-          JAVA_ENV_VERSION: corretto8
-          JAVA_NUMERIC_VERSION: 8
-        image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
-    - identifier: validate_staging_release_corretto11
-      depend-on:
-        - release_to_staging
-      buildspec: codebuild/release/validate-staging.yml
-      env:
-        variables:
-          JAVA_ENV_VERSION: corretto11
-          JAVA_NUMERIC_VERSION: 11
-        image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
