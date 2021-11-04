@@ -1341,4 +1341,11 @@ public class AwsCryptoTest {
     IOUtils.copy(new ByteArrayInputStream(ciphertext), decryptStream);
     decryptStream.close();
   }
+
+  @Test
+  public void setDecryptionCheck() {
+    assertFalse(encryptionClient_.getDecryptionCheckOnEncrypt());
+    encryptionClient_.setDecryptionCheckOnEncrypt(true);
+    assertTrue(encryptionClient_.getDecryptionCheckOnEncrypt());
+  }
 }

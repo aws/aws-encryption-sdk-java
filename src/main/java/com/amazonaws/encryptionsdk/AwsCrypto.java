@@ -12,6 +12,7 @@ import com.amazonaws.encryptionsdk.model.EncryptionMaterialsRequest;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 
@@ -78,6 +79,7 @@ public class AwsCrypto {
   private static final CommitmentPolicy DEFAULT_COMMITMENT_POLICY =
       CommitmentPolicy.RequireEncryptRequireDecrypt;
   private final CommitmentPolicy commitmentPolicy_;
+  private boolean isDecryptionCheckOnEncrypt_;
 
   /**
    * The maximum number of encrypted data keys to unwrap (resp. wrap) on decrypt (resp. encrypt), if
@@ -109,6 +111,7 @@ public class AwsCrypto {
     encryptionAlgorithm_ = builder.encryptionAlgorithm_;
     encryptionFrameSize_ = builder.encryptionFrameSize_;
     maxEncryptedDataKeys_ = builder.maxEncryptedDataKeys_;
+    isDecryptionCheckOnEncrypt_ = builder.isDecryptionCheckOnEncrypt_;
   }
 
   public static class Builder {
@@ -116,6 +119,7 @@ public class AwsCrypto {
     private int encryptionFrameSize_ = getDefaultFrameSize();
     private CommitmentPolicy commitmentPolicy_;
     private int maxEncryptedDataKeys_ = CiphertextHeaders.NO_MAX_ENCRYPTED_DATA_KEYS;
+    private boolean isDecryptionCheckOnEncrypt_ = false;
 
     private Builder() {}
 
@@ -124,6 +128,18 @@ public class AwsCrypto {
       encryptionFrameSize_ = client.encryptionFrameSize_;
       commitmentPolicy_ = client.commitmentPolicy_;
       maxEncryptedDataKeys_ = client.maxEncryptedDataKeys_;
+      isDecryptionCheckOnEncrypt_ = client.isDecryptionCheckOnEncrypt_;
+    }
+
+    /**
+     * Sets the {@boolean check} to perform a decryption check or not right after encryption
+     * to make sure no corruption occurred.
+     * @param check
+     * @return The Builder, for method chaining
+     */
+    public Builder withDecryptionCheckOnEncryption(boolean check) {
+      this.isDecryptionCheckOnEncrypt_ = check;
+      return this;
     }
 
     /**
@@ -232,6 +248,14 @@ public class AwsCrypto {
 
   public CryptoAlgorithm getEncryptionAlgorithm() {
     return encryptionAlgorithm_;
+  }
+
+  public void setDecryptionCheckOnEncrypt(final boolean check) {
+    isDecryptionCheckOnEncrypt_ = check;
+  }
+
+  public boolean getDecryptionCheckOnEncrypt() {
+    return isDecryptionCheckOnEncrypt_;
   }
 
   /**
@@ -365,7 +389,13 @@ public class AwsCrypto {
     final byte[] outBytes = Utils.truncate(out, outLen);
 
     //noinspection unchecked
-    return new CryptoResult(outBytes, cryptoHandler.getMasterKeys(), cryptoHandler.getHeaders());
+    CryptoResult cryptoResult = new CryptoResult(outBytes, cryptoHandler.getMasterKeys(), cryptoHandler.getHeaders());
+    if (isDecryptionCheckOnEncrypt_) {
+      CryptoResult<byte[], ?> decryptData = decryptData(materialsManager, outBytes);
+      if (!Arrays.equals(decryptData.getResult(), plaintext)) {
+        throw new AwsCryptoException("Decrypt verification step failed, encrypted plaintext couldn't successfully be decrypted.");      }
+    }
+    return cryptoResult;
   }
 
   /**
