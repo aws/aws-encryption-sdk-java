@@ -19,7 +19,7 @@ while [  $STATUS -ne 0 ]; do
         break
     fi
 
-    if [  $((COUNTER+=1)) -eq 10 ]; then
+    if [  $((COUNTER+=1)) -eq 15 ]; then
         echo "It has been an awfully long time, you should check Maven Central for issues"
         exit 1
     fi

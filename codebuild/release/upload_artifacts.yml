@@ -8,7 +8,7 @@ env:
     BRANCH: "master"
   git-credential-helper: yes
   secrets-manager:
-    GH_TOKEN: Github/aws-crypto-tools-ci-bot:personal\ access\ token
+    GH_TOKEN: Github/aws-crypto-tools-ci-bot:personal\ access\ token\ (new\ token\ format)
 
 phases:
   pre_build:
