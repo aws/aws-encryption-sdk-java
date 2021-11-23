@@ -75,6 +75,8 @@ The following code sample demonstrates how to get started:
 // You provide the KMS key ARN and plaintext string as arguments.
 package com.amazonaws.crypto.examples;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 
@@ -97,6 +99,9 @@ public class StringExample {
 
         // Set up the master key provider
         final KmsMasterKeyProvider prov = KmsMasterKeyProvider.builder().buildStrict(keyArn);
+        
+        // Set up encryption context
+        final Map<String, String> context = Collections.singletonMap("ExampleContextKey", "ExampleContextValue");
 
         // Encrypt the data
         //
@@ -104,13 +109,12 @@ public class StringExample {
         // to protect integrity. For this example, just use a placeholder
         // value. For more information about encryption context, see
         // https://amzn.to/1nSbe9X (blogs.aws.amazon.com)
-        final Map<String, String> context = Collections.singletonMap("Example", "String");
-
-        final String ciphertext = crypto.encryptString(prov, data, context).getResult();
-        System.out.println("Ciphertext: " + ciphertext);
+        final CryptoResult<byte[], KmsMasterKey> encryptResult = crypto.encryptData(prov, data.getBytes(StandardCharsets.UTF_8), context);
+        final byte[] ciphertext = encryptResult.getResult();
+        System.out.println("Ciphertext: " + Arrays.toString(ciphertext));
 
         // Decrypt the data
-        final CryptoResult<String, KmsMasterKey> decryptResult = crypto.decryptString(prov, ciphertext);
+        final CryptoResult<byte[], KmsMasterKey> decryptResult = crypto.decryptData(prov, ciphertext);
         // Check the encryption context (and ideally the master key) to
         // ensure this is the expected ciphertext
         if (!decryptResult.getMasterKeyIds().get(0).equals(keyArn)) {
@@ -119,14 +123,15 @@ public class StringExample {
 
         // The SDK may add information to the encryption context, so check to
         // ensure all of the values are present
-        for (final Map.Entry<String, String> e : context.entrySet()) {
-            if (!e.getValue().equals(decryptResult.getEncryptionContext().get(e.getKey()))) {
+        if (!context.entrySet().stream
+            .allMatch( e -> e.getValue().equals(decryptResult.getEncryptionContext().get(e.getKey())))) {
                 throw new IllegalStateException("Wrong Encryption Context!");
-            }
         }
 
+        assert Arrays.equals(decryptResult.getResult(), data.getBytes(StandardCharsets.UTF_8));
+
         // The data is correct, so output it.
-        System.out.println("Decrypted: " + decryptResult.getResult());
+        System.out.println("Decrypted: " + Arrays.toString(decryptResult.getResult()));
     }
 }
 ```
