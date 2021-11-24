@@ -99,16 +99,16 @@ public class StringExample {
 
         // Set up the master key provider
         final KmsMasterKeyProvider prov = KmsMasterKeyProvider.builder().buildStrict(keyArn);
-        
-        // Set up encryption context
+
+        // Set up the encryption context
         final Map<String, String> context = Collections.singletonMap("ExampleContextKey", "ExampleContextValue");
 
         // Encrypt the data
         //
         // NOTE: Encrypted data should have associated encryption context
-        // to protect integrity. For this example, just use a placeholder
-        // value. For more information about encryption context, see
-        // https://amzn.to/1nSbe9X (blogs.aws.amazon.com)
+        // to protect its integrity. This example uses placeholder values.
+        // For more information about encryption context, see
+        // https://docs.aws.amazon.com/encryption-sdk/latest/developer-guide/concepts.html#encryption-context
         final CryptoResult<byte[], KmsMasterKey> encryptResult = crypto.encryptData(prov, data.getBytes(StandardCharsets.UTF_8), context);
         final byte[] ciphertext = encryptResult.getResult();
         System.out.println("Ciphertext: " + Arrays.toString(ciphertext));
@@ -121,8 +121,8 @@ public class StringExample {
             throw new IllegalStateException("Wrong key id!");
         }
 
-        // The SDK may add information to the encryption context, so check to
-        // ensure all of the values are present
+        // The AWS Encryption SDK may add information to the encryption context, so check to
+        // ensure all of the values that you specified when encrypting are included in the returned encryption context.
         if (!context.entrySet().stream
             .allMatch( e -> e.getValue().equals(decryptResult.getEncryptionContext().get(e.getKey())))) {
                 throw new IllegalStateException("Wrong Encryption Context!");
@@ -130,8 +130,8 @@ public class StringExample {
 
         assert Arrays.equals(decryptResult.getResult(), data.getBytes(StandardCharsets.UTF_8));
 
-        // The data is correct, so output it.
-        System.out.println("Decrypted: " + Arrays.toString(decryptResult.getResult()));
+        // The data is correct, so return it. 
+        System.out.println("Decrypted: " + new String(decryptResult.getResult(), StandardCharsets.UTF_8));
     }
 }
 ```
