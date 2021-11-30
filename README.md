@@ -1,8 +1,10 @@
 # AWS Encryption SDK for Java
 
-The AWS Encryption SDK enables secure client-side encryption. It uses cryptography best practices to protect your data and the encryption keys used to protect that data. Each data object is protected with a unique data encryption key (DEK), and the DEK is protected with a key encryption key (KEK) called a *master key*. The encrypted DEK is combined with the encrypted data into a single [encrypted message](https://docs.aws.amazon.com/encryption-sdk/latest/developer-guide/message-format.html), so you don't need to keep track of the DEKs for your data. The SDK supports master keys in [AWS Key Management Service](https://aws.amazon.com/kms/) (KMS), and it also provides APIs to define and use other master key providers. The SDK provides methods for encrypting and decrypting strings, byte arrays, and byte streams. For details, see the [example code][examples] and the [Javadoc](https://aws.github.io/aws-encryption-sdk-java).
+The AWS Encryption SDK enables secure client-side encryption. It uses cryptography best practices to protect your data and protect the encryption keys that protect your data. Each data object is protected with a unique data encryption key, and the data encryption key is protected with a key encryption key called a *wrapping key* or *master key*. The encryption method returns a single, portable [encrypted message](https://docs.aws.amazon.com/encryption-sdk/latest/developer-guide/message-format.html) that contains the encrypted data and the encrypted data key, so you don't need to keep track of the data encryption keys for your data. You can use KMS keys in [AWS Key Management Service](https://aws.amazon.com/kms/) (AWS KMS) as wrapping keys. The AWS Encryption SDK also provides APIs to define and use encryption keys from other key providers. 
 
-For more details about the design and architecture of the SDK, see the [official documentation](https://docs.aws.amazon.com/encryption-sdk/latest/developer-guide/).
+The AWS Encryption SDK for Java provides methods for encrypting and decrypting strings, byte arrays, and byte streams. For details, see the [example code][examples] and the [Javadoc](https://aws.github.io/aws-encryption-sdk-java).
+
+For more details about the design and architecture of the AWS Encryption SDK, see the [AWS Encryption SDK Developer Guide](https://docs.aws.amazon.com/encryption-sdk/latest/developer-guide/).
 
 [Security issue notifications](./CONTRIBUTING.md#security-issue-notifications)
 
@@ -11,7 +13,7 @@ See [Support Policy](./SUPPORT_POLICY.rst) for for details on the current suppor
 ## Getting Started
 
 ### Required Prerequisites
-To use this SDK you must have:
+To use the AWS Encryption SDK for Java you must have:
 
 * **A Java 8 or newer development environment**
 
@@ -29,29 +31,25 @@ To use this SDK you must have:
   If you do not have Bouncy Castle, go to https://bouncycastle.org/latest_releases.html, then download the provider file that corresponds to your JDK.
   Or, you can pick it up from Maven (groupId: `org.bouncycastle`, artifactId: `bcprov-ext-jdk15on`).
 
-  Beginning in version 1.6.1,
-  the AWS Encryption SDK also works with Bouncy Castle FIPS (groupId: `org.bouncycastle`, artifactId: `bc-fips`)
-  as an alternative to non-FIPS Bouncy Castle.
-  For help installing and configuring Bouncy Castle FIPS properly, see [BC FIPS documentation](https://www.bouncycastle.org/documentation.html),
-  in particular, **User Guides** and **Security Policy**.
+  Beginning in version 1.6.1, the AWS Encryption SDK for Java also works with Bouncy Castle FIPS (groupId: `org.bouncycastle`, artifactId: `bc-fips`)
+  as an alternative to non-FIPS Bouncy Castle. For help installing and configuring Bouncy Castle FIPS, see [BC FIPS documentation](https://www.bouncycastle.org/documentation.html), in particular, **User Guides** and **Security Policy**.
 
 ### Optional Prerequisites
 
 #### AWS Integration
-You don't need an Amazon Web Services (AWS) account to use this SDK, but some of the [example code][examples] requires an AWS account, a customer master key (CMK) in AWS KMS, and the AWS SDK for Java.
+You don't need an Amazon Web Services (AWS) account to use the AWS Encryption SDK, but some of the [example code][examples] require an AWS account, an AWS KMS key, and the AWS SDK for Java 1.x. (The AWS Encryption SDK for Java does not support the AWS SDK for Java 2.x.)
 
 * **To create an AWS account**, go to [Sign In or Create an AWS Account](https://portal.aws.amazon.com/gp/aws/developer/registration/index.html) and then choose **I am a new user.** Follow the instructions to create an AWS account.
 
-* **To create a CMK in AWS KMS**, go to [Creating Keys](https://docs.aws.amazon.com/kms/latest/developerguide/create-keys.html) in the KMS documentation and then follow the instructions on that page.
+* **To create a symmetric encryption KMS key in AWS KMS**, see [Creating Keys](https://docs.aws.amazon.com/kms/latest/developerguide/create-keys.html).
 
-* **To download and install the AWS SDK for Java**, go to [Installing the AWS SDK for Java](https://docs.aws.amazon.com/AWSSdkDocsJava/latest/DeveloperGuide/java-dg-install-sdk.html) in the AWS SDK for Java documentation and then follow the instructions on that page.
+* **To download and install the AWS SDK for Java 1.x**, see [Installing the AWS SDK for Java 1.x](https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/getting-started.html).
 
 #### Amazon Corretto Crypto Provider
 Many users find that the Amazon Corretto Crypto Provider (ACCP) significantly improves the performance of the AWS Encryption SDK.
-For help installing and using ACCP, see the [ACCP GitHub Respository](https://github.com/corretto/amazon-corretto-crypto-provider) .
+For help installing and using ACCP, see the [amazon-corretto-crypto-provider repository](https://github.com/corretto/amazon-corretto-crypto-provider).
 
-### Download
-
+### Download the AWS Encryption SDK for Java
 You can get the latest release from Maven:
 
 ```xml
@@ -63,15 +61,14 @@ You can get the latest release from Maven:
 ```
 
 ### Get Started
+To get started with the AWS Encryption SDK for Java
 
-The following code sample demonstrates how to get started:
-
-1. Instantiate the SDK.
+1. Instantiate the AWS Encryption SDK.
 2. Define the master key provider.
 3. Encrypt and decrypt data.
 
 ```java
-// This sample code encrypts and then decrypts a string using a KMS CMK.
+// This sample code encrypts and then decrypts a string using an AWS KMS key.
 // You provide the KMS key ARN and plaintext string as arguments.
 package com.amazonaws.crypto.examples;
 
@@ -88,11 +85,11 @@ import com.amazonaws.encryptionsdk.kms.KmsMasterKeyProvider;
 
 public class StringExample {
     private static String keyArn;
-    private static String data;
+    private static String plaintext;
 
     public static void main(final String[] args) {
         keyArn = args[0];
-        data = args[1];
+        plaintext = args[1];
 
         // Instantiate the SDK
         final AwsCrypto crypto = AwsCrypto.standard();
@@ -101,28 +98,28 @@ public class StringExample {
         final KmsMasterKeyProvider prov = KmsMasterKeyProvider.builder().buildStrict(keyArn);
 
         // Set up the encryption context
+        // NOTE: Encrypted data should have associated encryption context
+        // to protect its integrity. This example uses placeholder values.
+        // For more information about the encryption context, see
+        // https://docs.aws.amazon.com/encryption-sdk/latest/developer-guide/concepts.html#encryption-context
         final Map<String, String> context = Collections.singletonMap("ExampleContextKey", "ExampleContextValue");
 
         // Encrypt the data
-        //
-        // NOTE: Encrypted data should have associated encryption context
-        // to protect its integrity. This example uses placeholder values.
-        // For more information about encryption context, see
-        // https://docs.aws.amazon.com/encryption-sdk/latest/developer-guide/concepts.html#encryption-context
-        final CryptoResult<byte[], KmsMasterKey> encryptResult = crypto.encryptData(prov, data.getBytes(StandardCharsets.UTF_8), context);
+        //        
+        final CryptoResult<byte[], KmsMasterKey> encryptResult = crypto.encryptData(prov, plaintext.getBytes(StandardCharsets.UTF_8), context);
         final byte[] ciphertext = encryptResult.getResult();
         System.out.println("Ciphertext: " + Arrays.toString(ciphertext));
 
         // Decrypt the data
         final CryptoResult<byte[], KmsMasterKey> decryptResult = crypto.decryptData(prov, ciphertext);
-        // Check the encryption context (and ideally the master key) to
-        // ensure this is the expected ciphertext
+        // Your application should verify the encryption context and the KMS key to
+        // ensure this is the expected ciphertext before returning the plaintext
         if (!decryptResult.getMasterKeyIds().get(0).equals(keyArn)) {
             throw new IllegalStateException("Wrong key id!");
         }
 
         // The AWS Encryption SDK may add information to the encryption context, so check to
-        // ensure all of the values that you specified when encrypting are included in the returned encryption context.
+        // ensure all of the values that you specified when encrypting are *included* in the returned encryption context.
         if (!context.entrySet().stream
             .allMatch( e -> e.getValue().equals(decryptResult.getEncryptionContext().get(e.getKey())))) {
                 throw new IllegalStateException("Wrong Encryption Context!");
