@@ -4,6 +4,11 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+  - package-ecosystem: "maven"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    target-branch: "mainline-1.x"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
