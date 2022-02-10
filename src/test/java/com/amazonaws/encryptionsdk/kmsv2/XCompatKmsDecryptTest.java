@@ -3,22 +3,21 @@
 
 package com.amazonaws.encryptionsdk.kmsv2;
 
+import static org.junit.Assert.assertArrayEquals;
+
 import com.amazonaws.encryptionsdk.AwsCrypto;
 import com.amazonaws.encryptionsdk.CryptoResult;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.*;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.*;
-
-import static org.junit.Assert.assertArrayEquals;
 
 @RunWith(Parameterized.class)
 public class XCompatKmsDecryptTest {
@@ -90,7 +89,8 @@ public class XCompatKmsDecryptTest {
         KmsMasterKeyProvider.builder().buildStrict(kmsKeyId);
     byte[] ciphertextBytes = Files.readAllBytes(Paths.get(ciphertextFileName));
     byte[] plaintextBytes = Files.readAllBytes(Paths.get(plaintextFileName));
-    final CryptoResult<byte[], KmsMasterKey> decryptResult = crypto.decryptData(masterKeyProvider, ciphertextBytes);
+    final CryptoResult<byte[], KmsMasterKey> decryptResult =
+        crypto.decryptData(masterKeyProvider, ciphertextBytes);
     assertArrayEquals(plaintextBytes, decryptResult.getResult());
   }
 }

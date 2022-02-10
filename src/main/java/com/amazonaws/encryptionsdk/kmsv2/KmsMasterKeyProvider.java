@@ -44,10 +44,9 @@ public class KmsMasterKeyProvider extends MasterKeyProvider<KmsMasterKey> implem
   public static class Builder implements Cloneable {
     private Region defaultRegion_ = null;
 
+    // TODO: change this to take in a client override builder
     private Supplier<KmsClientBuilder> builderSupplier_ = null;
     private RegionalClientSupplier regionalClientSupplier_ = null;
-
-    //    private AWSKMSClientBuilder templateBuilder_ = null;
     private DiscoveryFilter discoveryFilter_ = null;
 
     Builder() {
@@ -230,7 +229,8 @@ public class KmsMasterKeyProvider extends MasterKeyProvider<KmsMasterKey> implem
         client =
             builder
                 .region(region)
-                .overrideConfiguration(config -> config.addExecutionInterceptor(cacher))
+                // TODO need to have override configuration or add execution interceptor somehow without overwriting client overrides
+                .overrideConfiguration(overrideConfigBuilder -> overrideConfigBuilder.addExecutionInterceptor(cacher))
                 .build();
 
         return cacher.setClient(client);
