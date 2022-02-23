@@ -284,7 +284,6 @@ public final class AwsKmsMrkAwareMasterKeyProvider
               : AWSKMSClientBuilder.standard();
 
       return region -> {
-        /* Check for early return (Postcondition): If a client already exists, use that. */
         if (clientCache.containsKey(region)) {
           return clientCache.get(region);
         }
@@ -381,10 +380,6 @@ public final class AwsKmsMrkAwareMasterKeyProvider
     // # kms-mrk-are-unique.md#Implementation) and the function MUST return
     // # success.
     assertMrksAreUnique(keyIds);
-    /* Precondition: A region is required to contact AWS KMS.
-     * This is an edge case because the default region will be the same as the SDK default,
-     * but it is still possible.
-     */
     if (!isDiscovery
         && defaultRegion == null
         && keyIds.stream()
@@ -447,16 +442,6 @@ public final class AwsKmsMrkAwareMasterKeyProvider
             // # arn.md#identifying-an-aws-kms-multi-region-key) this function MUST
             // # exit successfully.
             //
-            /* Postcondition: Filter out duplicate resources that are not multi-region keys.
-             * I expect only have duplicates of specific multi-region keys.
-             * In JSON something like
-             * {
-             *      "mrk-edb7fe6942894d32ac46dbb1c922d574" : [
-             *          "arn:aws:kms:us-west-2:111122223333:key/mrk-edb7fe6942894d32ac46dbb1c922d574",
-             *          "arn:aws:kms:us-east-2:111122223333:key/mrk-edb7fe6942894d32ac46dbb1c922d574"
-             *      ]
-             *  }
-             */
             .filter(maybeMrk -> isMRK(maybeMrk.getKey()))
             /* Flatten the duplicate identifiers into a single list. */
             .flatMap(mrkEntry -> mrkEntry.getValue().stream())
@@ -481,35 +466,12 @@ public final class AwsKmsMrkAwareMasterKeyProvider
    */
   static String getResourceForResourceTypeKey(String identifier) {
     final AwsKmsCmkArnInfo info = parseInfoFromKeyArn(identifier);
-    /* Check for early return (Postcondition): Non-ARNs may be raw resources.
-     * Raw aliases ('alias/my-key')
-     * or key ids ('mrk-edb7fe6942894d32ac46dbb1c922d574').
-     */
     if (info == null) return identifier;
 
-    /* Check for early return (Postcondition): Return the identifier for non-key resource types.
-     * I only care about duplicate multi-region *keys*.
-     * Any other resource type
-     * should get filtered out.
-     * I return the entire identifier
-     * on the off chance that
-     * a customer has created
-     * an alias with a name `mrk-*`.
-     * This way such an alias
-     * can never accidentally
-     * collided with an existing multi-region key
-     * or a duplicate alias.
-     */
     if (!info.getResourceType().equals("key")) {
       return identifier;
     }
 
-    /* Postcondition: Return the key id.
-     * This will be used
-     * to find different regional replicas of
-     * the same multi-region key
-     * because the key id for replicas is always the same.
-     */
     return info.getResource();
   }
 
@@ -559,10 +521,6 @@ public final class AwsKmsMrkAwareMasterKeyProvider
     // = compliance/framework/aws-kms/aws-kms-mrk-aware-master-key-provider.txt#2.7
     // # In discovery mode, the requested
     // # AWS KMS key identifier MUST be a well formed AWS KMS ARN.
-    /* Precondition: Discovery mode requires requestedKeyArn be an ARN.
-     * This function is called on the encrypt path.
-     * It _may_ be the case that a raw key id, for example, was configured.
-     */
     if (isDiscovery_ && requestedKeyArnInfo == null) {
       throw new NoSuchMasterKeyException(
           "Cannot use AWS KMS identifiers " + "when in discovery mode.");

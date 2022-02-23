@@ -90,7 +90,6 @@ public final class AwsKmsMrkAwareMasterKey extends MasterKey<AwsKmsMrkAwareMaste
           "AwsKmsMrkAwareMasterKey must be configured with an AWS KMS client.");
     }
 
-    /* Precondition: A provider is required. */
     if (provider == null) {
       throw new IllegalArgumentException(
           "AwsKmsMrkAwareMasterKey must be configured with a source provider.");
@@ -177,7 +176,6 @@ public final class AwsKmsMrkAwareMasterKey extends MasterKey<AwsKmsMrkAwareMaste
     // # The response's "KeyId"
     // # MUST be valid.
     final String gdkResultKeyId = gdkResult.getKeyId();
-    /* Exceptional Postcondition: Must have an AWS KMS ARN from AWS KMS generateDataKey. */
     if (parseInfoFromKeyArn(gdkResultKeyId) == null) {
       throw new IllegalStateException("Received an empty or invalid keyId from KMS");
     }
@@ -212,7 +210,6 @@ public final class AwsKmsMrkAwareMasterKey extends MasterKey<AwsKmsMrkAwareMaste
       final Map<String, String> encryptionContext,
       final DataKey<?> dataKey) {
     final SecretKey key = dataKey.getKey();
-    /* Precondition: The key format MUST be RAW. */
     if (!key.getFormat().equals("RAW")) {
       throw new IllegalArgumentException("Only RAW encoded keys are supported");
     }
@@ -237,7 +234,6 @@ public final class AwsKmsMrkAwareMasterKey extends MasterKey<AwsKmsMrkAwareMaste
       final String encryptResultKeyId = encryptResult.getKeyId();
       // = compliance/framework/aws-kms/aws-kms-mrk-aware-master-key.txt#2.11
       // # The AWS KMS Encrypt response MUST contain a valid "KeyId".
-      /* Postcondition: Must have an AWS KMS ARN from AWS KMS encrypt. */
       if (parseInfoFromKeyArn(encryptResultKeyId) == null) {
         throw new IllegalStateException("Received an empty or invalid keyId from KMS");
       }
@@ -326,7 +322,6 @@ public final class AwsKmsMrkAwareMasterKey extends MasterKey<AwsKmsMrkAwareMaste
         // = compliance/framework/aws-kms/aws-kms-mrk-aware-master-key.txt#2.9
         // # The output MUST be the same as the Master Key Decrypt Data Key
         // # (../master-key-interface.md#decrypt-data-key) interface.
-        /* Exceptional Postcondition: Master key was unable to decrypt. */
         .orElseThrow(() -> buildCannotDecryptDksException(exceptions));
   }
 
@@ -358,7 +353,6 @@ public final class AwsKmsMrkAwareMasterKey extends MasterKey<AwsKmsMrkAwareMaste
                     .withKeyId(awsKmsIdentifier)));
 
     final String decryptResultKeyId = decryptResult.getKeyId();
-    /* Exceptional Postcondition: Must have a CMK ARN from AWS KMS to match. */
     if (decryptResultKeyId == null) {
       throw new IllegalStateException("Received an empty keyId from KMS");
     }

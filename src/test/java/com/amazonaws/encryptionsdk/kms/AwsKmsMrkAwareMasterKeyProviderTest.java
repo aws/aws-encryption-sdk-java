@@ -36,7 +36,6 @@ public class AwsKmsMrkAwareMasterKeyProviderTest {
 
   public static class getResourceForResourceTypeKey {
     @Test
-    @DisplayName("Postcondition: Return the key id.")
     public void basic_use() {
       assertEquals(
           "mrk-edb7fe6942894d32ac46dbb1c922d574",
@@ -45,7 +44,6 @@ public class AwsKmsMrkAwareMasterKeyProviderTest {
     }
 
     @Test
-    @DisplayName("Check for early return (Postcondition): Non-ARNs may be raw resources.")
     public void not_an_arn() {
       assertEquals(
           "mrk-edb7fe6942894d32ac46dbb1c922d574",
@@ -57,8 +55,6 @@ public class AwsKmsMrkAwareMasterKeyProviderTest {
     }
 
     @Test
-    @DisplayName(
-        "Check for early return (Postcondition): Return the identifier for non-key resource types.")
     public void not_a_key() {
       final String alias = "arn:aws:kms:us-west-2:658956600833:alias/EncryptDecrypt";
       assertEquals(alias, AwsKmsMrkAwareMasterKeyProvider.getResourceForResourceTypeKey(alias));
@@ -102,7 +98,6 @@ public class AwsKmsMrkAwareMasterKeyProviderTest {
     }
 
     @Test
-    @DisplayName("Postcondition: Filter out duplicate resources that are not multi-region keys.")
     public void non_mrk_duplicates_ok() {
       AwsKmsMrkAwareMasterKeyProvider.assertMrksAreUnique(
           Arrays.asList(
@@ -230,7 +225,6 @@ public class AwsKmsMrkAwareMasterKeyProviderTest {
     }
 
     @Test
-    @DisplayName("Precondition: A region is required to contact AWS KMS.")
     public void always_need_a_region() {
       assertThrows(
           AwsCryptoException.class,
@@ -498,7 +492,6 @@ public class AwsKmsMrkAwareMasterKeyProviderTest {
     }
 
     @Test
-    @DisplayName("Precondition: Discovery mode requires requestedKeyArn be an ARN.")
     // = compliance/framework/aws-kms/aws-kms-mrk-aware-master-key-provider.txt#2.7
     // = type=test
     // # In discovery mode, the requested
@@ -786,7 +779,6 @@ public class AwsKmsMrkAwareMasterKeyProviderTest {
     }
 
     @Test
-    @DisplayName("Check for early return (Postcondition): If a client already exists, use that.")
     public void use_clients_that_exist() {
       final String region = "asdf";
       final ConcurrentHashMap<String, AWSKMS> cache = spy(new ConcurrentHashMap<>());
