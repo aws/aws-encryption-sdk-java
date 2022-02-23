@@ -3,24 +3,26 @@
 
 package com.amazonaws.encryptionsdk.kmsv2;
 
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.AmazonWebServiceRequest;
+import static com.amazonaws.encryptionsdk.internal.AwsKmsCmkArnInfo.*;
+
 import com.amazonaws.encryptionsdk.*;
 import com.amazonaws.encryptionsdk.exception.AwsCryptoException;
 import com.amazonaws.encryptionsdk.internal.AwsKmsCmkArnInfo;
 import com.amazonaws.encryptionsdk.internal.VersionInfo;
 import com.amazonaws.encryptionsdk.kms.KmsMethods;
-import com.amazonaws.services.kms.AWSKMS;
-import com.amazonaws.services.kms.model.*;
-
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
-
-import static com.amazonaws.encryptionsdk.internal.AwsKmsCmkArnInfo.*;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
+import software.amazon.awssdk.core.ApiName;
+import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.services.kms.KmsClient;
+import software.amazon.awssdk.services.kms.model.*;
 
 // = compliance/framework/aws-kms/aws-kms-mrk-aware-master-key.txt#2.5
 // # MUST implement the Master Key Interface (../master-key-
@@ -38,17 +40,16 @@ import static com.amazonaws.encryptionsdk.internal.AwsKmsCmkArnInfo.*;
  */
 public final class AwsKmsMrkAwareMasterKey extends MasterKey<AwsKmsMrkAwareMasterKey>
     implements KmsMethods {
-  private static final String USER_AGENT = VersionInfo.loadUserAgent();
-  private final AWSKMS kmsClient_;
+
+  static final ApiName API_NAME =
+      ApiName.builder().name(VersionInfo.apiName()).version(VersionInfo.versionNumber()).build();
+  private static final Consumer<AwsRequestOverrideConfiguration.Builder> API_NAME_INTERCEPTOR =
+      builder -> builder.addApiName(API_NAME);
+
+  private final KmsClient kmsClient_;
   private final List<String> grantTokens_ = new ArrayList<>();
   private final String awsKmsIdentifier_;
   private final MasterKeyProvider<AwsKmsMrkAwareMasterKey> sourceProvider_;
-
-  private static <T extends AmazonWebServiceRequest> T updateUserAgent(T request) {
-    request.getRequestClientOptions().appendUserAgent(USER_AGENT);
-
-    return request;
-  }
 
   /**
    * A light builder method.
@@ -58,7 +59,7 @@ public final class AwsKmsMrkAwareMasterKey extends MasterKey<AwsKmsMrkAwareMaste
    * @param awsKmsIdentifier An identifier for an AWS KMS key. May be a raw resource.
    */
   static AwsKmsMrkAwareMasterKey getInstance(
-      final AWSKMS kms,
+      final KmsClient kms,
       final String awsKmsIdentifier,
       final MasterKeyProvider<AwsKmsMrkAwareMasterKey> provider) {
     return new AwsKmsMrkAwareMasterKey(awsKmsIdentifier, kms, provider);
@@ -68,7 +69,7 @@ public final class AwsKmsMrkAwareMasterKey extends MasterKey<AwsKmsMrkAwareMaste
   // # On initialization, the caller MUST provide:
   private AwsKmsMrkAwareMasterKey(
       final String awsKmsIdentifier,
-      final AWSKMS kmsClient,
+      final KmsClient kmsClient,
       final MasterKeyProvider<AwsKmsMrkAwareMasterKey> provider) {
 
     // = compliance/framework/aws-kms/aws-kms-mrk-aware-master-key.txt#2.6
@@ -151,36 +152,40 @@ public final class AwsKmsMrkAwareMasterKey extends MasterKey<AwsKmsMrkAwareMaste
     // # master key MUST use the configured AWS KMS client to make an AWS KMS
     // # GenerateDatakey (https://docs.aws.amazon.com/kms/latest/APIReference/
     // # API_GenerateDataKey.html) request constructed as follows:
-    final GenerateDataKeyResult gdkResult =
+    final GenerateDataKeyResponse gdkResponse =
         kmsClient_.generateDataKey(
-            updateUserAgent(
-                new GenerateDataKeyRequest()
-                    .withKeyId(awsKmsIdentifier_)
-                    .withNumberOfBytes(algorithm.getDataKeyLength())
-                    .withEncryptionContext(encryptionContext)
-                    .withGrantTokens(grantTokens_)));
+            GenerateDataKeyRequest.builder()
+                .overrideConfiguration(API_NAME_INTERCEPTOR)
+                .keyId(awsKmsIdentifier_)
+                .numberOfBytes(algorithm.getDataKeyLength())
+                .encryptionContext(encryptionContext)
+                .grantTokens(grantTokens_)
+                .build());
+
+    final ByteBuffer plaintextBuffer = gdkResponse.plaintext().asByteBuffer();
     // = compliance/framework/aws-kms/aws-kms-mrk-aware-master-key.txt#2.10
     // # If the call succeeds the AWS KMS Generate Data Key response's
     // # "Plaintext" MUST match the key derivation input length specified by
     // # the algorithm suite included in the input.
-    if (gdkResult.getPlaintext().limit() != algorithm.getDataKeyLength()) {
+    if (plaintextBuffer.limit() != algorithm.getDataKeyLength()) {
       throw new IllegalStateException("Received an unexpected number of bytes from KMS");
     }
 
     final byte[] rawKey = new byte[algorithm.getDataKeyLength()];
-    gdkResult.getPlaintext().get(rawKey);
+    plaintextBuffer.get(rawKey);
 
     // = compliance/framework/aws-kms/aws-kms-mrk-aware-master-key.txt#2.10
     // # The response's "KeyId"
     // # MUST be valid.
-    final String gdkResultKeyId = gdkResult.getKeyId();
+    final String gdkResponseKeyId = gdkResponse.keyId();
     /* Exceptional Postcondition: Must have an AWS KMS ARN from AWS KMS generateDataKey. */
-    if (parseInfoFromKeyArn(gdkResultKeyId) == null) {
+    if (parseInfoFromKeyArn(gdkResponseKeyId) == null) {
       throw new IllegalStateException("Received an empty or invalid keyId from KMS");
     }
 
-    final byte[] encryptedKey = new byte[gdkResult.getCiphertextBlob().remaining()];
-    gdkResult.getCiphertextBlob().get(encryptedKey);
+    final ByteBuffer ciphertextBlobBuffer = gdkResponse.ciphertextBlob().asByteBuffer();
+    final byte[] encryptedKey = new byte[ciphertextBlobBuffer.remaining()];
+    ciphertextBlobBuffer.get(encryptedKey);
 
     final SecretKeySpec key = new SecretKeySpec(rawKey, algorithm.getDataKeyAlgo());
     // = compliance/framework/aws-kms/aws-kms-mrk-aware-master-key.txt#2.10
@@ -195,7 +200,7 @@ public final class AwsKmsMrkAwareMasterKey extends MasterKey<AwsKmsMrkAwareMaste
         // # The response's cipher text blob MUST be used as the
         // # returned as the ciphertext for the encrypted data key in the output.
         encryptedKey,
-        gdkResultKeyId.getBytes(StandardCharsets.UTF_8),
+        gdkResponseKeyId.getBytes(StandardCharsets.UTF_8),
         this);
   }
 
@@ -220,18 +225,21 @@ public final class AwsKmsMrkAwareMasterKey extends MasterKey<AwsKmsMrkAwareMaste
       // # key MUST use the configured AWS KMS client to make an AWS KMS Encrypt
       // # (https://docs.aws.amazon.com/kms/latest/APIReference/
       // # API_Encrypt.html) request constructed as follows:
-      final EncryptResult encryptResult =
+      final EncryptResponse encryptResponse =
           kmsClient_.encrypt(
-              updateUserAgent(
-                  new EncryptRequest()
-                      .withKeyId(awsKmsIdentifier_)
-                      .withPlaintext(ByteBuffer.wrap(key.getEncoded()))
-                      .withEncryptionContext(encryptionContext)
-                      .withGrantTokens(grantTokens_)));
+              EncryptRequest.builder()
+                  .overrideConfiguration(API_NAME_INTERCEPTOR)
+                  .keyId(awsKmsIdentifier_)
+                  .plaintext(SdkBytes.fromByteArray(key.getEncoded()))
+                  .encryptionContext(encryptionContext)
+                  .grantTokens(grantTokens_)
+                  .build());
 
-      final byte[] edk = new byte[encryptResult.getCiphertextBlob().remaining()];
-      encryptResult.getCiphertextBlob().get(edk);
-      final String encryptResultKeyId = encryptResult.getKeyId();
+      final ByteBuffer ciphertextBlobBuffer = encryptResponse.ciphertextBlob().asByteBuffer();
+      final byte[] edk = new byte[ciphertextBlobBuffer.remaining()];
+      ciphertextBlobBuffer.get(edk);
+
+      final String encryptResultKeyId = encryptResponse.keyId();
       // = compliance/framework/aws-kms/aws-kms-mrk-aware-master-key.txt#2.11
       // # The AWS KMS Encrypt response MUST contain a valid "KeyId".
       /* Postcondition: Must have an AWS KMS ARN from AWS KMS encrypt. */
@@ -251,16 +259,16 @@ public final class AwsKmsMrkAwareMasterKey extends MasterKey<AwsKmsMrkAwareMaste
           edk,
           encryptResultKeyId.getBytes(StandardCharsets.UTF_8),
           this);
-    } catch (final AmazonServiceException asex) {
+    } catch (final AwsServiceException asex) {
       throw new AwsCryptoException(asex);
     }
   }
 
   /**
    * Will attempt to decrypt if awsKmsArnMatchForDecrypt returns true in {@link
-   * AwsKmsMrkAwareMasterKey#filterEncryptedDataKeys(String, AwsKmsCmkArnInfo, EncryptedDataKey)}.
-   * An extension of {@link KmsMasterKey#decryptDataKey(CryptoAlgorithm, Collection, Map)} but with
-   * an awareness of the properties of multi-Region keys.
+   * AwsKmsMrkAwareMasterKey#filterEncryptedDataKeys(String, String, EncryptedDataKey)}. An
+   * extension of {@link KmsMasterKey#decryptDataKey(CryptoAlgorithm, Collection, Map)} but with an
+   * awareness of the properties of multi-Region keys.
    */
   @Override
   // = compliance/framework/aws-kms/aws-kms-mrk-aware-master-key.txt#2.9
@@ -293,7 +301,7 @@ public final class AwsKmsMrkAwareMasterKey extends MasterKey<AwsKmsMrkAwareMaste
                     algorithm,
                     edk,
                     encryptionContext);
-              } catch (final AmazonServiceException amazonServiceException) {
+              } catch (final AwsServiceException amazonServiceException) {
                 // = compliance/framework/aws-kms/aws-kms-mrk-aware-master-key.txt#2.9
                 // # If this attempt
                 // # results in an error, then these errors MUST be collected.
@@ -333,7 +341,7 @@ public final class AwsKmsMrkAwareMasterKey extends MasterKey<AwsKmsMrkAwareMaste
    */
   static DataKey<AwsKmsMrkAwareMasterKey> decryptSingleEncryptedDataKey(
       final AwsKmsMrkAwareMasterKey masterKey,
-      final AWSKMS client,
+      final KmsClient client,
       final String awsKmsIdentifier,
       final List<String> grantTokens,
       final CryptoAlgorithm algorithm,
@@ -345,39 +353,41 @@ public final class AwsKmsMrkAwareMasterKey extends MasterKey<AwsKmsMrkAwareMaste
     // # configured AWS KMS client to make an AWS KMS Decrypt
     // # (https://docs.aws.amazon.com/kms/latest/APIReference/
     // # API_Decrypt.html) request constructed as follows:
-    final DecryptResult decryptResult =
+    final DecryptResponse decryptResponse =
         client.decrypt(
-            updateUserAgent(
-                new DecryptRequest()
-                    .withCiphertextBlob(ByteBuffer.wrap(edk.getEncryptedDataKey()))
-                    .withEncryptionContext(encryptionContext)
-                    .withGrantTokens(grantTokens)
-                    .withKeyId(awsKmsIdentifier)));
+            DecryptRequest.builder()
+                .overrideConfiguration(API_NAME_INTERCEPTOR)
+                .ciphertextBlob(SdkBytes.fromByteArray(edk.getEncryptedDataKey()))
+                .encryptionContext(encryptionContext)
+                .grantTokens(grantTokens)
+                .keyId(awsKmsIdentifier)
+                .build());
 
-    final String decryptResultKeyId = decryptResult.getKeyId();
+    final String decryptResponseKeyId = decryptResponse.keyId();
     /* Exceptional Postcondition: Must have a CMK ARN from AWS KMS to match. */
-    if (decryptResultKeyId == null) {
+    if (decryptResponseKeyId == null) {
       throw new IllegalStateException("Received an empty keyId from KMS");
     }
     // = compliance/framework/aws-kms/aws-kms-mrk-aware-master-key.txt#2.9
     // # If the call succeeds then the response's "KeyId" MUST be equal to the
     // # configured AWS KMS key identifier otherwise the function MUST collect
     // # an error.
-    if (!awsKmsIdentifier.equals(decryptResultKeyId)) {
+    if (!awsKmsIdentifier.equals(decryptResponseKeyId)) {
       throw new IllegalStateException(
           "Received an invalid response from KMS Decrypt call: Unexpected keyId.");
     }
 
+    final ByteBuffer plaintextBuffer = decryptResponse.plaintext().asByteBuffer();
     // = compliance/framework/aws-kms/aws-kms-mrk-aware-master-key.txt#2.9
     // # The response's "Plaintext"'s length MUST equal the length
     // # required by the requested algorithm suite otherwise the function MUST
     // # collect an error.
-    if (decryptResult.getPlaintext().limit() != algorithm.getDataKeyLength()) {
+    if (plaintextBuffer.limit() != algorithm.getDataKeyLength()) {
       throw new IllegalStateException("Received an unexpected number of bytes from KMS");
     }
 
     final byte[] rawKey = new byte[algorithm.getDataKeyLength()];
-    decryptResult.getPlaintext().get(rawKey);
+    plaintextBuffer.get(rawKey);
 
     return new DataKey<>(
         new SecretKeySpec(rawKey, algorithm.getDataKeyAlgo()),

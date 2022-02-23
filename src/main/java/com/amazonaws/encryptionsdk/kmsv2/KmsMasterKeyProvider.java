@@ -3,12 +3,11 @@
 
 package com.amazonaws.encryptionsdk.kmsv2;
 
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.Request;
-import com.amazonaws.Response;
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import static com.amazonaws.encryptionsdk.internal.AwsKmsCmkArnInfo.parseInfoFromKeyArn;
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+
 import com.amazonaws.encryptionsdk.*;
 import com.amazonaws.encryptionsdk.exception.AwsCryptoException;
 import com.amazonaws.encryptionsdk.exception.NoSuchMasterKeyException;
@@ -16,20 +15,14 @@ import com.amazonaws.encryptionsdk.exception.UnsupportedProviderException;
 import com.amazonaws.encryptionsdk.internal.AwsKmsCmkArnInfo;
 import com.amazonaws.encryptionsdk.kms.DiscoveryFilter;
 import com.amazonaws.encryptionsdk.kms.KmsMethods;
-import com.amazonaws.handlers.RequestHandler2;
-import com.amazonaws.services.kms.AWSKMS;
-import com.amazonaws.services.kms.AWSKMSClient;
-import com.amazonaws.services.kms.AWSKMSClientBuilder;
-
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
-
-import static com.amazonaws.encryptionsdk.internal.AwsKmsCmkArnInfo.parseInfoFromKeyArn;
-import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.kms.KmsClient;
+import software.amazon.awssdk.services.kms.KmsClientBuilder;
 
 /**
  * Provides {@link MasterKey}s backed by the AWS Key Management Service. This object is regional and
@@ -47,24 +40,13 @@ public class KmsMasterKeyProvider extends MasterKeyProvider<KmsMasterKey> implem
   private final DiscoveryFilter discoveryFilter_;
 
   private final RegionalClientSupplier regionalClientSupplier_;
-  private final String defaultRegion_;
-
-  @FunctionalInterface
-  public interface RegionalClientSupplier {
-    /**
-     * Supplies an AWSKMS instance to use for a given region. The {@link KmsMasterKeyProvider} will
-     * not cache the result of this function.
-     *
-     * @param regionName The region to get a client for
-     * @return The client to use, or null if this region cannot or should not be used.
-     */
-    AWSKMS getClient(String regionName);
-  }
+  private final Region defaultRegion_;
 
   public static class Builder implements Cloneable {
-    private String defaultRegion_ = null;
+    private Region defaultRegion_ = null;
+
+    private Supplier<KmsClientBuilder> builderSupplier_ = null;
     private RegionalClientSupplier regionalClientSupplier_ = null;
-    private AWSKMSClientBuilder templateBuilder_ = null;
     private DiscoveryFilter discoveryFilter_ = null;
 
     Builder() {
@@ -75,9 +57,7 @@ public class KmsMasterKeyProvider extends MasterKeyProvider<KmsMasterKey> implem
       try {
         Builder cloned = (Builder) super.clone();
 
-        if (templateBuilder_ != null) {
-          cloned.templateBuilder_ = cloneClientBuilder(templateBuilder_);
-        }
+        cloned.builderSupplier_ = builderSupplier_;
 
         return cloned;
       } catch (CloneNotSupportedException e) {
@@ -95,7 +75,7 @@ public class KmsMasterKeyProvider extends MasterKeyProvider<KmsMasterKey> implem
      * @param defaultRegion The default region to use.
      * @return
      */
-    public Builder withDefaultRegion(String defaultRegion) {
+    public Builder defaultRegion(Region defaultRegion) {
       this.defaultRegion_ = defaultRegion;
       return this;
     }
@@ -106,14 +86,14 @@ public class KmsMasterKeyProvider extends MasterKeyProvider<KmsMasterKey> implem
      *
      * <p>Because the regional client supplier fully controls the client construction process, it is
      * not possible to configure the client through methods such as {@link
-     * #withCredentials(AWSCredentialsProvider)} or {@link #withClientBuilder(AWSKMSClientBuilder)};
-     * if you try to use these in combination, an {@link IllegalStateException} will be thrown.
+     * #builderSupplier(Supplier)}; if you try to use these in combination, an {@link
+     * IllegalStateException} will be thrown.
      *
      * @param regionalClientSupplier
      * @return
      */
-    public Builder withCustomClientFactory(RegionalClientSupplier regionalClientSupplier) {
-      if (templateBuilder_ != null) {
+    public Builder customRegionalClientSupplier(RegionalClientSupplier regionalClientSupplier) {
+      if (builderSupplier_ != null) {
         throw clientSupplierComboException();
       }
 
@@ -121,87 +101,30 @@ public class KmsMasterKeyProvider extends MasterKeyProvider<KmsMasterKey> implem
       return this;
     }
 
-    private RuntimeException clientSupplierComboException() {
-      return new IllegalStateException(
-          "withCustomClientFactory cannot be used in conjunction with "
-              + "withCredentials or withClientBuilder");
-    }
-
-    /**
-     * Configures the {@link KmsMasterKeyProvider} to use specific credentials. If a builder was
-     * previously set, this will override whatever credentials it set.
-     *
-     * @param credentialsProvider
-     * @return
-     */
-    public Builder withCredentials(AWSCredentialsProvider credentialsProvider) {
-      if (regionalClientSupplier_ != null) {
-        throw clientSupplierComboException();
-      }
-
-      if (templateBuilder_ == null) {
-        templateBuilder_ = AWSKMSClientBuilder.standard();
-      }
-
-      templateBuilder_.setCredentials(credentialsProvider);
-
-      return this;
-    }
-
-    /**
-     * Configures the {@link KmsMasterKeyProvider} to use specific credentials. If a builder was
-     * previously set, this will override whatever credentials it set.
-     *
-     * @param credentials
-     * @return
-     */
-    public Builder withCredentials(AWSCredentials credentials) {
-      return withCredentials(new AWSStaticCredentialsProvider(credentials));
-    }
-
     /**
      * Configures the {@link KmsMasterKeyProvider} to use settings from this {@link
-     * AWSKMSClientBuilder} to configure KMS clients. Note that the region set on this builder will
-     * be ignored, but all other settings will be propagated into the regional clients.
+     * KmsClientBuilder} to configure KMS clients. Note that the region set on this builder will be
+     * ignored, but all other settings will be propagated into the regional clients.
      *
-     * <p>This method will overwrite any credentials set using {@link
-     * #withCredentials(AWSCredentialsProvider)}.
+     * <p>Trying to use this method in combination with {@link
+     * #customRegionalClientSupplier(RegionalClientSupplier)} will cause an {@link
+     * IllegalStateException} to be thrown.
      *
-     * @param builder
+     * @param supplier Should return a new {@link KmsClientBuilder} on each invocation.
      * @return
      */
-    public Builder withClientBuilder(AWSKMSClientBuilder builder) {
+    public Builder builderSupplier(Supplier<KmsClientBuilder> supplier) {
       if (regionalClientSupplier_ != null) {
         throw clientSupplierComboException();
       }
-      final AWSKMSClientBuilder newBuilder = cloneClientBuilder(builder);
 
-      this.templateBuilder_ = newBuilder;
-
+      this.builderSupplier_ = supplier;
       return this;
     }
 
-    AWSKMSClientBuilder cloneClientBuilder(final AWSKMSClientBuilder builder) {
-      // We need to copy all arguments out of the builder in case it's mutated later on.
-      // Unfortunately AWSKMSClientBuilder doesn't support .clone() so we'll have to do it by hand.
-
-      if (builder.getEndpoint() != null) {
-        // We won't be able to set the region later if a custom endpoint is set.
-        throw new IllegalArgumentException(
-            "Setting endpoint configuration is not compatible with passing a "
-                + "builder to the KmsMasterKeyProvider. Use withCustomClientFactory"
-                + " instead.");
-      }
-
-      final AWSKMSClientBuilder newBuilder = AWSKMSClient.builder();
-      newBuilder.setClientConfiguration(builder.getClientConfiguration());
-      newBuilder.setCredentials(builder.getCredentials());
-      newBuilder.setEndpointConfiguration(builder.getEndpoint());
-      newBuilder.setMetricsCollector(builder.getMetricsCollector());
-      if (builder.getRequestHandlers() != null) {
-        newBuilder.setRequestHandlers(builder.getRequestHandlers().toArray(new RequestHandler2[0]));
-      }
-      return newBuilder;
+    private RuntimeException clientSupplierComboException() {
+      return new IllegalStateException(
+          "only one of builderSupplier and customRegionalClientSupplier may be used");
     }
 
     /**
@@ -284,80 +207,35 @@ public class KmsMasterKeyProvider extends MasterKeyProvider<KmsMasterKey> implem
         return regionalClientSupplier_;
       }
 
-      // Clone again; this MKP builder might be reused to build a second MKP with different creds.
-      AWSKMSClientBuilder builder =
-          templateBuilder_ != null
-              ? cloneClientBuilder(templateBuilder_)
-              : AWSKMSClientBuilder.standard();
-
-      ConcurrentHashMap<String, AWSKMS> clientCache = new ConcurrentHashMap<>();
+      ConcurrentHashMap<Region, KmsClient> clientCache = new ConcurrentHashMap<>();
       snoopClientCache(clientCache);
 
       return region -> {
-        AWSKMS kms = clientCache.get(region);
+        KmsClient client = clientCache.get(region);
 
-        if (kms != null) return kms;
+        if (client != null) return client;
+
+        KmsClientBuilder builder =
+            builderSupplier_ != null ? builderSupplier_.get() : KmsClient.builder();
 
         // We can't just use computeIfAbsent as we need to avoid leaking KMS clients if we're asked
         // to decrypt
         // an EDK with a bogus region in its ARN. So we'll install a request handler to identify the
         // first
         // successful call, and cache it when we see that.
-        SuccessfulRequestCacher cacher = new SuccessfulRequestCacher(clientCache, region);
-        ArrayList<RequestHandler2> handlers = new ArrayList<>();
-        if (builder.getRequestHandlers() != null) {
-          handlers.addAll(builder.getRequestHandlers());
-        }
-        handlers.add(cacher);
+        RequestClientCacher cacher = new RequestClientCacher(clientCache, region);
 
-        kms =
-            cloneClientBuilder(builder)
-                .withRegion(region)
-                .withRequestHandlers(handlers.toArray(new RequestHandler2[handlers.size()]))
-                .build();
+        ClientOverrideConfiguration overrideConfig =
+            builder.overrideConfiguration().toBuilder().addExecutionInterceptor(cacher).build();
 
-        return cacher.setClient(kms);
+        client = builder.region(region).overrideConfiguration(overrideConfig).build();
+
+        return cacher.setClient(client);
       };
     }
 
-    protected void snoopClientCache(ConcurrentHashMap<String, AWSKMS> map) {
+    protected void snoopClientCache(ConcurrentHashMap<Region, KmsClient> map) {
       // no-op - this is a test hook
-    }
-  }
-
-  static class SuccessfulRequestCacher extends RequestHandler2 {
-    private final ConcurrentHashMap<String, AWSKMS> cache_;
-    private final String region_;
-    private AWSKMS client_;
-
-    volatile boolean ranBefore_ = false;
-
-    SuccessfulRequestCacher(final ConcurrentHashMap<String, AWSKMS> cache, final String region) {
-      this.region_ = region;
-      this.cache_ = cache;
-    }
-
-    public AWSKMS setClient(final AWSKMS client) {
-      client_ = client;
-      return client;
-    }
-
-    @Override
-    public void afterResponse(final Request<?> request, final Response<?> response) {
-      if (ranBefore_) return;
-      ranBefore_ = true;
-
-      cache_.putIfAbsent(region_, client_);
-    }
-
-    @Override
-    public void afterError(
-        final Request<?> request, final Response<?> response, final Exception e) {
-      if (ranBefore_) return;
-      if (e instanceof AmazonServiceException) {
-        ranBefore_ = true;
-        cache_.putIfAbsent(region_, client_);
-      }
     }
   }
 
@@ -367,7 +245,7 @@ public class KmsMasterKeyProvider extends MasterKeyProvider<KmsMasterKey> implem
 
   KmsMasterKeyProvider(
       RegionalClientSupplier supplier,
-      String defaultRegion,
+      Region defaultRegion,
       List<String> keyIds,
       List<String> grantTokens,
       boolean isDiscovery,
@@ -442,20 +320,20 @@ public class KmsMasterKeyProvider extends MasterKeyProvider<KmsMasterKey> implem
               + " with configured discovery filter.");
     }
 
-    String regionName = defaultRegion_;
+    Region region = defaultRegion_;
     if (arnInfo != null) {
-      regionName = arnInfo.getRegion();
+      region = Region.of(arnInfo.getRegion());
     }
 
-    String regionName_ = regionName;
+    final Region region_ = region;
 
-    Supplier<AWSKMS> kmsSupplier =
+    Supplier<KmsClient> kmsSupplier =
         () -> {
-          AWSKMS kms = regionalClientSupplier_.getClient(regionName_);
-          if (kms == null) {
-            throw new AwsCryptoException("Can't use keys from region " + regionName_);
+          KmsClient client = regionalClientSupplier_.getClient(region_);
+          if (client == null) {
+            throw new AwsCryptoException("Can't use keys from region " + region_.id());
           }
-          return kms;
+          return client;
         };
 
     final KmsMasterKey result = KmsMasterKey.getInstance(kmsSupplier, keyId, this);

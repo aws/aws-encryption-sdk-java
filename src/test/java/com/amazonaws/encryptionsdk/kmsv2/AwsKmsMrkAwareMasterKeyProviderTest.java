@@ -3,37 +3,34 @@
 
 package com.amazonaws.encryptionsdk.kmsv2;
 
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.auth.BasicAWSCredentials;
+import static com.amazonaws.encryptionsdk.internal.AwsKmsCmkArnInfo.parseInfoFromKeyArn;
+import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
 import com.amazonaws.encryptionsdk.*;
 import com.amazonaws.encryptionsdk.exception.AwsCryptoException;
 import com.amazonaws.encryptionsdk.exception.CannotUnwrapDataKeyException;
 import com.amazonaws.encryptionsdk.exception.NoSuchMasterKeyException;
 import com.amazonaws.encryptionsdk.exception.UnsupportedProviderException;
-import com.amazonaws.encryptionsdk.kms.AwsKmsMrkAwareMasterKey;
-import com.amazonaws.encryptionsdk.kms.AwsKmsMrkAwareMasterKeyProvider;
 import com.amazonaws.encryptionsdk.kms.DiscoveryFilter;
-import com.amazonaws.encryptionsdk.kms.KmsMasterKeyProvider.RegionalClientSupplier;
 import com.amazonaws.encryptionsdk.model.KeyBlob;
-import com.amazonaws.services.kms.AWSKMS;
-import com.amazonaws.services.kms.AWSKMSClientBuilder;
-import com.amazonaws.services.kms.model.DecryptRequest;
-import com.amazonaws.services.kms.model.DecryptResult;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-
-import static com.amazonaws.encryptionsdk.internal.AwsKmsCmkArnInfo.parseInfoFromKeyArn;
-import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
+import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.kms.KmsClient;
+import software.amazon.awssdk.services.kms.model.DecryptRequest;
+import software.amazon.awssdk.services.kms.model.DecryptResponse;
 
 @RunWith(Enclosed.class)
 public class AwsKmsMrkAwareMasterKeyProviderTest {
@@ -240,11 +237,7 @@ public class AwsKmsMrkAwareMasterKeyProviderTest {
           AwsCryptoException.class,
           () ->
               AwsKmsMrkAwareMasterKeyProvider.builder()
-                  .withDefaultRegion(null)
-                  .buildStrict("mrk-edb7fe6942894d32ac46dbb1c922d574"));
 
-      AwsKmsMrkAwareMasterKeyProvider.builder()
-          .withDefaultRegion("us-east-1")
           .buildStrict("mrk-edb7fe6942894d32ac46dbb1c922d574");
     }
 
@@ -260,17 +253,13 @@ public class AwsKmsMrkAwareMasterKeyProviderTest {
               AwsKmsMrkAwareMasterKeyProvider.builder()
                   // need to force the default region to `null`
                   // otherwise it may pick one up from the environment.
-                  .withDefaultRegion(null)
-                  .withDiscoveryMrkRegion(null)
+
                   .buildDiscovery());
     }
 
     @Test
     public void basic_credentials_and_builder() {
-      BasicAWSCredentials creds = new BasicAWSCredentials("asdf", "qwer");
-      AwsKmsMrkAwareMasterKeyProvider.builder()
-          .withClientBuilder(AWSKMSClientBuilder.standard())
-          .withCredentials(creds)
+
           .buildDiscovery();
     }
   }
@@ -279,17 +268,14 @@ public class AwsKmsMrkAwareMasterKeyProviderTest {
 
     @Test
     public void basic_use() {
-      final String test =
-          AwsKmsMrkAwareMasterKeyProvider.extractRegion(
-              "us-east-1",
-              "us-east-2",
+
               Optional.of(
                   "arn:aws:kms:us-west-2:111122223333:key/mrk-edb7fe6942894d32ac46dbb1c922d574"),
               parseInfoFromKeyArn(
                   "arn:aws:kms:us-west-2:111122223333:key/mrk-edb7fe6942894d32ac46dbb1c922d574"),
               false);
 
-      assertEquals("us-west-2", test);
+
     }
 
     @Test
@@ -299,15 +285,12 @@ public class AwsKmsMrkAwareMasterKeyProviderTest {
     // # AWS Region MUST be the configured default region this SHOULD be
     // # obtained from the AWS SDK.
     public void not_an_arn() {
-      final String test =
-          AwsKmsMrkAwareMasterKeyProvider.extractRegion(
-              "us-east-1",
-              "us-east-2",
+
               Optional.empty(),
               parseInfoFromKeyArn("mrk-edb7fe6942894d32ac46dbb1c922d574"),
               false);
 
-      assertEquals("us-east-1", test);
+
     }
 
     @Test
@@ -319,27 +302,19 @@ public class AwsKmsMrkAwareMasterKeyProviderTest {
     // # be the region from the AWS KMS key ARN stored in the provider info
     // # from the encrypted data key.
     public void not_an_mrk() {
-      final String test =
-          AwsKmsMrkAwareMasterKeyProvider.extractRegion(
-              "us-east-1",
-              "us-east-2",
+
               Optional.of(
                   "arn:aws:kms:us-west-2:658956600833:key/b3537ef1-d8dc-4780-9f5a-55776cbb2f7f"),
               parseInfoFromKeyArn(
                   "arn:aws:kms:us-west-2:658956600833:key/b3537ef1-d8dc-4780-9f5a-55776cbb2f7f"),
               false);
 
-      assertEquals("us-west-2", test);
 
-      final String test2 =
-          AwsKmsMrkAwareMasterKeyProvider.extractRegion(
-              "us-east-1",
-              "us-east-2",
               Optional.of("arn:aws:kms:us-west-2:658956600833:alias/mrk-nasty"),
               parseInfoFromKeyArn("arn:aws:kms:us-west-2:658956600833:alias/mrk-nasty"),
               false);
 
-      assertEquals("us-west-2", test2);
+
     }
 
     @Test
@@ -348,16 +323,13 @@ public class AwsKmsMrkAwareMasterKeyProviderTest {
     // # Otherwise if the mode is discovery then
     // # the AWS Region MUST be the discovery MRK region.
     public void mrk_in_discovery() {
-      final String test =
-          AwsKmsMrkAwareMasterKeyProvider.extractRegion(
-              "us-east-1",
-              "us-east-2",
+
               Optional.empty(),
               parseInfoFromKeyArn(
                   "arn:aws:kms:us-west-2:111122223333:key/mrk-edb7fe6942894d32ac46dbb1c922d574"),
               true);
 
-      assertEquals("us-east-2", test);
+
     }
 
     @Test
@@ -370,17 +342,14 @@ public class AwsKmsMrkAwareMasterKeyProviderTest {
     // # to the requested AWS KMS key by using AWS KMS MRK Match for Decrypt
     // # (aws-kms-mrk-match-for-decrypt.md#implementation).
     public void fuzzy_match_mrk() {
-      final String test =
-          AwsKmsMrkAwareMasterKeyProvider.extractRegion(
-              "us-east-1",
-              "us-east-2",
+
               Optional.of(
                   "arn:aws:kms:us-west-2:111122223333:key/mrk-edb7fe6942894d32ac46dbb1c922d574"),
               parseInfoFromKeyArn(
                   "arn:aws:kms:us-west-1:111122223333:key/mrk-edb7fe6942894d32ac46dbb1c922d574"),
               false);
 
-      assertEquals("us-west-2", test);
+
     }
   }
 
@@ -389,13 +358,13 @@ public class AwsKmsMrkAwareMasterKeyProviderTest {
     public void basic_use() {
       final String identifier =
           "arn:aws:kms:us-west-2:111122223333:key/mrk-edb7fe6942894d32ac46dbb1c922d574";
-      final AWSKMS client = Mockito.spy(new MockKMSClient());
+
       final RegionalClientSupplier supplier = mock(RegionalClientSupplier.class);
       when(supplier.getClient(any())).thenReturn(client);
 
       AwsKmsMrkAwareMasterKeyProvider mkp =
           AwsKmsMrkAwareMasterKeyProvider.builder()
-              .withCustomClientFactory(supplier)
+
               .buildStrict(identifier);
 
       // = compliance/framework/aws-kms/aws-kms-mrk-aware-master-key-provider.txt#2.7
@@ -411,7 +380,7 @@ public class AwsKmsMrkAwareMasterKeyProviderTest {
       assertTrue(AwsKmsMrkAwareMasterKey.class.isInstance((test)));
 
       assertEquals(identifier, test.getKeyId());
-      verify(supplier, times(1)).getClient("us-west-2");
+
     }
 
     @Test
@@ -420,38 +389,38 @@ public class AwsKmsMrkAwareMasterKeyProviderTest {
           "arn:aws:kms:us-west-2:111122223333:key/mrk-edb7fe6942894d32ac46dbb1c922d574";
       final String requestedIdentifier =
           "arn:aws:kms:us-east-1:111122223333:key/mrk-edb7fe6942894d32ac46dbb1c922d574";
-      final AWSKMS client = Mockito.spy(new MockKMSClient());
+
       final RegionalClientSupplier supplier = mock(RegionalClientSupplier.class);
       when(supplier.getClient(any())).thenReturn(client);
 
       AwsKmsMrkAwareMasterKeyProvider mkp =
           AwsKmsMrkAwareMasterKeyProvider.builder()
-              .withCustomClientFactory(supplier)
+
               .buildStrict(configuredIdentifier);
 
       AwsKmsMrkAwareMasterKey test = mkp.getMasterKey("aws-kms", requestedIdentifier);
 
       assertEquals(configuredIdentifier, test.getKeyId());
-      verify(supplier, times(1)).getClient("us-west-2");
+
     }
 
     @Test
     public void other_basic_uses() {
-      final AWSKMS client = Mockito.spy(new MockKMSClient());
+
       final RegionalClientSupplier supplier = mock(RegionalClientSupplier.class);
       when(supplier.getClient(any())).thenReturn(client);
 
       // A raw alias is a valid configuration for encryption
       final String rawAliasIdentifier = "alias/my-alias";
       AwsKmsMrkAwareMasterKeyProvider.builder()
-          .withCustomClientFactory(supplier)
+
           .buildStrict(rawAliasIdentifier)
           .getMasterKey("aws-kms", rawAliasIdentifier);
 
       // A raw alias is a valid configuration for encryption
       final String rawKeyIdentifier = "mrk-edb7fe6942894d32ac46dbb1c922d574";
       AwsKmsMrkAwareMasterKeyProvider.builder()
-          .withCustomClientFactory(supplier)
+
           .buildStrict(rawKeyIdentifier)
           .getMasterKey("aws-kms", rawKeyIdentifier);
     }
@@ -464,13 +433,13 @@ public class AwsKmsMrkAwareMasterKeyProviderTest {
     public void only_this_provider() {
       final String identifier =
           "arn:aws:kms:us-west-2:111122223333:key/mrk-edb7fe6942894d32ac46dbb1c922d574";
-      final AWSKMS client = Mockito.spy(new MockKMSClient());
+
       final RegionalClientSupplier supplier = mock(RegionalClientSupplier.class);
       when(supplier.getClient(any())).thenReturn(client);
 
       AwsKmsMrkAwareMasterKeyProvider mkp =
           AwsKmsMrkAwareMasterKeyProvider.builder()
-              .withCustomClientFactory(supplier)
+
               .buildStrict(identifier);
 
       assertThrows(
@@ -487,13 +456,13 @@ public class AwsKmsMrkAwareMasterKeyProviderTest {
     public void no_key_id_match() {
       final String identifier =
           "arn:aws:kms:us-west-2:111122223333:key/mrk-edb7fe6942894d32ac46dbb1c922d574";
-      final AWSKMS client = Mockito.spy(new MockKMSClient());
+
       final RegionalClientSupplier supplier = mock(RegionalClientSupplier.class);
       when(supplier.getClient(any())).thenReturn(client);
 
       final AwsKmsMrkAwareMasterKeyProvider mkp =
           AwsKmsMrkAwareMasterKeyProvider.builder()
-              .withCustomClientFactory(supplier)
+
               .buildStrict(identifier);
 
       assertThrows(
@@ -527,7 +496,7 @@ public class AwsKmsMrkAwareMasterKeyProviderTest {
     public void discovery_filter_must_match() {
       final String identifier =
           "arn:aws:kms:us-west-2:111122223333:key/mrk-edb7fe6942894d32ac46dbb1c922d574";
-      final AWSKMS client = Mockito.spy(new MockKMSClient());
+
       final RegionalClientSupplier supplier = mock(RegionalClientSupplier.class);
       when(supplier.getClient(any())).thenReturn(client);
 
@@ -554,14 +523,13 @@ public class AwsKmsMrkAwareMasterKeyProviderTest {
     public void discovery_magic_to_make_the_region_match() {
       final String identifier =
           "arn:aws:kms:us-west-2:111122223333:key/mrk-edb7fe6942894d32ac46dbb1c922d574";
-      final AWSKMS client = Mockito.spy(new MockKMSClient());
+
       final RegionalClientSupplier supplier = mock(RegionalClientSupplier.class);
       when(supplier.getClient(any())).thenReturn(client);
 
       AwsKmsMrkAwareMasterKeyProvider mkp =
           AwsKmsMrkAwareMasterKeyProvider.builder()
-              .withCustomClientFactory(supplier)
-              .withDiscoveryMrkRegion("my-region")
+
               .buildDiscovery();
 
       AwsKmsMrkAwareMasterKey test = mkp.getMasterKey("aws-kms", identifier);
@@ -574,7 +542,7 @@ public class AwsKmsMrkAwareMasterKeyProviderTest {
       assertEquals(
           "arn:aws:kms:my-region:111122223333:key/mrk-edb7fe6942894d32ac46dbb1c922d574",
           test.getKeyId());
-      verify(supplier, times(1)).getClient("my-region");
+
     }
 
     @Test
@@ -587,19 +555,19 @@ public class AwsKmsMrkAwareMasterKeyProviderTest {
           "arn:aws:kms:us-west-2:111122223333:key/mrk-edb7fe6942894d32ac46dbb1c922d574";
       final String configIdentifier =
           "arn:aws:kms:us-east-1:111122223333:key/mrk-edb7fe6942894d32ac46dbb1c922d574";
-      final AWSKMS client = Mockito.spy(new MockKMSClient());
+
       final RegionalClientSupplier supplier = mock(RegionalClientSupplier.class);
       when(supplier.getClient(any())).thenReturn(client);
 
       AwsKmsMrkAwareMasterKeyProvider mkp =
           AwsKmsMrkAwareMasterKeyProvider.builder()
-              .withCustomClientFactory(supplier)
+
               .buildStrict(configIdentifier);
 
       AwsKmsMrkAwareMasterKey test = mkp.getMasterKey("aws-kms", identifier);
 
       assertEquals(configIdentifier, test.getKeyId());
-      verify(supplier, times(1)).getClient("us-east-1");
+
     }
   }
 
@@ -620,17 +588,12 @@ public class AwsKmsMrkAwareMasterKeyProviderTest {
           new KeyBlob("aws-kms", identifier.getBytes(StandardCharsets.UTF_8), cipherText);
 
       final RegionalClientSupplier supplier = mock(RegionalClientSupplier.class);
-      final AWSKMS client = mock(AWSKMS.class);
-      when(client.decrypt(any()))
-          .thenReturn(
-              new DecryptResult()
-                  .withKeyId(identifier)
-                  .withPlaintext(ByteBuffer.allocate(ALGORITHM_SUITE.getDataKeyLength())));
+
       when(supplier.getClient(any())).thenReturn(client);
 
       AwsKmsMrkAwareMasterKeyProvider mkp =
           AwsKmsMrkAwareMasterKeyProvider.builder()
-              .withCustomClientFactory(supplier)
+
               .buildStrict(identifier)
               .withGrantTokens(GRANT_TOKENS);
 
@@ -662,11 +625,7 @@ public class AwsKmsMrkAwareMasterKeyProviderTest {
       // # attempt to decrypt any more encrypted data keys.
       verify(client, times((1)))
           .decrypt(
-              new DecryptRequest()
-                  .withGrantTokens(GRANT_TOKENS)
-                  .withEncryptionContext(ENCRYPTION_CONTEXT)
-                  .withKeyId(identifier)
-                  .withCiphertextBlob(ByteBuffer.wrap(cipherText)));
+
 
       // = compliance/framework/aws-kms/aws-kms-mrk-aware-master-key-provider.txt#2.9
       // = type=test
@@ -753,14 +712,12 @@ public class AwsKmsMrkAwareMasterKeyProviderTest {
           new KeyBlob("aws-kms", identifier.getBytes(StandardCharsets.UTF_8), new byte[10]);
 
       final RegionalClientSupplier supplier = mock(RegionalClientSupplier.class);
-      final AWSKMS client = mock(AWSKMS.class);
-      final String clientErrMsg = "asdf";
-      when(client.decrypt(any())).thenThrow(new AmazonServiceException(clientErrMsg));
+
       when(supplier.getClient(any())).thenReturn(client);
 
       AwsKmsMrkAwareMasterKeyProvider mkp =
           AwsKmsMrkAwareMasterKeyProvider.builder()
-              .withCustomClientFactory(supplier)
+
               .buildStrict(identifier);
 
       CannotUnwrapDataKeyException test =
@@ -773,7 +730,7 @@ public class AwsKmsMrkAwareMasterKeyProviderTest {
       assertTrue(fromMasterKey instanceof CannotUnwrapDataKeyException);
       assertEquals(1, fromMasterKey.getSuppressed().length);
       Throwable fromClient = Arrays.stream(fromMasterKey.getSuppressed()).findFirst().get();
-      assertTrue(fromClient instanceof AmazonServiceException);
+
       assertTrue(fromClient.getMessage().startsWith(clientErrMsg));
     }
   }
@@ -781,24 +738,13 @@ public class AwsKmsMrkAwareMasterKeyProviderTest {
   public static class clientFactory {
     @Test
     public void basic_use() {
-      final ConcurrentHashMap<String, AWSKMS> cache = spy(new ConcurrentHashMap<>());
 
-      final AWSKMS test =
-          AwsKmsMrkAwareMasterKeyProvider.Builder.clientFactory(cache, null).getClient("asdf");
-      assertNotEquals(null, test);
-      verify(cache, times(1)).containsKey("asdf");
     }
 
     @Test
     @DisplayName("Check for early return (Postcondition): If a client already exists, use that.")
     public void use_clients_that_exist() {
-      final String region = "asdf";
-      final ConcurrentHashMap<String, AWSKMS> cache = spy(new ConcurrentHashMap<>());
-      // Add something so we can verify that we get it
-      final AWSKMS client = mock(AWSKMS.class);
-      cache.put(region, client);
 
-      final AWSKMS test =
           AwsKmsMrkAwareMasterKeyProvider.Builder.clientFactory(cache, null).getClient(region);
 
       assertEquals(client, test);
@@ -810,14 +756,12 @@ public class AwsKmsMrkAwareMasterKeyProviderTest {
     public void basic_use() {
       final String identifier =
           "arn:aws:kms:us-west-2:111122223333:key/mrk-edb7fe6942894d32ac46dbb1c922d574";
-      final AWSKMS client = Mockito.spy(new MockKMSClient());
-      final RegionalClientSupplier supplier = mock(RegionalClientSupplier.class);
-      when(supplier.getClient("us-west-2")).thenReturn(client);
+
       final MasterKeyRequest request = MasterKeyRequest.newBuilder().build();
 
       final AwsKmsMrkAwareMasterKeyProvider mkp =
           AwsKmsMrkAwareMasterKeyProvider.builder()
-              .withCustomClientFactory(supplier)
+
               .buildStrict(identifier);
 
       // = compliance/framework/aws-kms/aws-kms-mrk-aware-master-key-provider.txt#2.8

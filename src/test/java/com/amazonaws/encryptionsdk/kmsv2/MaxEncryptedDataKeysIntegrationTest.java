@@ -3,35 +3,35 @@
 
 package com.amazonaws.encryptionsdk.kmsv2;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.mockito.Mockito.*;
+
 import com.amazonaws.encryptionsdk.AwsCrypto;
 import com.amazonaws.encryptionsdk.TestUtils;
 import com.amazonaws.encryptionsdk.exception.AwsCryptoException;
-import com.amazonaws.encryptionsdk.kms.KmsMasterKeyProvider;
-import com.amazonaws.services.kms.AWSKMS;
-import com.amazonaws.services.kms.AWSKMSClientBuilder;
-import org.junit.Before;
-import org.junit.Test;
-
+import com.amazonaws.encryptionsdk.kms.KMSTestFixtures;
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.junit.Assert.assertArrayEquals;
-import static org.mockito.Mockito.*;
+import org.junit.Before;
+import org.junit.Test;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.kms.KmsClient;
+import software.amazon.awssdk.services.kms.model.DecryptRequest;
 
 public class MaxEncryptedDataKeysIntegrationTest {
   private static final byte[] PLAINTEXT = {1, 2, 3, 4};
   private static final int MAX_EDKS = 3;
 
-  private AWSKMS testClient_;
-  private KmsMasterKeyProvider.RegionalClientSupplier testClientSupplier_;
+  private KmsClient testClient_;
+  private RegionalClientSupplier testClientSupplier_;
   private AwsCrypto testCryptoClient_;
 
   @Before
   public void setup() {
-    testClient_ = spy(AWSKMSClientBuilder.standard().withRegion("us-west-2").build());
+    testClient_ = spy(new ProxyKmsClient(KmsClient.builder().region(Region.US_WEST_2).build()));
     testClientSupplier_ =
-        regionName -> {
-          if (regionName.equals("us-west-2")) {
+        region -> {
+          if (region == Region.US_WEST_2) {
             return testClient_;
           }
           throw new AwsCryptoException(
@@ -46,7 +46,7 @@ public class MaxEncryptedDataKeysIntegrationTest {
       keyIds.add(KMSTestFixtures.US_WEST_2_KEY_ID);
     }
     return KmsMasterKeyProvider.builder()
-        .withCustomClientFactory(testClientSupplier_)
+        .customRegionalClientSupplier(testClientSupplier_)
         .buildStrict(keyIds);
   }
 
@@ -83,6 +83,6 @@ public class MaxEncryptedDataKeysIntegrationTest {
         AwsCryptoException.class,
         "Ciphertext encrypted data keys exceed maxEncryptedDataKeys",
         () -> testCryptoClient_.decryptData(provider, ciphertext));
-    verify(testClient_, never()).decrypt(any());
+    verify(testClient_, never()).decrypt((DecryptRequest) any());
   }
 }

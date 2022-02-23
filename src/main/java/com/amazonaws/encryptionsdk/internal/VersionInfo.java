@@ -24,13 +24,29 @@ public class VersionInfo {
    * Loads the version of the library
    */
   public static String loadUserAgent() {
+    return USER_AGENT_PREFIX + versionNumber();
+  }
+
+  /**
+   * This returns the API name compatible with the AWS SDK v2
+   *
+   * @return the name of the library with a tag indicating intended for AWS SDK v2
+   */
+  public static String apiName() {
+    return USER_AGENT_PREFIX.substring(0, USER_AGENT_PREFIX.length() - 1);
+  }
+
+  /*
+   * String representation of the library version e.g. 2.3.3
+   */
+  public static String versionNumber() {
     try {
       final Properties properties = new Properties();
       final ClassLoader loader = VersionInfo.class.getClassLoader();
       properties.load(loader.getResourceAsStream("project.properties"));
-      return USER_AGENT_PREFIX + properties.getProperty("version");
+      return properties.getProperty("version");
     } catch (final IOException ex) {
-      return USER_AGENT_PREFIX + UNKNOWN_VERSION;
+      return UNKNOWN_VERSION;
     }
   }
 }

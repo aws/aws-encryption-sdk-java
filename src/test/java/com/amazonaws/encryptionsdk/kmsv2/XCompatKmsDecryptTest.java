@@ -3,29 +3,27 @@
 
 package com.amazonaws.encryptionsdk.kmsv2;
 
+import static org.junit.Assert.assertArrayEquals;
+
 import com.amazonaws.encryptionsdk.AwsCrypto;
 import com.amazonaws.encryptionsdk.CryptoResult;
-import com.amazonaws.encryptionsdk.kms.KmsMasterKeyProvider;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.*;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.*;
-
-import static org.junit.Assert.assertArrayEquals;
-
 @RunWith(Parameterized.class)
 public class XCompatKmsDecryptTest {
-  private String plaintextFileName;
-  private String ciphertextFileName;
-  private String kmsKeyId;
+  private final String plaintextFileName;
+  private final String ciphertextFileName;
+  private final String kmsKeyId;
 
   public XCompatKmsDecryptTest(
       String plaintextFileName, String ciphertextFileName, String kmsKeyId) {
@@ -44,7 +42,7 @@ public class XCompatKmsDecryptTest {
               + "aws_encryption_sdk_resources";
     }
 
-    List<Object[]> testCases_ = new ArrayList<Object[]>();
+    List<Object[]> testCases_ = new ArrayList<>();
 
     String ciphertextManifestName =
         StringUtils.join(
@@ -89,9 +87,10 @@ public class XCompatKmsDecryptTest {
     AwsCrypto crypto = AwsCrypto.standard();
     final KmsMasterKeyProvider masterKeyProvider =
         KmsMasterKeyProvider.builder().buildStrict(kmsKeyId);
-    byte ciphertextBytes[] = Files.readAllBytes(Paths.get(ciphertextFileName));
-    byte plaintextBytes[] = Files.readAllBytes(Paths.get(plaintextFileName));
-    final CryptoResult decryptResult = crypto.decryptData(masterKeyProvider, ciphertextBytes);
-    assertArrayEquals(plaintextBytes, (byte[]) decryptResult.getResult());
+    byte[] ciphertextBytes = Files.readAllBytes(Paths.get(ciphertextFileName));
+    byte[] plaintextBytes = Files.readAllBytes(Paths.get(plaintextFileName));
+    final CryptoResult<byte[], KmsMasterKey> decryptResult =
+        crypto.decryptData(masterKeyProvider, ciphertextBytes);
+    assertArrayEquals(plaintextBytes, decryptResult.getResult());
   }
 }
