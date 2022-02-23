@@ -72,8 +72,7 @@ public class MaxEncryptedDataKeysIntegrationTest {
     TestUtils.assertThrows(
         AwsCryptoException.class,
         "Encrypted data keys exceed maxEncryptedDataKeys",
-        () ->
-            testCryptoClient_.encryptData(provider, PLAINTEXT));
+        () -> testCryptoClient_.encryptData(provider, PLAINTEXT));
   }
 
   @Test

@@ -21,9 +21,7 @@ import software.amazon.awssdk.services.kms.model.KmsInternalException;
 import software.amazon.awssdk.services.kms.model.KmsInvalidStateException;
 import software.amazon.awssdk.services.kms.model.NotFoundException;
 
-/**
- * This wraps KmsClient since the default implementation is final.
- */
+/** This wraps KmsClient since the default implementation is final. */
 class ProxyKmsClient implements KmsClient {
   private final KmsClient proxiedClient_;
 
@@ -43,21 +41,28 @@ class ProxyKmsClient implements KmsClient {
 
   @Override
   public DecryptResponse decrypt(DecryptRequest decryptRequest)
-      throws NotFoundException, DisabledException, InvalidCiphertextException, KeyUnavailableException, IncorrectKeyException, InvalidKeyUsageException, DependencyTimeoutException, InvalidGrantTokenException, KmsInternalException, KmsInvalidStateException, AwsServiceException, SdkClientException, KmsException {
+      throws NotFoundException, DisabledException, InvalidCiphertextException,
+          KeyUnavailableException, IncorrectKeyException, InvalidKeyUsageException,
+          DependencyTimeoutException, InvalidGrantTokenException, KmsInternalException,
+          KmsInvalidStateException, AwsServiceException, SdkClientException, KmsException {
     return proxiedClient_.decrypt(decryptRequest);
   }
 
   @Override
   public EncryptResponse encrypt(EncryptRequest encryptRequest)
-      throws NotFoundException, DisabledException, KeyUnavailableException, DependencyTimeoutException, InvalidKeyUsageException, InvalidGrantTokenException, KmsInternalException, KmsInvalidStateException, AwsServiceException, SdkClientException, KmsException {
+      throws NotFoundException, DisabledException, KeyUnavailableException,
+          DependencyTimeoutException, InvalidKeyUsageException, InvalidGrantTokenException,
+          KmsInternalException, KmsInvalidStateException, AwsServiceException, SdkClientException,
+          KmsException {
     return proxiedClient_.encrypt(encryptRequest);
   }
 
   @Override
   public GenerateDataKeyResponse generateDataKey(GenerateDataKeyRequest generateDataKeyRequest)
-      throws NotFoundException, DisabledException, KeyUnavailableException, DependencyTimeoutException, InvalidKeyUsageException, InvalidGrantTokenException, KmsInternalException, KmsInvalidStateException, AwsServiceException, SdkClientException, KmsException {
+      throws NotFoundException, DisabledException, KeyUnavailableException,
+          DependencyTimeoutException, InvalidKeyUsageException, InvalidGrantTokenException,
+          KmsInternalException, KmsInvalidStateException, AwsServiceException, SdkClientException,
+          KmsException {
     return proxiedClient_.generateDataKey(generateDataKeyRequest);
   }
-
-
 }

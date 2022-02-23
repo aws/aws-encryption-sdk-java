@@ -15,7 +15,6 @@ import com.amazonaws.encryptionsdk.internal.VersionInfo;
 import com.amazonaws.encryptionsdk.kms.DiscoveryFilter;
 import com.amazonaws.encryptionsdk.kms.KMSTestFixtures;
 import com.amazonaws.encryptionsdk.model.KeyBlob;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
@@ -24,7 +23,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import software.amazon.awssdk.auth.credentials.AwsCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.awscore.AwsRequest;
@@ -32,7 +30,6 @@ import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
 import software.amazon.awssdk.core.ApiName;
 import software.amazon.awssdk.core.SdkRequest;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
-import software.amazon.awssdk.core.exception.AbortedException;
 import software.amazon.awssdk.core.exception.ApiCallAttemptTimeoutException;
 import software.amazon.awssdk.core.exception.ApiCallTimeoutException;
 import software.amazon.awssdk.core.interceptor.Context;
@@ -54,8 +51,10 @@ public class KMSProviderBuilderIntegrationTests {
 
   @Before
   public void setup() {
-    testUSWestClient__ = spy(new ProxyKmsClient(KmsClient.builder().region(Region.US_WEST_2).build()));
-    testEUCentralClient__ = spy(new ProxyKmsClient(KmsClient.builder().region(Region.EU_CENTRAL_1).build()));
+    testUSWestClient__ =
+        spy(new ProxyKmsClient(KmsClient.builder().region(Region.US_WEST_2).build()));
+    testEUCentralClient__ =
+        spy(new ProxyKmsClient(KmsClient.builder().region(Region.EU_CENTRAL_1).build()));
     testClientSupplier__ =
         region -> {
           if (region == Region.US_WEST_2) {
@@ -124,7 +123,7 @@ public class KMSProviderBuilderIntegrationTests {
     assertEquals(kms, kmsCache.get().get(Region.US_WEST_2));
   }
 
-  //============================================================================== GOOD
+  // ============================================================================== GOOD
 
   @Test
   public void whenConstructedWithoutArguments_canUseMultipleRegions() throws Exception {
@@ -337,32 +336,34 @@ public class KMSProviderBuilderIntegrationTests {
       AwsCrypto.standard().encryptData(mkp, new byte[1]);
       fail("Expected exception");
     } catch (Exception e) {
-      if (!(e instanceof ApiCallAttemptTimeoutException) &&
-          !(e instanceof ApiCallTimeoutException)) {
+      if (!(e instanceof ApiCallAttemptTimeoutException)
+          && !(e instanceof ApiCallTimeoutException)) {
         throw e;
       }
     }
   }
 
-  //================================================= BAD
+  // ================================================= BAD
 
   @Test
   public void whenBuilderCloned_configurationIsRetained() throws Exception {
     // TODO: remove test of credentials provider since no longer domain of builder supplier
-    AwsCredentialsProvider customProvider1 = spy(new ProxyCredentialsProvider(DefaultCredentialsProvider.builder().build()));
-    AwsCredentialsProvider customProvider2 = spy(new ProxyCredentialsProvider(DefaultCredentialsProvider.builder().build()));
+    AwsCredentialsProvider customProvider1 =
+        spy(new ProxyCredentialsProvider(DefaultCredentialsProvider.builder().build()));
+    AwsCredentialsProvider customProvider2 =
+        spy(new ProxyCredentialsProvider(DefaultCredentialsProvider.builder().build()));
 
-    KmsMasterKeyProvider.Builder builder = KmsMasterKeyProvider.builder()
-        .builderSupplier(() -> KmsClient.builder()
-            .credentialsProvider(customProvider1));
+    KmsMasterKeyProvider.Builder builder =
+        KmsMasterKeyProvider.builder()
+            .builderSupplier(() -> KmsClient.builder().credentialsProvider(customProvider1));
 
     KmsMasterKeyProvider.Builder builder2 = builder.clone();
 
     // This will mutate the first builder to change the creds, but leave the clone unchanged.
-    MasterKeyProvider<?> mkp2 = builder
-        .builderSupplier(() ->
-            KmsClient.builder().credentialsProvider(customProvider2))
-        .buildStrict(KMSTestFixtures.TEST_KEY_IDS[0]);
+    MasterKeyProvider<?> mkp2 =
+        builder
+            .builderSupplier(() -> KmsClient.builder().credentialsProvider(customProvider2))
+            .buildStrict(KMSTestFixtures.TEST_KEY_IDS[0]);
     MasterKeyProvider<?> mkp1 = builder2.buildStrict(KMSTestFixtures.TEST_KEY_IDS[0]);
 
     CryptoResult<byte[], ?> result = AwsCrypto.standard().encryptData(mkp1, new byte[0]);
@@ -416,13 +417,16 @@ public class KMSProviderBuilderIntegrationTests {
                 }
 
                 AwsRequest awsRequest = (AwsRequest) context.request();
-                if (!awsRequest.overrideConfiguration().isPresent()) {
-                  return awsRequest;
+                AwsRequestOverrideConfiguration.Builder overrideConfiguration;
+                if (awsRequest.overrideConfiguration().isPresent()) {
+                  overrideConfiguration = awsRequest.overrideConfiguration().get().toBuilder();
+                } else {
+                  overrideConfiguration = AwsRequestOverrideConfiguration.builder();
                 }
 
                 AwsRequestOverrideConfiguration newConfig =
-                    awsRequest.overrideConfiguration().get().toBuilder()
-                        .addApiName(ApiName.builder().name("NEW_API").build())
+                    overrideConfiguration
+                        .addApiName(ApiName.builder().name("NEW_API").version("0.0.1").build())
                         .build();
 
                 awsRequest = awsRequest.toBuilder().overrideConfiguration(newConfig).build();
@@ -430,8 +434,8 @@ public class KMSProviderBuilderIntegrationTests {
               }
 
               @Override
-              public void afterMarshalling(
-                  Context.AfterMarshalling context, ExecutionAttributes executionAttributes) {
+              public void beforeTransmission(
+                  Context.BeforeTransmission context, ExecutionAttributes executionAttributes) {
                 // Just for spying
               }
             });
@@ -445,28 +449,19 @@ public class KMSProviderBuilderIntegrationTests {
                             ClientOverrideConfiguration.builder()
                                 .addExecutionInterceptor(interceptor)
                                 .build()))
-            //            .withClientBuilder(
-            //                KmsClientClientBuilder.standard()
-            //                    .withRequestHandlers(handler)
-            //                    .withClientConfiguration(
-            //                        new ClientConfiguration()
-            //                            .withUserAgentPrefix("TEST-UA-PREFIX")
-            //                            .withUserAgentSuffix("TEST-UA-SUFFIX")))
-            .clone()
             .buildStrict(KMSTestFixtures.TEST_KEY_IDS[0]);
 
     AwsCrypto.standard().encryptData(mkp, new byte[0]);
 
     verify(interceptor, atLeastOnce()).modifyRequest(any(), any());
 
-    ArgumentCaptor<Context.AfterMarshalling> captor =
-        ArgumentCaptor.forClass(Context.AfterMarshalling.class);
-    verify(interceptor, atLeastOnce()).afterMarshalling(captor.capture(), any());
+    ArgumentCaptor<Context.BeforeTransmission> captor =
+        ArgumentCaptor.forClass(Context.BeforeTransmission.class);
+    verify(interceptor, atLeastOnce()).beforeTransmission(captor.capture(), any());
 
     String ua = captor.getValue().httpRequest().headers().get("User-Agent").get(0);
 
-    assertTrue(ua.contains("TEST-UA-PREFIX"));
-    assertTrue(ua.contains("TEST-UA-SUFFIX"));
+    assertTrue(ua.contains("NEW_API/0.0.1"));
     assertTrue(ua.contains(VersionInfo.loadUserAgent()));
   }
 
