@@ -120,12 +120,6 @@ public final class AwsKmsMrkAwareMasterKeyProvider
       return this;
     }
 
-    private RuntimeException clientSupplierComboException() {
-      return new IllegalStateException(
-          "withCustomClientFactory cannot be used in conjunction with "
-              + "withCredentials or withClientBuilder");
-    }
-
     /**
      * Configures the {@link AwsKmsMrkAwareMasterKeyProvider} to use settings from this {@link
      * KmsClientBuilder} to configure KMS clients. Note that the region set on this builder will be
@@ -140,6 +134,11 @@ public final class AwsKmsMrkAwareMasterKeyProvider
 
       this.builderSupplier_ = supplier;
       return this;
+    }
+
+    private RuntimeException clientSupplierComboException() {
+      return new IllegalStateException(
+          "only one of builderSupplier and customRegionalClientSupplier may be used");
     }
 
     /**
