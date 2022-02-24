@@ -325,7 +325,7 @@ public final class AwsKmsMrkAwareMasterKeyProvider
       throw new AwsCryptoException(
           "Can't use non-ARN key identifiers or aliases when " + "no default region is set");
     }
-    /* Precondition (untested): Discovery filter is only valid in discovery mode. */
+    /* Precondition: Discovery filter is only valid in discovery mode. */
     if (!isDiscovery && discoveryFilter != null) {
       throw new IllegalArgumentException(
           "Strict mode cannot be configured with a " + "discovery filter.");

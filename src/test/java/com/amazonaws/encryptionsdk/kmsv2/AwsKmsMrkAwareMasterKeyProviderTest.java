@@ -15,9 +15,11 @@ import com.amazonaws.encryptionsdk.exception.NoSuchMasterKeyException;
 import com.amazonaws.encryptionsdk.exception.UnsupportedProviderException;
 import com.amazonaws.encryptionsdk.kms.DiscoveryFilter;
 import com.amazonaws.encryptionsdk.model.KeyBlob;
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.jupiter.api.DisplayName;
@@ -27,8 +29,10 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.kms.KmsClient;
+import software.amazon.awssdk.services.kms.KmsClientBuilder;
 import software.amazon.awssdk.services.kms.model.DecryptRequest;
 import software.amazon.awssdk.services.kms.model.DecryptResponse;
 
@@ -260,6 +264,55 @@ public class AwsKmsMrkAwareMasterKeyProviderTest {
                   .defaultRegion(null)
                   .discoveryMrkRegion(null)
                   .buildDiscovery());
+    }
+
+    @Test
+    @DisplayName("Precondition: Discovery filter is only valid in discovery mode.")
+    public void strict_cannot_have_discovery_filter() {
+      assertThrows(
+          IllegalArgumentException.class,
+          () -> {
+            AwsKmsMrkAwareMasterKeyProvider mkp =
+                AwsKmsMrkAwareMasterKeyProvider.builder()
+                    .buildStrict(
+                        "arn:aws:kms:us-west-2:111122223333:key/mrk-edb7fe6942894d32ac46dbb1c922d574");
+
+            Field field = mkp.getClass().getDeclaredField("discoveryFilter_");
+            field.setAccessible(true);
+            DiscoveryFilter filter = new DiscoveryFilter("partition", "accountId1");
+            field.set(mkp, filter);
+            field.setAccessible(false);
+
+            mkp.withGrantTokens("token1", "token2");
+          });
+    }
+
+    @Test
+    @DisplayName("Precondition: Discovery mode can not have any keys to filter.")
+    public void discovery_cannot_have_any_keys() {
+      assertThrows(
+          IllegalArgumentException.class,
+          () -> {
+            AwsKmsMrkAwareMasterKeyProvider mkp =
+                AwsKmsMrkAwareMasterKeyProvider.builder().buildDiscovery();
+
+            Field field = mkp.getClass().getDeclaredField("keyIds_");
+            field.setAccessible(true);
+            List<String> keyIds = Arrays.asList("keyId1", "keyId2");
+            field.set(mkp, keyIds);
+            field.setAccessible(false);
+
+            mkp.withGrantTokens("token1", "token2");
+          });
+    }
+
+    @Test
+    public void get_grant_tokens() {
+      AwsKmsMrkAwareMasterKeyProvider mkp =
+          AwsKmsMrkAwareMasterKeyProvider.builder().buildDiscovery();
+      mkp = mkp.withGrantTokens("token1", "token2");
+      assert (mkp.getGrantTokens()).contains("token1");
+      assert (mkp.getGrantTokens()).contains("token2");
     }
 
     @Test
@@ -803,6 +856,36 @@ public class AwsKmsMrkAwareMasterKeyProviderTest {
       final KmsClient test =
           AwsKmsMrkAwareMasterKeyProvider.Builder.clientFactory(cache, null).getClient(region);
 
+      assertEquals(client, test);
+    }
+
+    @Test
+    public void uses_builder_supplier() {
+      final ConcurrentHashMap<Region, KmsClient> cache = spy(new ConcurrentHashMap<>());
+      final Region region = Region.of("asdf");
+
+      KmsClientBuilder builder = mock(KmsClientBuilder.class);
+      KmsClient client = mock(KmsClient.class);
+      ClientOverrideConfiguration.Builder overrideBuilder =
+          mock(ClientOverrideConfiguration.Builder.class);
+
+      when(builder.region(any())).thenReturn(builder);
+      when(builder.build()).thenReturn(client);
+      doAnswer(
+              ans -> {
+                Consumer<ClientOverrideConfiguration.Builder> consumer = ans.getArgument(0);
+                consumer.accept(overrideBuilder);
+                return builder;
+              })
+          .when(builder)
+          .overrideConfiguration((Consumer<ClientOverrideConfiguration.Builder>) any());
+
+      final KmsClient test =
+          AwsKmsMrkAwareMasterKeyProvider.Builder.clientFactory(cache, () -> builder)
+              .getClient(region);
+
+      verify(builder, times(1)).build();
+      verify(overrideBuilder, times(1)).addExecutionInterceptor(any());
       assertEquals(client, test);
     }
   }

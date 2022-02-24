@@ -183,7 +183,7 @@ public class KmsMasterKeyProvider extends MasterKeyProvider<KmsMasterKey> implem
       RegionalClientSupplier supplier = clientFactory();
 
       return new KmsMasterKeyProvider(
-          supplier, defaultRegion_, new ArrayList<String>(keyIds), emptyList(), isDiscovery, null);
+          supplier, defaultRegion_, new ArrayList<>(keyIds), emptyList(), isDiscovery, null);
     }
 
     /**
@@ -280,10 +280,6 @@ public class KmsMasterKeyProvider extends MasterKeyProvider<KmsMasterKey> implem
     this.isDiscovery_ = isDiscovery;
     this.discoveryFilter_ = discoveryFilter;
     this.grantTokens_ = grantTokens;
-  }
-
-  private static RegionalClientSupplier defaultProvider() {
-    return builder().clientFactory();
   }
 
   /** Returns "aws-kms" */
