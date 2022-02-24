@@ -40,6 +40,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import software.amazon.awssdk.regions.Region;
 
 @RunWith(Parameterized.class)
 public class TestVectorRunner {
@@ -104,19 +105,27 @@ public class TestVectorRunner {
       final Map<String, KeyEntry> keys =
           parseKeyManifest(readJsonMapFromJar(jar, (String) manifest.get("keys")));
 
-      final KmsMasterKeyProvider kmsProv =
+      final KmsMasterKeyProvider kmsProvV1 =
           KmsMasterKeyProvider.builder()
               .withCredentials(new DefaultAWSCredentialsProviderChain())
+              .buildDiscovery();
+
+      final com.amazonaws.encryptionsdk.kmsv2.KmsMasterKeyProvider kmsProvV2 =
+          com.amazonaws.encryptionsdk.kmsv2.KmsMasterKeyProvider.builder()
               .buildDiscovery();
 
       List<Object[]> testCases = new ArrayList<>();
       for (Map.Entry<String, Map<String, Object>> testEntry :
           ((Map<String, Map<String, Object>>) manifest.get("tests")).entrySet()) {
         String testName = testEntry.getKey();
-        TestCase testCase = parseTest(testEntry.getKey(), testEntry.getValue(), keys, jar, kmsProv);
+
+        TestCase testCaseV1 = parseTest(testEntry.getKey(), testEntry.getValue(), keys, jar, kmsProvV1);
+        TestCase testCaseV2 = parseTest(testEntry.getKey(), testEntry.getValue(), keys, jar, kmsProvV2);
+
         for (DecryptionMethod decryptionMethod : DecryptionMethod.values()) {
-          if (testCase.signaturePolicy.equals(decryptionMethod.signaturePolicy())) {
-            testCases.add(new Object[] {testName, testCase, decryptionMethod});
+          if (testCaseV1.signaturePolicy.equals(decryptionMethod.signaturePolicy())) {
+            testCases.add(new Object[] {testName, testCaseV1, decryptionMethod});
+            testCases.add(new Object[] {testName+"-V2", testCaseV2, decryptionMethod});
           }
         }
       }
@@ -157,7 +166,7 @@ public class TestVectorRunner {
   }
 
   @SuppressWarnings("unchecked")
-  private static TestCase parseTest(
+  private static <T> TestCase parseTest(
       String testName,
       Map<String, Object> data,
       Map<String, KeyEntry> keys,
@@ -198,6 +207,110 @@ public class TestVectorRunner {
               }
               return AwsKmsMrkAwareMasterKeyProvider.builder()
                   .withDiscoveryMrkRegion(defaultMrkRegion)
+                  .buildDiscovery(discoveryFilter);
+            } else if ("raw".equals(type)) {
+              final String provId = (String) mkEntry.get("provider-id");
+              final String algorithm = (String) mkEntry.get("encryption-algorithm");
+              if ("aes".equals(algorithm)) {
+                mks.add(
+                    JceMasterKey.getInstance(
+                        (SecretKey) key.key, provId, key.keyId, "AES/GCM/NoPadding"));
+              } else if ("rsa".equals(algorithm)) {
+                String transformation = "RSA/ECB/";
+                final String padding = (String) mkEntry.get("padding-algorithm");
+                if ("pkcs1".equals(padding)) {
+                  transformation += "PKCS1Padding";
+                } else if ("oaep-mgf1".equals(padding)) {
+                  final String hashName =
+                      ((String) mkEntry.get("padding-hash")).replace("sha", "sha-").toUpperCase();
+                  transformation += "OAEPWith" + hashName + "AndMGF1Padding";
+                } else {
+                  throw new IllegalArgumentException("Unsupported padding:" + padding);
+                }
+                final PublicKey wrappingKey;
+                final PrivateKey unwrappingKey;
+                if (key.key instanceof PublicKey) {
+                  wrappingKey = (PublicKey) key.key;
+                  unwrappingKey = null;
+                } else {
+                  wrappingKey = null;
+                  unwrappingKey = (PrivateKey) key.key;
+                }
+                mks.add(
+                    JceMasterKey.getInstance(
+                        wrappingKey, unwrappingKey, provId, key.keyId, transformation));
+              } else {
+                throw new IllegalArgumentException("Unsupported algorithm: " + algorithm);
+              }
+            } else {
+              throw new IllegalArgumentException("Unsupported Key Type: " + type);
+            }
+          }
+
+          return MultipleProviderFactory.buildMultiProvider(mks);
+        };
+
+    @SuppressWarnings("unchecked")
+    final Map<String, Object> resultSpec = (Map<String, Object>) data.get("result");
+    final ResultMatcher matcher = parseResultMatcher(jar, resultSpec);
+
+    String decryptionMethodSpec = (String) data.get("decryption-method");
+    SignaturePolicy signaturePolicy = SignaturePolicy.AllowEncryptAllowDecrypt;
+    if (decryptionMethodSpec != null) {
+      if ("streaming-unsigned-only".equals(decryptionMethodSpec)) {
+        signaturePolicy = SignaturePolicy.AllowEncryptForbidDecrypt;
+      } else {
+        throw new IllegalArgumentException(
+            "Unsupported Decryption Method: " + decryptionMethodSpec);
+      }
+    }
+
+    return new TestCase(testName, ciphertextURL, mkpSupplier, matcher, signaturePolicy);
+  }
+
+  @SuppressWarnings("unchecked")
+  private static TestCase parseTest(
+      String testName,
+      Map<String, Object> data,
+      Map<String, KeyEntry> keys,
+      JarFile jar,
+      com.amazonaws.encryptionsdk.kmsv2.KmsMasterKeyProvider kmsProv)
+      throws IOException {
+    final String ciphertextURL = (String) data.get("ciphertext");
+    cacheData(jar, ciphertextURL);
+
+    Supplier<MasterKeyProvider<?>> mkpSupplier =
+        () -> {
+          @SuppressWarnings("generic")
+          final List<MasterKey<?>> mks = new ArrayList<>();
+
+          for (Map<String, Object> mkEntry : (List<Map<String, Object>>) data.get("master-keys")) {
+            final String type = (String) mkEntry.get("type");
+            final String keyName = (String) mkEntry.get("key");
+            final KeyEntry key = keys.get(keyName);
+
+            if ("aws-kms".equals(type)) {
+              mks.add(kmsProv.getMasterKey(key.keyId));
+            } else if ("aws-kms-mrk-aware".equals(type)) {
+              com.amazonaws.encryptionsdk.kmsv2.AwsKmsMrkAwareMasterKeyProvider provider =
+                  com.amazonaws.encryptionsdk.kmsv2.AwsKmsMrkAwareMasterKeyProvider.builder()
+                      .buildStrict(key.keyId);
+              mks.add(provider.getMasterKey(key.keyId));
+            } else if ("aws-kms-mrk-aware-discovery".equals(type)) {
+              final String defaultMrkRegion = (String) mkEntry.get("default-mrk-region");
+              final Map<String, Object> discoveryFilterSpec =
+                  (Map<String, Object>) mkEntry.get("aws-kms-discovery-filter");
+              final DiscoveryFilter discoveryFilter;
+              if (discoveryFilterSpec != null) {
+                discoveryFilter =
+                    new DiscoveryFilter(
+                        (String) discoveryFilterSpec.get("partition"),
+                        (List<String>) discoveryFilterSpec.get("account-ids"));
+              } else {
+                discoveryFilter = null;
+              }
+              return com.amazonaws.encryptionsdk.kmsv2.AwsKmsMrkAwareMasterKeyProvider.builder()
+                  .discoveryMrkRegion(Region.of(defaultMrkRegion))
                   .buildDiscovery(discoveryFilter);
             } else if ("raw".equals(type)) {
               final String provId = (String) mkEntry.get("provider-id");
