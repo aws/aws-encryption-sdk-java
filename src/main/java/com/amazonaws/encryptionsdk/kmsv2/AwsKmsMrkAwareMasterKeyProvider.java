@@ -330,7 +330,7 @@ public final class AwsKmsMrkAwareMasterKeyProvider
       throw new IllegalArgumentException(
           "Strict mode cannot be configured with a " + "discovery filter.");
     }
-    /* Precondition (untested): Discovery mode can not have any keys to filter. */
+    /* Precondition: Discovery mode can not have any keys to filter. */
     if (isDiscovery && !keyIds.isEmpty()) {
       throw new IllegalArgumentException("Discovery mode can not be configured with keys.");
     }
