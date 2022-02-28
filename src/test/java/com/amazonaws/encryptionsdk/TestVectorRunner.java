@@ -111,21 +111,22 @@ public class TestVectorRunner {
               .buildDiscovery();
 
       final com.amazonaws.encryptionsdk.kmsv2.KmsMasterKeyProvider kmsProvV2 =
-          com.amazonaws.encryptionsdk.kmsv2.KmsMasterKeyProvider.builder()
-              .buildDiscovery();
+          com.amazonaws.encryptionsdk.kmsv2.KmsMasterKeyProvider.builder().buildDiscovery();
 
       List<Object[]> testCases = new ArrayList<>();
       for (Map.Entry<String, Map<String, Object>> testEntry :
           ((Map<String, Map<String, Object>>) manifest.get("tests")).entrySet()) {
         String testName = testEntry.getKey();
 
-        TestCase testCaseV1 = parseTest(testEntry.getKey(), testEntry.getValue(), keys, jar, kmsProvV1);
-        TestCase testCaseV2 = parseTest(testEntry.getKey(), testEntry.getValue(), keys, jar, kmsProvV2);
+        TestCase testCaseV1 =
+            parseTest(testEntry.getKey(), testEntry.getValue(), keys, jar, kmsProvV1);
+        TestCase testCaseV2 =
+            parseTest(testEntry.getKey(), testEntry.getValue(), keys, jar, kmsProvV2);
 
         for (DecryptionMethod decryptionMethod : DecryptionMethod.values()) {
           if (testCaseV1.signaturePolicy.equals(decryptionMethod.signaturePolicy())) {
             testCases.add(new Object[] {testName, testCaseV1, decryptionMethod});
-            testCases.add(new Object[] {testName+"-V2", testCaseV2, decryptionMethod});
+            testCases.add(new Object[] {testName + "-V2", testCaseV2, decryptionMethod});
           }
         }
       }
