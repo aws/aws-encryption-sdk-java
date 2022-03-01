@@ -11,5 +11,8 @@ import org.junit.runners.Suite;
   XCompatKmsDecryptTest.class,
   KMSProviderBuilderIntegrationTests.class,
   MaxEncryptedDataKeysIntegrationTest.class,
+  com.amazonaws.encryptionsdk.kms.KMSProviderBuilderIntegrationTests.class,
+  com.amazonaws.encryptionsdk.kms.MaxEncryptedDataKeysIntegrationTest.class,
+  com.amazonaws.encryptionsdk.kms.XCompatKmsDecryptTest.class
 })
 public class IntegrationTestSuite {}
