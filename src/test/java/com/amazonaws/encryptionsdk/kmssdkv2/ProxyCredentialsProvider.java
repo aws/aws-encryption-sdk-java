@@ -1,4 +1,4 @@
-package com.amazonaws.encryptionsdk.kmsv2;
+package com.amazonaws.encryptionsdk.kmssdkv2;
 
 import software.amazon.awssdk.auth.credentials.AwsCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;

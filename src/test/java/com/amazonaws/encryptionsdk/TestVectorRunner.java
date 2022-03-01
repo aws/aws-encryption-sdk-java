@@ -110,8 +110,8 @@ public class TestVectorRunner {
               .withCredentials(new DefaultAWSCredentialsProviderChain())
               .buildDiscovery();
 
-      final com.amazonaws.encryptionsdk.kmsv2.KmsMasterKeyProvider kmsProvV2 =
-          com.amazonaws.encryptionsdk.kmsv2.KmsMasterKeyProvider.builder().buildDiscovery();
+      final com.amazonaws.encryptionsdk.kmssdkv2.KmsMasterKeyProvider kmsProvV2 =
+          com.amazonaws.encryptionsdk.kmssdkv2.KmsMasterKeyProvider.builder().buildDiscovery();
 
       List<Object[]> testCases = new ArrayList<>();
       for (Map.Entry<String, Map<String, Object>> testEntry :
@@ -275,7 +275,7 @@ public class TestVectorRunner {
       Map<String, Object> data,
       Map<String, KeyEntry> keys,
       JarFile jar,
-      com.amazonaws.encryptionsdk.kmsv2.KmsMasterKeyProvider kmsProv)
+      com.amazonaws.encryptionsdk.kmssdkv2.KmsMasterKeyProvider kmsProv)
       throws IOException {
     final String ciphertextURL = (String) data.get("ciphertext");
     cacheData(jar, ciphertextURL);
@@ -293,8 +293,8 @@ public class TestVectorRunner {
             if ("aws-kms".equals(type)) {
               mks.add(kmsProv.getMasterKey(key.keyId));
             } else if ("aws-kms-mrk-aware".equals(type)) {
-              com.amazonaws.encryptionsdk.kmsv2.AwsKmsMrkAwareMasterKeyProvider provider =
-                  com.amazonaws.encryptionsdk.kmsv2.AwsKmsMrkAwareMasterKeyProvider.builder()
+              com.amazonaws.encryptionsdk.kmssdkv2.AwsKmsMrkAwareMasterKeyProvider provider =
+                  com.amazonaws.encryptionsdk.kmssdkv2.AwsKmsMrkAwareMasterKeyProvider.builder()
                       .buildStrict(key.keyId);
               mks.add(provider.getMasterKey(key.keyId));
             } else if ("aws-kms-mrk-aware-discovery".equals(type)) {
@@ -310,7 +310,7 @@ public class TestVectorRunner {
               } else {
                 discoveryFilter = null;
               }
-              return com.amazonaws.encryptionsdk.kmsv2.AwsKmsMrkAwareMasterKeyProvider.builder()
+              return com.amazonaws.encryptionsdk.kmssdkv2.AwsKmsMrkAwareMasterKeyProvider.builder()
                   .discoveryMrkRegion(Region.of(defaultMrkRegion))
                   .buildDiscovery(discoveryFilter);
             } else if ("raw".equals(type)) {

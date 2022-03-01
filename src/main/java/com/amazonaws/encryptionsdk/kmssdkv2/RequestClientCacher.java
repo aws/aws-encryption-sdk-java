@@ -1,4 +1,4 @@
-package com.amazonaws.encryptionsdk.kmsv2;
+package com.amazonaws.encryptionsdk.kmssdkv2;
 
 import java.util.concurrent.ConcurrentHashMap;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;

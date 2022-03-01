@@ -90,9 +90,9 @@ import org.junit.runners.Suite;
   AwsKmsMrkAwareMasterKeyProviderTest.class,
   AwsKmsMrkAwareMasterKeyTest.class,
   VersionInfoTest.class,
-  com.amazonaws.encryptionsdk.kmsv2.AwsKmsMrkAwareMasterKeyProviderTest.class,
-  com.amazonaws.encryptionsdk.kmsv2.AwsKmsMrkAwareMasterKeyTest.class,
-  com.amazonaws.encryptionsdk.kmsv2.KmsMasterKeyProviderTest.class,
-  com.amazonaws.encryptionsdk.kmsv2.KmsMasterKeyTest.class,
+  com.amazonaws.encryptionsdk.kmssdkv2.AwsKmsMrkAwareMasterKeyProviderTest.class,
+  com.amazonaws.encryptionsdk.kmssdkv2.AwsKmsMrkAwareMasterKeyTest.class,
+  com.amazonaws.encryptionsdk.kmssdkv2.KmsMasterKeyProviderTest.class,
+  com.amazonaws.encryptionsdk.kmssdkv2.KmsMasterKeyTest.class,
 })
 public class AllTestsSuite {}

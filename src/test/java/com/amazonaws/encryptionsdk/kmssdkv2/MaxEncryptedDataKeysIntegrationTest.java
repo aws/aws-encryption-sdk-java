@@ -1,7 +1,7 @@
 // Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package com.amazonaws.encryptionsdk.kmsv2;
+package com.amazonaws.encryptionsdk.kmssdkv2;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.mockito.Mockito.*;

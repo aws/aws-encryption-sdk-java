@@ -15,4 +15,4 @@
  * Contains logic necessary to create {@link com.amazonaws.encryptionsdk.MasterKey}s backed by AWS
  * KMS keys.
  */
-package com.amazonaws.encryptionsdk.kmsv2;
+package com.amazonaws.encryptionsdk.kmssdkv2;
