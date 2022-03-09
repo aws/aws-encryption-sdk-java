@@ -14,6 +14,7 @@ phases:
   pre_build:
     commands:
         # get new project version
+      - git checkout $BRANCH
       - export VERSION=$(grep version pom.xml | head -n 1 | sed -n 's/[ \t]*<version>\(.*\)<\/version>/\1/p')
       - git config --global user.name "aws-crypto-tools-ci-bot"
       - git config --global user.email "no-reply@noemail.local"
@@ -24,7 +25,6 @@ phases:
       - echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null
       - apt update
       - apt install gh
-      - git checkout $BRANCH
   build:
     commands:
       - gh version

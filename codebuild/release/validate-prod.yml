@@ -3,12 +3,18 @@
 
 version: 0.2
 
+env:
+  variables:
+    BRANCH: "master"
+
 phases:
   install:
     runtime-versions:
       java: $JAVA_ENV_VERSION
   pre_build:
     commands:
+      - git checkout $BRANCH
+      - export VERSION=$(grep version pom.xml | head -n 1 | sed -n 's/[ \t]*<version>\(.*\)<\/version>/\1/p')
       - git clone https://github.com/aws-samples/busy-engineers-document-bucket.git
       - cd busy-engineers-document-bucket/exercises/java/encryption-context-complete
   build:

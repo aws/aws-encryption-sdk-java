@@ -4,6 +4,8 @@
 version: 0.2
 
 env:
+  variables:
+    BRANCH: "master"
   secrets-manager:
     GPG_KEY: Maven-GPG-Keys-Credentials:Keyname
     GPG_PASS: Maven-GPG-Keys-Credentials:Passphrase
@@ -16,6 +18,7 @@ phases:
       java: corretto11
   pre_build:
     commands:
+      - git checkout $BRANCH
       - export SETTINGS_FILE=$(pwd)/codebuild/release/settings.xml
       - aws secretsmanager get-secret-value --region us-west-2 --secret-id Maven-GPG-Keys --query SecretBinary --output text | base64 -d > ~/mvn_gpg.tgz
       - tar -xvf ~/mvn_gpg.tgz -C ~
