@@ -22,5 +22,5 @@ phases:
       - git checkout $GH_PAGES
       - cp -r /tmp/apidocs/* .
       - git add .
-      - git commit -m "docs: updating javadocs"
+      - 'git commit -m "docs: updating javadocs"'
       - git push
