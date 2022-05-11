@@ -44,8 +44,9 @@ public class JceMasterKey extends MasterKey<JceMasterKey> {
   private final JceKeyCipher jceKeyCipher_;
 
   /**
-   * Returns a {@code JceMasterKey} backed by {@code key} using {@code wrappingAlgorithm}. Currently
-   * "{@code AES/GCM/NoPadding}" is the only supported value for {@code wrappingAlgorithm}.
+   * Returns a {@code JceMasterKey} backed by the symmetric key {@code key} using
+   * {@code wrappingAlgorithm}. Currently "{@code AES/GCM/NoPadding}" is the only supported
+   * value for symmetric {@code wrappingAlgorithm}s.
    *
    * @param key key used to wrap/unwrap (encrypt/decrypt) {@link DataKey}s
    * @param provider
@@ -67,10 +68,10 @@ public class JceMasterKey extends MasterKey<JceMasterKey> {
   }
 
   /**
-   * Returns a {@code JceMasterKey} backed by {@code unwrappingKey} and {@code wrappingKey} using
-   * {@code wrappingAlgorithm}. Currently only RSA algorithms are supported for {@code
-   * wrappingAlgorithm}. {@code wrappingAlgorithm}. If {@code unwrappingKey} is {@code null} then
-   * the returned {@link JceMasterKey} can only be used for encryption.
+   * Returns a {@code JceMasterKey} backed by the asymmetric key pair {@code unwrappingKey} and
+   * {@code wrappingKey} using {@code wrappingAlgorithm}. Currently only RSA algorithms are
+   * supported for asymmetric {@code wrappingAlgorithm}s. If {@code unwrappingKey} is {@code null}
+   * then the returned {@link JceMasterKey} can only be used for encryption.
    *
    * @param wrappingKey key used to wrap (encrypt) {@link DataKey}s
    * @param unwrappingKey (Optional) key used to unwrap (decrypt) {@link DataKey}s.
