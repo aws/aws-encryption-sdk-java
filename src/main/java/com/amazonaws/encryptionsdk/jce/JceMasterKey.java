@@ -44,9 +44,9 @@ public class JceMasterKey extends MasterKey<JceMasterKey> {
   private final JceKeyCipher jceKeyCipher_;
 
   /**
-   * Returns a {@code JceMasterKey} backed by the symmetric key {@code key} using
-   * {@code wrappingAlgorithm}. Currently "{@code AES/GCM/NoPadding}" is the only supported
-   * value for symmetric {@code wrappingAlgorithm}s.
+   * Returns a {@code JceMasterKey} backed by the symmetric key {@code key} using {@code
+   * wrappingAlgorithm}. Currently "{@code AES/GCM/NoPadding}" is the only supported value for
+   * symmetric {@code wrappingAlgorithm}s.
    *
    * @param key key used to wrap/unwrap (encrypt/decrypt) {@link DataKey}s
    * @param provider
