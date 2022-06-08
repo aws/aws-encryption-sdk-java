@@ -107,7 +107,9 @@ public final class AwsKmsMrkAwareMasterKeyProvider
      * <p>Because the regional client supplier fully controls the client construction process, it is
      * not possible to configure the client through methods such as {@link
      * #builderSupplier(Supplier)}; if you try to use these in combination, an {@link
-     * IllegalStateException} will be thrown.
+     * IllegalStateException} will be thrown.</p>
+     *
+     * <p>Note: The AWS Encryption SDK for Java does not support the {@code KmsAsyncClient} interface.</p>
      *
      * @see KmsMasterKeyProvider.Builder#customRegionalClientSupplier(RegionalClientSupplier)
      */
@@ -124,6 +126,8 @@ public final class AwsKmsMrkAwareMasterKeyProvider
      * Configures the {@link AwsKmsMrkAwareMasterKeyProvider} to use settings from this {@link
      * KmsClientBuilder} to configure KMS clients. Note that the region set on this builder will be
      * ignored, but all other settings will be propagated into the regional clients.
+     *
+     * <p>Note: The AWS Encryption SDK for Java does not support the {@code KmsAsyncClient} interface.</p>
      *
      * @see KmsMasterKeyProvider.Builder#builderSupplier(Supplier)
      */

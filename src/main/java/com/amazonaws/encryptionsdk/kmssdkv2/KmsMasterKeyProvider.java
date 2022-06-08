@@ -87,7 +87,9 @@ public class KmsMasterKeyProvider extends MasterKeyProvider<KmsMasterKey> implem
      * <p>Because the regional client supplier fully controls the client construction process, it is
      * not possible to configure the client through methods such as {@link
      * #builderSupplier(Supplier)}; if you try to use these in combination, an {@link
-     * IllegalStateException} will be thrown.
+     * IllegalStateException} will be thrown.</p>
+     *
+     * <p>Note: The AWS Encryption SDK for Java does not support the {@code KmsAsyncClient} interface.</p>
      *
      * @param regionalClientSupplier
      * @return
@@ -108,7 +110,9 @@ public class KmsMasterKeyProvider extends MasterKeyProvider<KmsMasterKey> implem
      *
      * <p>Trying to use this method in combination with {@link
      * #customRegionalClientSupplier(RegionalClientSupplier)} will cause an {@link
-     * IllegalStateException} to be thrown.
+     * IllegalStateException} to be thrown.</p>
+     *
+     * <p>Note: The AWS Encryption SDK for Java does not support the {@code KmsAsyncClient} interface.</p>
      *
      * @param supplier Should return a new {@link KmsClientBuilder} on each invocation.
      * @return

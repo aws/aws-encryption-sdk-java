@@ -8,7 +8,7 @@ For more details about the design and architecture of the AWS Encryption SDK, se
 
 [Security issue notifications](./CONTRIBUTING.md#security-issue-notifications)
 
-See [Support Policy](./SUPPORT_POLICY.rst) for for details on the current support status of all major versions of this library.
+See [Support Policy](./SUPPORT_POLICY.rst) for details on the current support status of all major versions of this library.
 
 ## Getting Started
 
@@ -37,11 +37,13 @@ To use the AWS Encryption SDK for Java you must have:
 ### Optional Prerequisites
 
 #### AWS Integration
-You don't need an Amazon Web Services (AWS) account to use the AWS Encryption SDK, but some of the [example code][examples] require an AWS account, an AWS KMS key, and the AWS SDK for Java 1.x. (The AWS Encryption SDK for Java does not support the AWS SDK for Java 2.x.)
+You don't need an Amazon Web Services (AWS) account to use the AWS Encryption SDK, but some [example code][examples] require an AWS account, an AWS KMS key, and the AWS SDK for Java (either 1.x or 2.x).
 
 * **To create an AWS account**, go to [Sign In or Create an AWS Account](https://portal.aws.amazon.com/gp/aws/developer/registration/index.html) and then choose **I am a new user.** Follow the instructions to create an AWS account.
 
 * **To create a symmetric encryption KMS key in AWS KMS**, see [Creating Keys](https://docs.aws.amazon.com/kms/latest/developerguide/create-keys.html).
+
+* **To download and install the AWS SDK for Java 2.x**, see [Installing the AWS SDK for Java 2.x](https://docs.aws.amazon.com/sdk-for-java/v2/developer-guide/getting-started.html).
 
 * **To download and install the AWS SDK for Java 1.x**, see [Installing the AWS SDK for Java 1.x](https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/getting-started.html).
 
@@ -133,7 +135,7 @@ public class StringExample {
 }
 ```
 
-You can find more examples in the [examples directory][examples].
+You can find more examples in the [example directory][examples].
 
 ## Public API
 
