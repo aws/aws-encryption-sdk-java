@@ -37,7 +37,7 @@ To use the AWS Encryption SDK for Java you must have:
 ### Optional Prerequisites
 
 #### AWS Integration
-    You don't need an Amazon Web Services (AWS) account to use the AWS Encryption SDK, but some [example code][examples] require an AWS account, an AWS KMS key, and the AWS SDK for Java (either 1.x or 2.x). Note that the `KmsAsyncClient` is not supported, only the regular synchronous client.
+You don't need an Amazon Web Services (AWS) account to use the AWS Encryption SDK, but some [example code][examples] require an AWS account, an AWS KMS key, and the AWS SDK for Java (either 1.x or 2.x). Note that the `KmsAsyncClient` is not supported, only the regular synchronous client.
 
 * **To create an AWS account**, go to [Sign In or Create an AWS Account](https://portal.aws.amazon.com/gp/aws/developer/registration/index.html) and then choose **I am a new user.** Follow the instructions to create an AWS account.
 
