@@ -22,7 +22,8 @@ phases:
       - export SETTINGS_FILE=$(pwd)/codebuild/release/settings.xml
       - export CODEARTIFACT_TOKEN=$(aws codeartifact get-authorization-token --domain $DOMAIN --domain-owner $ACCOUNT --query authorizationToken --output text --region ${REGION})
       - export CODEARTIFACT_REPO_URL=https://${DOMAIN}-${ACCOUNT}.d.codeartifact.${REGION}.amazonaws.com/maven/${REPOSITORY}
-      - aws secretsmanager get-secret-value --region us-west-2 --secret-id Maven-GPG-CI-Keys --query SecretBinary --output text | base64 -d > $HOME/mvn_gpg
+      - aws secretsmanager get-secret-value --region us-west-2 --secret-id Maven-GPG-CI-Keys --query SecretBinary --output text | base64 -d > ~/mvn_gpg.tgz
+      - tar -xvf ~/mvn_gpg.tgz -C ~
   build:
     commands:
       - VERSION_HASH="$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)-$CODEBUILD_RESOLVED_SOURCE_VERSION"
