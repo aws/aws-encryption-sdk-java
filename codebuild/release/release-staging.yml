@@ -11,8 +11,8 @@ env:
   parameter-store:
     ACCOUNT: /CodeBuild/AccountId
   secrets-manager:
-    GPG_KEY: Maven-GPG-Keys-Credentials:Keyname
-    GPG_PASS: Maven-GPG-Keys-Credentials:Passphrase
+    GPG_KEY: Maven-GPG-Keys-Release-Credentials:Keyname
+    GPG_PASS: Maven-GPG-Keys-Release-Credentials:Passphrase
 
 phases:
   install:
@@ -23,7 +23,7 @@ phases:
       - export SETTINGS_FILE=$(pwd)/codebuild/release/settings.xml
       - export CODEARTIFACT_TOKEN=$(aws codeartifact get-authorization-token --domain $DOMAIN --domain-owner $ACCOUNT --query authorizationToken --output text --region ${REGION})
       - export CODEARTIFACT_REPO_URL=https://${DOMAIN}-${ACCOUNT}.d.codeartifact.${REGION}.amazonaws.com/maven/${REPOSITORY}
-      - aws secretsmanager get-secret-value --region us-west-2 --secret-id Maven-GPG-Keys --query SecretBinary --output text | base64 -d > ~/mvn_gpg.tgz
+      - aws secretsmanager get-secret-value --region us-west-2 --secret-id Maven-GPG-Keys-Release --query SecretBinary --output text | base64 -d > ~/mvn_gpg.tgz
       - tar -xvf ~/mvn_gpg.tgz -C ~
   build:
     commands:

@@ -7,8 +7,8 @@ env:
   variables:
     BRANCH: "master"
   secrets-manager:
-    GPG_KEY: Maven-GPG-Keys-Credentials:Keyname
-    GPG_PASS: Maven-GPG-Keys-Credentials:Passphrase
+    GPG_KEY: Maven-GPG-Keys-Release-Credentials:Keyname
+    GPG_PASS: Maven-GPG-Keys-Release-Credentials:Passphrase
     SONA_USERNAME: Sonatype-Team-Account:Username 
     SONA_PASSWORD: Sonatype-Team-Account:Password
 
@@ -20,7 +20,7 @@ phases:
     commands:
       - git checkout $BRANCH
       - export SETTINGS_FILE=$(pwd)/codebuild/release/settings.xml
-      - aws secretsmanager get-secret-value --region us-west-2 --secret-id Maven-GPG-Keys --query SecretBinary --output text | base64 -d > ~/mvn_gpg.tgz
+      - aws secretsmanager get-secret-value --region us-west-2 --secret-id Maven-GPG-Keys-Release --query SecretBinary --output text | base64 -d > ~/mvn_gpg.tgz
       - tar -xvf ~/mvn_gpg.tgz -C ~
   build:
     commands:
