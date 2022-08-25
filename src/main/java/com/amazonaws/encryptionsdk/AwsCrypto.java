@@ -13,8 +13,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
-import java.util.logging.Logger;
 import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * Provides the primary entry-point to the AWS Encryption SDK. All encryption and decryption
@@ -87,10 +87,9 @@ public class AwsCrypto {
 
   private static void warn_end_of_support() {
     LOGGER.warning(
-            "This major version (1.x) of the AWS Encryption SDK for Java has reached End-of-Support.\n" +
-                    "It will no longer receive security updates or bug fixes.\n" +
-                    "Consider updating to the latest version of the AWS Encryption SDK."
-    );
+        "This major version (1.x) of the AWS Encryption SDK for Java has reached End-of-Support.\n"
+            + "It will no longer receive security updates or bug fixes.\n"
+            + "Consider updating to the latest version of the AWS Encryption SDK.");
   }
 
   /**
