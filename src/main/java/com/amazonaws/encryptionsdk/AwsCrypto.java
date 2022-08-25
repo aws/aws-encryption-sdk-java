@@ -13,6 +13,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.logging.Logger;
 import java.util.Map;
 
 /**
@@ -65,6 +66,7 @@ import java.util.Map;
  */
 @SuppressWarnings("WeakerAccess") // this is a public API
 public class AwsCrypto {
+  private static final Logger LOGGER = Logger.getLogger(AwsCrypto.class.getName());
   private static final Map<String, String> EMPTY_MAP = Collections.emptyMap();
 
   // These are volatile because we allow unsynchronized writes via our setters,
@@ -93,6 +95,11 @@ public class AwsCrypto {
   public AwsCrypto() {
     commitmentPolicy_ = CommitmentPolicy.ForbidEncryptAllowDecrypt;
     maxEncryptedDataKeys_ = CiphertextHeaders.NO_MAX_ENCRYPTED_DATA_KEYS;
+    LOGGER.warning(
+            "This major version (1.x) of the AWS Encryption SDK for Java has reached End-of-Support.\n" +
+            "It will no longer receive security updates or bug fixes.\n" +
+            "Consider updating to the latest version of the AWS Encryption SDK."
+    );
   }
 
   private AwsCrypto(Builder builder) {
