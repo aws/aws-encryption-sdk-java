@@ -5,7 +5,7 @@ version: 0.2
 
 env:
   variables:
-    BRANCH: "master"
+    BRANCH: "mainline-1.x"
   git-credential-helper: yes
   secrets-manager:
     GH_TOKEN: Github/aws-crypto-tools-ci-bot:ESDK Release Token
