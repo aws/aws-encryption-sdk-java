@@ -27,7 +27,18 @@ phases:
   build:
     commands:
       - VERSION_HASH="$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)-$CODEBUILD_RESOLVED_SOURCE_VERSION"
-#      See https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-env-vars.html
+
+      # Remove any old artifacts with the same commit ID. This allows CI to run more than once for the same commit
+      - |
+        aws codeartifact delete-package-versions --domain $DOMAIN \
+          --repository $REPOSITORY \
+          --format maven \
+          --namespace $NAMESPACE \
+          --package $PACKAGE \
+          --versions $VERSION_HASH \
+          --region $REGION;
+
+      # See https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-env-vars.html
       - echo "Setting version in POM to $VERSION_HASH"
       - mvn versions:set -DnewVersion="$VERSION_HASH" --no-transfer-progress
       - echo "Version is now $(grep version pom.xml | head -n 1 | sed -n 's/[ \t]*<version>\(.*\)<\/version>/\1/p')"
@@ -49,14 +60,5 @@ phases:
       - |
         if expr ${CODEBUILD_BUILD_SUCCEEDING} != 1; then
           echo "An error occured while building and uploading $REPOSITORY."
-          echo "Did a previous build already upload $VERSION_HASH to $REPOSITORY?"
-          echo "Try deleting $VERSION_HASH from $REPOSITORY and restart"
-          echo "Delete Package Version Command \n
-            aws codeartifact delete-package-versions --domain $DOMAIN \
-              --repository $REPOSITORY \
-              --format maven \
-              --namespace $NAMESPACE \
-              --package $PACKAGE \
-              --versions $VERSION_HASH \
-              --region $REGION";
+          echo "Check logs above for error details."
         fi
