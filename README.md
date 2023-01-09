@@ -122,12 +122,12 @@ public class StringExample {
 
         // The AWS Encryption SDK may add information to the encryption context, so check to
         // ensure all of the values that you specified when encrypting are *included* in the returned encryption context.
-        if (!context.entrySet().stream
+        if (!context.entrySet().stream()
             .allMatch( e -> e.getValue().equals(decryptResult.getEncryptionContext().get(e.getKey())))) {
                 throw new IllegalStateException("Wrong Encryption Context!");
         }
 
-        assert Arrays.equals(decryptResult.getResult(), data.getBytes(StandardCharsets.UTF_8));
+        assert Arrays.equals(decryptResult.getResult(), plaintext.getBytes(StandardCharsets.UTF_8));
 
         // The data is correct, so return it. 
         System.out.println("Decrypted: " + new String(decryptResult.getResult(), StandardCharsets.UTF_8));
