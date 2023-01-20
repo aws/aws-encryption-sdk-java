@@ -642,7 +642,7 @@ public class DecryptionHandlerTest {
     final byte[] plaintext = new byte[plaintextLen];
     decryptionHandler.processBytes(header, 0, header.length, plaintext, 0);
   }
-  
+
   @Test
   public void validSignatureAcrossMultipleBlocks() {
     byte[] ciphertext =
