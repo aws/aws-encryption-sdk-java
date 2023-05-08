@@ -29,7 +29,7 @@ To use the AWS Encryption SDK for Java you must have:
   [Java Cryptography Architecture (JCA) Reference Guide](https://docs.oracle.com/javase/9/security/java-cryptography-architecture-jca-reference-guide.htm#JSSEC-GUID-2BCFDD85-D533-4E6C-8CE9-29990DEB0190).
 
   If you do not have Bouncy Castle, go to https://bouncycastle.org/latest_releases.html, then download the provider file that corresponds to your JDK.
-  Or, you can pick it up from Maven (groupId: `org.bouncycastle`, artifactId: `bcprov-ext-jdk15on`).
+  Or, you can pick it up from Maven (groupId: `org.bouncycastle`, artifactId: `bcprov-ext-jdk18on`).
 
   Beginning in version 1.6.1, the AWS Encryption SDK for Java also works with Bouncy Castle FIPS (groupId: `org.bouncycastle`, artifactId: `bc-fips`)
   as an alternative to non-FIPS Bouncy Castle. For help installing and configuring Bouncy Castle FIPS, see [BC FIPS documentation](https://www.bouncycastle.org/documentation.html), in particular, **User Guides** and **Security Policy**.
