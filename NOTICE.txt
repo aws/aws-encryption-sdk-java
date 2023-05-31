@@ -1,4 +1,4 @@
-AWS KMS Encryption Client SDK
+AWS Encryption SDK
 Copyright 2015 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 
 THIRD PARTY COMPONENTS
