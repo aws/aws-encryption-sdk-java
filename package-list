@@ -1,0 +1,9 @@
+com.amazonaws.encryptionsdk
+com.amazonaws.encryptionsdk.caching
+com.amazonaws.encryptionsdk.exception
+com.amazonaws.encryptionsdk.internal
+com.amazonaws.encryptionsdk.jce
+com.amazonaws.encryptionsdk.kms
+com.amazonaws.encryptionsdk.kmssdkv2
+com.amazonaws.encryptionsdk.model
+com.amazonaws.encryptionsdk.multi
