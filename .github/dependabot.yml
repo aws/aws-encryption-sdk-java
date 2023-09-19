@@ -7,8 +7,12 @@ updates:
     groups:
       production-dependencies:
         dependency-type: "production"
+        patterns:
+          - "*"
       development-dependencies:
         dependency-type: "development"
+        patterns:
+          - "*"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
