@@ -45,10 +45,6 @@ import org.bouncycastle.x509.X509V3CertificateGenerator;
 import org.junit.Before;
 import org.junit.Test;
 
-/* These internal sun classes are included solely for test purposes as
-this test cannot use BouncyCastle cert generation, as there are incompatibilities
-between how standard BC and FIPS BC perform cert generation. */
-
 public class KeyStoreProviderTest {
   private static final SecureRandom RND = new SecureRandom();
   private static final KeyPairGenerator KG;
@@ -298,7 +294,7 @@ public class KeyStoreProviderTest {
     certGen.setPublicKey(pair.getPublic());
     certGen.setSignatureAlgorithm("SHA256WithRSA");
 
-    certificate = certGen.generate(pair.getPrivate(), "BC");
+    certificate = certGen.generate(pair.getPrivate());
 
     return certificate;
   }
