@@ -142,6 +142,7 @@ Resources:
         - !Ref ParameterStorePolicy
         - !Ref CodeBuildBasePolicyCI
         - !Ref HierarchicalKeyringTestTableUsage
+        - !Ref CodeBuildCISTSAllow
         - "arn:aws:iam::aws:policy/AWSCodeArtifactReadOnlyAccess"
         - "arn:aws:iam::aws:policy/AWSCodeArtifactAdminAccess"
 
@@ -161,8 +162,26 @@ Resources:
         - !Ref SecretsManagerPolicyRelease
         - !Ref ParameterStorePolicy
         - !Ref HierarchicalKeyringTestTableUsage
+        - !Ref CodeBuildCISTSAllow
         - "arn:aws:iam::aws:policy/AWSCodeArtifactReadOnlyAccess"
         - "arn:aws:iam::aws:policy/AWSCodeArtifactAdminAccess"
+
+  CodeBuildCISTSAllow:
+    Type: "AWS::IAM::ManagedPolicy"
+    Properties:
+      ManagedPolicyName: !Sub CodeBuildCISTSAllow-${ProjectName}
+      Path: /service-role/
+      PolicyDocument: |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+              {
+                  "Effect": "Allow",
+                  "Action": "sts:AssumeRole",
+                  "Resource": "arn:aws:iam::370957321024:role/GitHub-CI-Public-ESDK-Java-Role-us-west-2"
+              }
+          ]
+        }
 
   CodeBuildBatchPolicy:
     Type: "AWS::IAM::ManagedPolicy"
@@ -399,50 +418,6 @@ Resources:
             }
           ]
         }
-
-  HierarchicalKeyringTestTableUsage:
-    Type: "AWS::IAM::ManagedPolicy"
-    Properties:
-      Description: "Allow Read, Write, and Delete of Items in HierarchicalKeyringTestTable"
-      ManagedPolicyName: !Sub "${ProjectName}-DDB-ReadWriteDelete-${AWS::Region}"
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Action:
-              - dynamodb:PutItem
-              - dynamodb:DeleteItem
-              - dynamodb:GetItem
-              - dynamodb:Query
-            Resource:
-              - "arn:aws:dynamodb:us-west-2:370957321024:table/HierarchicalKeyringTestTable"
-              - "arn:aws:dynamodb:us-west-2:370957321024:table/HierarchicalKeyringTestTable/index/*"
-          - Effect: Allow
-            Action:
-              - dynamodb:DescribeTable
-              - dynamodb:CreateTable
-              - dynamodb:PutItem
-              - dynamodb:DeleteItem
-              - dynamodb:GetItem
-              - dynamodb:Query
-              - dynamodb:ConditionCheckItem
-              - dynamodb:UpdateItem
-            Resource:
-              - "arn:aws:dynamodb:us-west-2:370957321024:table/KeyStoreTestTable"
-              - "arn:aws:dynamodb:us-west-2:370957321024:table/KeyStoreTestTable/index/*"
-          - Effect: Allow
-            Action:
-              - dynamodb:DescribeTable
-              - dynamodb:CreateTable
-              - dynamodb:PutItem
-              - dynamodb:DeleteItem
-              - dynamodb:GetItem
-              - dynamodb:Query
-              - dynamodb:ConditionCheckItem
-              - dynamodb:UpdateItem
-            Resource:
-              - "arn:aws:dynamodb:us-west-2:370957321024:table/KeyStoreDdbTable"
-              - "arn:aws:dynamodb:us-west-2:370957321024:table/KeyStoreDdbTable/index/*"
 
   ParameterStorePolicy:
     Type: "AWS::IAM::ManagedPolicy"
