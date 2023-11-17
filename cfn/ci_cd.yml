@@ -141,6 +141,7 @@ Resources:
         - !Ref SecretsManagerPolicyCI
         - !Ref ParameterStorePolicy
         - !Ref CodeBuildBasePolicyCI
+        - !Ref HierarchicalKeyringTestTableUsage
         - "arn:aws:iam::aws:policy/AWSCodeArtifactReadOnlyAccess"
         - "arn:aws:iam::aws:policy/AWSCodeArtifactAdminAccess"
 
@@ -159,6 +160,7 @@ Resources:
         - !Ref CodeBuildBasePolicy
         - !Ref SecretsManagerPolicyRelease
         - !Ref ParameterStorePolicy
+        - !Ref HierarchicalKeyringTestTableUsage
         - "arn:aws:iam::aws:policy/AWSCodeArtifactReadOnlyAccess"
         - "arn:aws:iam::aws:policy/AWSCodeArtifactAdminAccess"
 
@@ -382,16 +384,65 @@ Resources:
               "Effect": "Allow",
               "Resource": [
                 "arn:aws:kms:*:658956600833:key/*",
-                "arn:aws:kms:*:658956600833:alias/*"
+                "arn:aws:kms:*:658956600833:alias/*",
+                "arn:aws:kms:*:370957321024:key/*",
+                "arn:aws:kms:*:370957321024:alias/*"
               ],
               "Action": [
                 "kms:Encrypt",
                 "kms:Decrypt",
-                "kms:GenerateDataKey"
+                "kms:ReEncrypt*",
+                "kms:Generate*",
+                "kms:GetPublicKey",
+                "kms:DescribeKey"
               ]
             }
           ]
         }
+
+  HierarchicalKeyringTestTableUsage:
+    Type: "AWS::IAM::ManagedPolicy"
+    Properties:
+      Description: "Allow Read, Write, and Delete of Items in HierarchicalKeyringTestTable"
+      ManagedPolicyName: !Sub "${ProjectName}-DDB-ReadWriteDelete-${AWS::Region}"
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:PutItem
+              - dynamodb:DeleteItem
+              - dynamodb:GetItem
+              - dynamodb:Query
+            Resource:
+              - "arn:aws:dynamodb:us-west-2:370957321024:table/HierarchicalKeyringTestTable"
+              - "arn:aws:dynamodb:us-west-2:370957321024:table/HierarchicalKeyringTestTable/index/*"
+          - Effect: Allow
+            Action:
+              - dynamodb:DescribeTable
+              - dynamodb:CreateTable
+              - dynamodb:PutItem
+              - dynamodb:DeleteItem
+              - dynamodb:GetItem
+              - dynamodb:Query
+              - dynamodb:ConditionCheckItem
+              - dynamodb:UpdateItem
+            Resource:
+              - "arn:aws:dynamodb:us-west-2:370957321024:table/KeyStoreTestTable"
+              - "arn:aws:dynamodb:us-west-2:370957321024:table/KeyStoreTestTable/index/*"
+          - Effect: Allow
+            Action:
+              - dynamodb:DescribeTable
+              - dynamodb:CreateTable
+              - dynamodb:PutItem
+              - dynamodb:DeleteItem
+              - dynamodb:GetItem
+              - dynamodb:Query
+              - dynamodb:ConditionCheckItem
+              - dynamodb:UpdateItem
+            Resource:
+              - "arn:aws:dynamodb:us-west-2:370957321024:table/KeyStoreDdbTable"
+              - "arn:aws:dynamodb:us-west-2:370957321024:table/KeyStoreDdbTable/index/*"
 
   ParameterStorePolicy:
     Type: "AWS::IAM::ManagedPolicy"
