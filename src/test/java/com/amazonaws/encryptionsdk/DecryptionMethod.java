@@ -2,9 +2,14 @@ package com.amazonaws.encryptionsdk;
 
 import com.amazonaws.encryptionsdk.internal.SignaturePolicy;
 import com.amazonaws.encryptionsdk.internal.TestIOUtils;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import software.amazon.cryptography.materialproviders.IKeyring;
 
-enum DecryptionMethod {
+public enum DecryptionMethod {
   OneShot {
     @Override
     public byte[] decryptMessage(
@@ -12,10 +17,16 @@ enum DecryptionMethod {
         throws IOException {
       return crypto.decryptData(masterKeyProvider, ciphertext).getResult();
     }
+
+    @Override
+    public byte[] decryptMessage(AwsCrypto crypto, IKeyring keyring, byte[] ciphertext)
+        throws IOException {
+      return crypto.decryptData(keyring, ciphertext).getResult();
+    }
   },
   // Note for the record that changing the readLen parameter of copyInStreamToOutStream has minimal
-  // effect on the actual data flow when copying from a CryptoInputStream: it will always read from
-  // the
+  // effect on the actual data flow when copying from a CryptoInputStream: it will always read
+  // from// the
   // underlying input stream with a fixed chunk size (4096 bytes at the time of writing this),
   // independently
   // of how many bytes its asked to read of the decryption result. It's still useful to vary the
@@ -32,6 +43,15 @@ enum DecryptionMethod {
       TestIOUtils.copyInStreamToOutStream(in, out, 1);
       return out.toByteArray();
     }
+
+    @Override
+    public byte[] decryptMessage(AwsCrypto crypto, IKeyring keyring, byte[] ciphertext)
+        throws IOException {
+      InputStream in = crypto.createDecryptingStream(keyring, new ByteArrayInputStream(ciphertext));
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      TestIOUtils.copyInStreamToOutStream(in, out, 1);
+      return out.toByteArray();
+    }
   },
   InputStreamSmallByteChunks {
     @Override
@@ -40,6 +60,15 @@ enum DecryptionMethod {
         throws IOException {
       InputStream in =
           crypto.createDecryptingStream(masterKeyProvider, new ByteArrayInputStream(ciphertext));
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      TestIOUtils.copyInStreamToOutStream(in, out, SMALL_CHUNK_SIZE);
+      return out.toByteArray();
+    }
+
+    @Override
+    public byte[] decryptMessage(AwsCrypto crypto, IKeyring keyring, byte[] ciphertext)
+        throws IOException {
+      InputStream in = crypto.createDecryptingStream(keyring, new ByteArrayInputStream(ciphertext));
       ByteArrayOutputStream out = new ByteArrayOutputStream();
       TestIOUtils.copyInStreamToOutStream(in, out, SMALL_CHUNK_SIZE);
       return out.toByteArray();
@@ -56,6 +85,15 @@ enum DecryptionMethod {
       TestIOUtils.copyInStreamToOutStream(in, out, ciphertext.length);
       return out.toByteArray();
     }
+
+    @Override
+    public byte[] decryptMessage(AwsCrypto crypto, IKeyring keyring, byte[] ciphertext)
+        throws IOException {
+      InputStream in = crypto.createDecryptingStream(keyring, new ByteArrayInputStream(ciphertext));
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      TestIOUtils.copyInStreamToOutStream(in, out, ciphertext.length);
+      return out.toByteArray();
+    }
   },
   UnsignedMessageInputStreamSingleByteChunks {
     @Override
@@ -65,6 +103,17 @@ enum DecryptionMethod {
       InputStream in =
           crypto.createUnsignedMessageDecryptingStream(
               masterKeyProvider, new ByteArrayInputStream(ciphertext));
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      TestIOUtils.copyInStreamToOutStream(in, out, 1);
+      return out.toByteArray();
+    }
+
+    @Override
+    public byte[] decryptMessage(AwsCrypto crypto, IKeyring keyring, byte[] ciphertext)
+        throws IOException {
+      InputStream in =
+          crypto.createUnsignedMessageDecryptingStream(
+              keyring, new ByteArrayInputStream(ciphertext));
       ByteArrayOutputStream out = new ByteArrayOutputStream();
       TestIOUtils.copyInStreamToOutStream(in, out, 1);
       return out.toByteArray();
@@ -89,6 +138,17 @@ enum DecryptionMethod {
     }
 
     @Override
+    public byte[] decryptMessage(AwsCrypto crypto, IKeyring keyring, byte[] ciphertext)
+        throws IOException {
+      InputStream in =
+          crypto.createUnsignedMessageDecryptingStream(
+              keyring, new ByteArrayInputStream(ciphertext));
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      TestIOUtils.copyInStreamToOutStream(in, out, SMALL_CHUNK_SIZE);
+      return out.toByteArray();
+    }
+
+    @Override
     public SignaturePolicy signaturePolicy() {
       return SignaturePolicy.AllowEncryptForbidDecrypt;
     }
@@ -101,6 +161,17 @@ enum DecryptionMethod {
       InputStream in =
           crypto.createUnsignedMessageDecryptingStream(
               masterKeyProvider, new ByteArrayInputStream(ciphertext));
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      TestIOUtils.copyInStreamToOutStream(in, out, ciphertext.length);
+      return out.toByteArray();
+    }
+
+    @Override
+    public byte[] decryptMessage(AwsCrypto crypto, IKeyring keyring, byte[] ciphertext)
+        throws IOException {
+      InputStream in =
+          crypto.createUnsignedMessageDecryptingStream(
+              keyring, new ByteArrayInputStream(ciphertext));
       ByteArrayOutputStream out = new ByteArrayOutputStream();
       TestIOUtils.copyInStreamToOutStream(in, out, ciphertext.length);
       return out.toByteArray();
@@ -122,6 +193,16 @@ enum DecryptionMethod {
       TestIOUtils.copyInStreamToOutStream(in, decryptingOut, 1);
       return out.toByteArray();
     }
+
+    @Override
+    public byte[] decryptMessage(AwsCrypto crypto, IKeyring keyring, byte[] ciphertext)
+        throws IOException {
+      InputStream in = new ByteArrayInputStream(ciphertext);
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      OutputStream decryptingOut = crypto.createDecryptingStream(keyring, out);
+      TestIOUtils.copyInStreamToOutStream(in, decryptingOut, 1);
+      return out.toByteArray();
+    }
   },
   OutputStreamSmallByteChunks {
     @Override
@@ -131,6 +212,16 @@ enum DecryptionMethod {
       InputStream in = new ByteArrayInputStream(ciphertext);
       ByteArrayOutputStream out = new ByteArrayOutputStream();
       OutputStream decryptingOut = crypto.createDecryptingStream(masterKeyProvider, out);
+      TestIOUtils.copyInStreamToOutStream(in, decryptingOut, SMALL_CHUNK_SIZE);
+      return out.toByteArray();
+    }
+
+    @Override
+    public byte[] decryptMessage(AwsCrypto crypto, IKeyring keyring, byte[] ciphertext)
+        throws IOException {
+      InputStream in = new ByteArrayInputStream(ciphertext);
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      OutputStream decryptingOut = crypto.createDecryptingStream(keyring, out);
       TestIOUtils.copyInStreamToOutStream(in, decryptingOut, SMALL_CHUNK_SIZE);
       return out.toByteArray();
     }
@@ -146,6 +237,16 @@ enum DecryptionMethod {
       TestIOUtils.copyInStreamToOutStream(in, decryptingOut, ciphertext.length);
       return out.toByteArray();
     }
+
+    @Override
+    public byte[] decryptMessage(AwsCrypto crypto, IKeyring keyring, byte[] ciphertext)
+        throws IOException {
+      InputStream in = new ByteArrayInputStream(ciphertext);
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      OutputStream decryptingOut = crypto.createDecryptingStream(keyring, out);
+      TestIOUtils.copyInStreamToOutStream(in, decryptingOut, ciphertext.length);
+      return out.toByteArray();
+    }
   },
   UnsignedMessageOutputStreamSingleByteChunks {
     @Override
@@ -156,6 +257,16 @@ enum DecryptionMethod {
       ByteArrayOutputStream out = new ByteArrayOutputStream();
       OutputStream decryptingOut =
           crypto.createUnsignedMessageDecryptingStream(masterKeyProvider, out);
+      TestIOUtils.copyInStreamToOutStream(in, decryptingOut, 1);
+      return out.toByteArray();
+    }
+
+    @Override
+    public byte[] decryptMessage(AwsCrypto crypto, IKeyring keyring, byte[] ciphertext)
+        throws IOException {
+      InputStream in = new ByteArrayInputStream(ciphertext);
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      OutputStream decryptingOut = crypto.createUnsignedMessageDecryptingStream(keyring, out);
       TestIOUtils.copyInStreamToOutStream(in, decryptingOut, 1);
       return out.toByteArray();
     }
@@ -179,6 +290,16 @@ enum DecryptionMethod {
     }
 
     @Override
+    public byte[] decryptMessage(AwsCrypto crypto, IKeyring keyring, byte[] ciphertext)
+        throws IOException {
+      InputStream in = new ByteArrayInputStream(ciphertext);
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      OutputStream decryptingOut = crypto.createUnsignedMessageDecryptingStream(keyring, out);
+      TestIOUtils.copyInStreamToOutStream(in, decryptingOut, SMALL_CHUNK_SIZE);
+      return out.toByteArray();
+    }
+
+    @Override
     public SignaturePolicy signaturePolicy() {
       return SignaturePolicy.AllowEncryptForbidDecrypt;
     }
@@ -196,6 +317,15 @@ enum DecryptionMethod {
       return out.toByteArray();
     }
 
+    public byte[] decryptMessage(AwsCrypto crypto, IKeyring keyring, byte[] ciphertext)
+        throws IOException {
+      InputStream in = new ByteArrayInputStream(ciphertext);
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      OutputStream decryptingOut = crypto.createUnsignedMessageDecryptingStream(keyring, out);
+      TestIOUtils.copyInStreamToOutStream(in, decryptingOut, ciphertext.length);
+      return out.toByteArray();
+    }
+
     @Override
     public SignaturePolicy signaturePolicy() {
       return SignaturePolicy.AllowEncryptForbidDecrypt;
@@ -208,6 +338,9 @@ enum DecryptionMethod {
 
   public abstract byte[] decryptMessage(
       AwsCrypto crypto, MasterKeyProvider<?> masterKeyProvider, byte[] ciphertext)
+      throws IOException;
+
+  public abstract byte[] decryptMessage(AwsCrypto crypto, IKeyring keyring, byte[] ciphertext)
       throws IOException;
 
   public SignaturePolicy signaturePolicy() {

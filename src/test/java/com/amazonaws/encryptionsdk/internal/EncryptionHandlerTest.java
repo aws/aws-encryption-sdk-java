@@ -17,6 +17,7 @@ import com.amazonaws.encryptionsdk.DefaultCryptoMaterialsManager;
 import com.amazonaws.encryptionsdk.TestUtils;
 import com.amazonaws.encryptionsdk.exception.AwsCryptoException;
 import com.amazonaws.encryptionsdk.model.EncryptionMaterials;
+import com.amazonaws.encryptionsdk.model.EncryptionMaterialsHandler;
 import com.amazonaws.encryptionsdk.model.EncryptionMaterialsRequest;
 import java.util.Arrays;
 import java.util.Collections;
@@ -46,50 +47,63 @@ public class EncryptionHandlerTest {
     assertThrows(
         () ->
             new EncryptionHandler(
-                frameSize_, testResult.toBuilder().setAlgorithm(null).build(), commitmentPolicy));
-
-    assertThrows(
-        () ->
-            new EncryptionHandler(
                 frameSize_,
-                testResult.toBuilder().setEncryptionContext(null).build(),
+                new EncryptionMaterialsHandler(testResult.toBuilder().setAlgorithm(null).build()),
                 commitmentPolicy));
 
     assertThrows(
         () ->
             new EncryptionHandler(
                 frameSize_,
-                testResult.toBuilder().setEncryptedDataKeys(null).build(),
+                new EncryptionMaterialsHandler(
+                    testResult.toBuilder().setEncryptionContext(null).build()),
                 commitmentPolicy));
 
     assertThrows(
         () ->
             new EncryptionHandler(
                 frameSize_,
-                testResult.toBuilder().setEncryptedDataKeys(emptyList()).build(),
+                new EncryptionMaterialsHandler(
+                    testResult.toBuilder().setEncryptedDataKeys(null).build()),
                 commitmentPolicy));
 
     assertThrows(
         () ->
             new EncryptionHandler(
                 frameSize_,
-                testResult.toBuilder().setCleartextDataKey(null).build(),
+                new EncryptionMaterialsHandler(
+                    testResult.toBuilder().setEncryptedDataKeys(emptyList()).build()),
                 commitmentPolicy));
 
     assertThrows(
         () ->
             new EncryptionHandler(
-                frameSize_, testResult.toBuilder().setMasterKeys(null).build(), commitmentPolicy));
+                frameSize_,
+                new EncryptionMaterialsHandler(
+                    testResult.toBuilder().setCleartextDataKey(null).build()),
+                commitmentPolicy));
 
-    assertThrows(() -> new EncryptionHandler(-1, testResult, commitmentPolicy));
+    assertThrows(
+        () ->
+            new EncryptionHandler(
+                frameSize_,
+                new EncryptionMaterialsHandler(testResult.toBuilder().setMasterKeys(null).build()),
+                commitmentPolicy));
 
-    assertThrows(() -> new EncryptionHandler(frameSize_, testResult, null));
+    assertThrows(
+        () ->
+            new EncryptionHandler(
+                -1, new EncryptionMaterialsHandler(testResult), commitmentPolicy));
+
+    assertThrows(
+        () -> new EncryptionHandler(frameSize_, new EncryptionMaterialsHandler(testResult), null));
   }
 
   @Test(expected = AwsCryptoException.class)
   public void invalidLenProcessBytes() {
     final EncryptionHandler encryptionHandler =
-        new EncryptionHandler(frameSize_, testResult, commitmentPolicy);
+        new EncryptionHandler(
+            frameSize_, new EncryptionMaterialsHandler(testResult), commitmentPolicy);
 
     final byte[] in = new byte[1];
     final byte[] out = new byte[1];
@@ -99,7 +113,8 @@ public class EncryptionHandlerTest {
   @Test(expected = AwsCryptoException.class)
   public void invalidOffsetProcessBytes() {
     final EncryptionHandler encryptionHandler =
-        new EncryptionHandler(frameSize_, testResult, commitmentPolicy);
+        new EncryptionHandler(
+            frameSize_, new EncryptionMaterialsHandler(testResult), commitmentPolicy);
 
     final byte[] in = new byte[1];
     final byte[] out = new byte[1];
@@ -109,7 +124,8 @@ public class EncryptionHandlerTest {
   @Test
   public void whenEncrypting_headerIVIsZero() throws Exception {
     final EncryptionHandler encryptionHandler =
-        new EncryptionHandler(frameSize_, testResult, commitmentPolicy);
+        new EncryptionHandler(
+            frameSize_, new EncryptionMaterialsHandler(testResult), commitmentPolicy);
 
     assertArrayEquals(
         new byte[encryptionHandler.getHeaders().getCryptoAlgoId().getNonceLen()],
@@ -124,7 +140,9 @@ public class EncryptionHandlerTest {
         AwsCryptoException.class,
         () ->
             new EncryptionHandler(
-                frameSize_, resultWithV2Alg, CommitmentPolicy.ForbidEncryptAllowDecrypt));
+                frameSize_,
+                new EncryptionMaterialsHandler(resultWithV2Alg),
+                CommitmentPolicy.ForbidEncryptAllowDecrypt));
   }
 
   @Test
@@ -142,7 +160,10 @@ public class EncryptionHandlerTest {
             .getMaterialsForEncrypt(requestForMaterialsWithoutCommitment);
 
     EncryptionHandler handler =
-        new EncryptionHandler(frameSize_, materials, CommitmentPolicy.ForbidEncryptAllowDecrypt);
+        new EncryptionHandler(
+            frameSize_,
+            new EncryptionMaterialsHandler(materials),
+            CommitmentPolicy.ForbidEncryptAllowDecrypt);
     assertNotNull(handler);
     assertEquals(algorithm, handler.getHeaders().getCryptoAlgoId());
   }
@@ -158,12 +179,16 @@ public class EncryptionHandlerTest {
         AwsCryptoException.class,
         () ->
             new EncryptionHandler(
-                frameSize_, resultWithV1Alg, CommitmentPolicy.RequireEncryptRequireDecrypt));
+                frameSize_,
+                new EncryptionMaterialsHandler(resultWithV1Alg),
+                CommitmentPolicy.RequireEncryptRequireDecrypt));
     assertThrows(
         AwsCryptoException.class,
         () ->
             new EncryptionHandler(
-                frameSize_, resultWithV1Alg, CommitmentPolicy.RequireEncryptAllowDecrypt));
+                frameSize_,
+                new EncryptionMaterialsHandler(resultWithV1Alg),
+                CommitmentPolicy.RequireEncryptAllowDecrypt));
   }
 
   @Test
@@ -184,7 +209,8 @@ public class EncryptionHandlerTest {
             CommitmentPolicy.RequireEncryptRequireDecrypt);
 
     for (CommitmentPolicy policy : requireWritePolicies) {
-      EncryptionHandler handler = new EncryptionHandler(frameSize_, materials, policy);
+      EncryptionHandler handler =
+          new EncryptionHandler(frameSize_, new EncryptionMaterialsHandler(materials), policy);
       assertNotNull(handler);
       assertEquals(algorithm, handler.getHeaders().getCryptoAlgoId());
     }
@@ -194,7 +220,8 @@ public class EncryptionHandlerTest {
   public void setMaxInputLength() {
     byte[] plaintext = "Don't warn the tadpoles".getBytes();
     final EncryptionHandler encryptionHandler =
-        new EncryptionHandler(frameSize_, testResult, commitmentPolicy);
+        new EncryptionHandler(
+            frameSize_, new EncryptionMaterialsHandler(testResult), commitmentPolicy);
     encryptionHandler.setMaxInputLength(plaintext.length - 1);
 
     assertEquals(encryptionHandler.getMaxInputLength(), (long) plaintext.length - 1);
@@ -210,7 +237,8 @@ public class EncryptionHandlerTest {
   public void setMaxInputLengthThrowsIfAlreadyOver() {
     byte[] plaintext = "Don't warn the tadpoles".getBytes();
     final EncryptionHandler encryptionHandler =
-        new EncryptionHandler(frameSize_, testResult, commitmentPolicy);
+        new EncryptionHandler(
+            frameSize_, new EncryptionMaterialsHandler(testResult), commitmentPolicy);
     final byte[] out = new byte[1024];
     encryptionHandler.processBytes(plaintext, 0, plaintext.length - 1, out, 0);
     assertFalse(encryptionHandler.isComplete());
@@ -224,7 +252,8 @@ public class EncryptionHandlerTest {
   @Test
   public void setMaxInputLengthAcceptsSmallerValue() {
     final EncryptionHandler encryptionHandler =
-        new EncryptionHandler(frameSize_, testResult, commitmentPolicy);
+        new EncryptionHandler(
+            frameSize_, new EncryptionMaterialsHandler(testResult), commitmentPolicy);
     encryptionHandler.setMaxInputLength(100);
     assertEquals(encryptionHandler.getMaxInputLength(), 100);
 
@@ -235,7 +264,8 @@ public class EncryptionHandlerTest {
   @Test
   public void setMaxInputLengthIgnoresLargerValue() {
     final EncryptionHandler encryptionHandler =
-        new EncryptionHandler(frameSize_, testResult, commitmentPolicy);
+        new EncryptionHandler(
+            frameSize_, new EncryptionMaterialsHandler(testResult), commitmentPolicy);
     encryptionHandler.setMaxInputLength(10);
     assertEquals(encryptionHandler.getMaxInputLength(), 10);
 

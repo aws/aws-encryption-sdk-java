@@ -84,6 +84,7 @@ public final class EncryptionMaterials {
   }
 
   /** Contains a list of all MasterKeys that could decrypt this message. */
+  @Deprecated
   public List<MasterKey> getMasterKeys() {
     return masterKeys;
   }
@@ -180,6 +181,7 @@ public final class EncryptionMaterials {
       return this;
     }
 
+    @Deprecated
     public List<MasterKey> getMasterKeys() {
       return masterKeys;
     }

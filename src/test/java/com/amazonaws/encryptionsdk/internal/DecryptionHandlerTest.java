@@ -22,6 +22,7 @@ import com.amazonaws.encryptionsdk.jce.JceMasterKey;
 import com.amazonaws.encryptionsdk.model.CiphertextHeaders;
 import com.amazonaws.encryptionsdk.model.CiphertextType;
 import com.amazonaws.encryptionsdk.model.EncryptionMaterials;
+import com.amazonaws.encryptionsdk.model.EncryptionMaterialsHandler;
 import com.amazonaws.encryptionsdk.model.EncryptionMaterialsRequest;
 import com.amazonaws.encryptionsdk.multi.MultipleProviderFactory;
 import java.util.ArrayList;
@@ -461,7 +462,8 @@ public class DecryptionHandlerTest {
             .getMaterialsForEncrypt(encryptionMaterialsRequest);
 
     final EncryptionHandler encryptionHandler =
-        new EncryptionHandler(frameSize_, encryptionMaterials, policy);
+        new EncryptionHandler(
+            frameSize_, new EncryptionMaterialsHandler(encryptionMaterials), policy);
 
     // create the ciphertext headers by calling encryption handler.
     final byte[] in = new byte[0];

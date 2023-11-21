@@ -3,6 +3,8 @@
 
 package com.amazonaws.encryptionsdk;
 
+import software.amazon.cryptography.materialproviders.model.ESDKCommitmentPolicy;
+
 /**
  * Governs how a AwsCrypto behaves during configuration, encryption, and decryption, with respect to
  * key commitment.
@@ -13,18 +15,33 @@ public enum CommitmentPolicy {
    * is present on the ciphertext, then the key commitment must be valid. Key commitment will NOT be
    * included in ciphertext on encrypt.
    */
-  ForbidEncryptAllowDecrypt,
+  ForbidEncryptAllowDecrypt(ESDKCommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT),
   /**
    * On encrypt, algorithm suite must support key commitment; On decrypt, if a key commitment is
    * present on the ciphertext, then the key commitment must be valid. Key commitment will be
    * included in ciphertext on encrypt.
    */
-  RequireEncryptAllowDecrypt,
+  RequireEncryptAllowDecrypt(ESDKCommitmentPolicy.REQUIRE_ENCRYPT_ALLOW_DECRYPT),
   /**
    * Algorithm suite must support key commitment. Key commitment will be included in ciphertext on
    * encrypt. Valid key commitment must be present in ciphertext on decrypt.
    */
-  RequireEncryptRequireDecrypt;
+  RequireEncryptRequireDecrypt(ESDKCommitmentPolicy.REQUIRE_ENCRYPT_REQUIRE_DECRYPT);
+
+  private final software.amazon.cryptography.materialproviders.model.CommitmentPolicy
+      mplCommitmentPolicy;
+
+  CommitmentPolicy(ESDKCommitmentPolicy esdkCommitmentPolicy) {
+    this.mplCommitmentPolicy =
+        software.amazon.cryptography.materialproviders.model.CommitmentPolicy.builder()
+            .ESDK(esdkCommitmentPolicy)
+            .build();
+  }
+
+  public software.amazon.cryptography.materialproviders.model.CommitmentPolicy
+      getMplCommitmentPolicy() {
+    return mplCommitmentPolicy;
+  }
 
   /** Validates that an algorithm meets the Policy's On encrypt key commitment. */
   public boolean algorithmAllowedForEncrypt(CryptoAlgorithm algorithm) {

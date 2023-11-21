@@ -3,14 +3,22 @@
 
 package com.amazonaws.encryptionsdk.internal;
 
-import com.amazonaws.encryptionsdk.*;
+import com.amazonaws.encryptionsdk.CMMHandler;
+import com.amazonaws.encryptionsdk.CommitmentPolicy;
+import com.amazonaws.encryptionsdk.CryptoAlgorithm;
+import com.amazonaws.encryptionsdk.CryptoMaterialsManager;
+import com.amazonaws.encryptionsdk.DataKey;
+import com.amazonaws.encryptionsdk.DefaultCryptoMaterialsManager;
+import com.amazonaws.encryptionsdk.MasterKey;
+import com.amazonaws.encryptionsdk.MasterKeyProvider;
+import com.amazonaws.encryptionsdk.ParsedCiphertext;
 import com.amazonaws.encryptionsdk.exception.AwsCryptoException;
 import com.amazonaws.encryptionsdk.exception.BadCiphertextException;
 import com.amazonaws.encryptionsdk.model.CiphertextFooters;
 import com.amazonaws.encryptionsdk.model.CiphertextHeaders;
 import com.amazonaws.encryptionsdk.model.CiphertextType;
 import com.amazonaws.encryptionsdk.model.ContentType;
-import com.amazonaws.encryptionsdk.model.DecryptionMaterials;
+import com.amazonaws.encryptionsdk.model.DecryptionMaterialsHandler;
 import com.amazonaws.encryptionsdk.model.DecryptionMaterialsRequest;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
@@ -21,8 +29,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
+import software.amazon.cryptography.materialproviders.ICryptographicMaterialsManager;
 
 /**
  * This class implements the CryptoHandler interface by providing methods for the decryption of
@@ -33,7 +43,7 @@ import javax.crypto.SecretKey;
  * on the content type parsed in the ciphertext headers.
  */
 public class DecryptionHandler<K extends MasterKey<K>> implements MessageCryptoHandler {
-  private final CryptoMaterialsManager materialsManager_;
+  private final CMMHandler cmmHandler_;
   private final CommitmentPolicy commitmentPolicy_;
   /**
    * The maximum number of encrypted data keys to parse, if positive. If zero, do not limit EDKs.
@@ -54,6 +64,7 @@ public class DecryptionHandler<K extends MasterKey<K>> implements MessageCryptoH
   private Signature trailingSig_;
 
   private Map<String, String> encryptionContext_ = null;
+  private Map<String, String> reproducedEncryptionContext_ = Collections.emptyMap();
 
   private byte[] unparsedBytes_ = new byte[0];
   private boolean complete_ = false;
@@ -67,15 +78,15 @@ public class DecryptionHandler<K extends MasterKey<K>> implements MessageCryptoH
   // CryptoMaterialsManager is not itself
   // genericized.
   private DecryptionHandler(
-      final CryptoMaterialsManager materialsManager,
+      final CMMHandler cmmHandler,
       final CommitmentPolicy commitmentPolicy,
       final SignaturePolicy signaturePolicy,
       final int maxEncryptedDataKeys) {
-    Utils.assertNonNull(materialsManager, "materialsManager");
+    Utils.assertNonNull(cmmHandler, "cmmHandler");
     Utils.assertNonNull(commitmentPolicy, "commitmentPolicy");
     Utils.assertNonNull(signaturePolicy, "signaturePolicy");
 
-    this.materialsManager_ = materialsManager;
+    this.cmmHandler_ = cmmHandler;
     this.commitmentPolicy_ = commitmentPolicy;
     this.maxEncryptedDataKeys_ = maxEncryptedDataKeys;
     this.signaturePolicy_ = signaturePolicy;
@@ -84,17 +95,37 @@ public class DecryptionHandler<K extends MasterKey<K>> implements MessageCryptoH
   }
 
   private DecryptionHandler(
-      final CryptoMaterialsManager materialsManager,
-      final CiphertextHeaders headers,
+      final CMMHandler cmmHandler,
       final CommitmentPolicy commitmentPolicy,
       final SignaturePolicy signaturePolicy,
-      final int maxEncryptedDataKeys)
-      throws AwsCryptoException {
-    Utils.assertNonNull(materialsManager, "materialsManager");
+      final int maxEncryptedDataKeys,
+      final Map<String, String> reproducedEncryptionContext) {
+    Utils.assertNonNull(cmmHandler, "cmmHandler");
     Utils.assertNonNull(commitmentPolicy, "commitmentPolicy");
     Utils.assertNonNull(signaturePolicy, "signaturePolicy");
 
-    materialsManager_ = materialsManager;
+    this.cmmHandler_ = cmmHandler;
+    this.commitmentPolicy_ = commitmentPolicy;
+    this.maxEncryptedDataKeys_ = maxEncryptedDataKeys;
+    this.signaturePolicy_ = signaturePolicy;
+    this.reproducedEncryptionContext_ = reproducedEncryptionContext;
+    ciphertextHeaders_ = new CiphertextHeaders();
+    ciphertextFooters_ = new CiphertextFooters();
+  }
+
+  private DecryptionHandler(
+      final CMMHandler cmmHandler,
+      final CiphertextHeaders headers,
+      final CommitmentPolicy commitmentPolicy,
+      final SignaturePolicy signaturePolicy,
+      final int maxEncryptedDataKeys,
+      final Map<String, String> reproducedEncryptionContext)
+      throws AwsCryptoException {
+    Utils.assertNonNull(cmmHandler, "materialsManager");
+    Utils.assertNonNull(commitmentPolicy, "commitmentPolicy");
+    Utils.assertNonNull(signaturePolicy, "signaturePolicy");
+
+    cmmHandler_ = cmmHandler;
     ciphertextHeaders_ = headers;
     commitmentPolicy_ = commitmentPolicy;
     signaturePolicy_ = signaturePolicy;
@@ -108,6 +139,7 @@ public class DecryptionHandler<K extends MasterKey<K>> implements MessageCryptoH
       // deprecated.
       ciphertextBytesSupplied_ = headers.toByteArray().length;
     }
+    reproducedEncryptionContext_ = reproducedEncryptionContext;
     readHeaderFields(headers);
     updateTrailingSignature(headers);
   }
@@ -239,7 +271,63 @@ public class DecryptionHandler<K extends MasterKey<K>> implements MessageCryptoH
       final int maxEncryptedDataKeys)
       throws AwsCryptoException {
     return new DecryptionHandler(
-        materialsManager, commitmentPolicy, signaturePolicy, maxEncryptedDataKeys);
+        new CMMHandler(materialsManager), commitmentPolicy, signaturePolicy, maxEncryptedDataKeys);
+  }
+
+  /**
+   * Create a decryption handler using the provided materials manager.
+   *
+   * <p>Note the methods in the provided materials manager are used in decrypting the encrypted data
+   * key parsed from the ciphertext headers.
+   *
+   * @param materialsManager the materials manager to use in decrypting the data key from the key
+   *     blobs encoded in the provided ciphertext.
+   * @param commitmentPolicy The commitment policy to enforce during decryption
+   * @param signaturePolicy The signature policy to enforce during decryption
+   * @param maxEncryptedDataKeys The maximum number of encrypted data keys to unwrap during
+   *     decryption; zero indicates no maximum
+   * @throws AwsCryptoException if the master key is null.
+   */
+  public static DecryptionHandler<?> create(
+      final ICryptographicMaterialsManager materialsManager,
+      final CommitmentPolicy commitmentPolicy,
+      final SignaturePolicy signaturePolicy,
+      final int maxEncryptedDataKeys)
+      throws AwsCryptoException {
+    return new DecryptionHandler(
+        new CMMHandler(materialsManager), commitmentPolicy, signaturePolicy, maxEncryptedDataKeys);
+  }
+
+  /**
+   * Create a decryption handler using the provided materials manager.
+   *
+   * <p>Note the methods in the provided materials manager are used in decrypting the encrypted data
+   * key parsed from the ciphertext headers.
+   *
+   * @param materialsManager the materials manager to use in decrypting the data key from the key
+   *     blobs encoded in the provided ciphertext.
+   * @param commitmentPolicy The commitment policy to enforce during decryption
+   * @param signaturePolicy The signature policy to enforce during decryption
+   * @param maxEncryptedDataKeys The maximum number of encrypted data keys to unwrap during
+   *     decryption; zero indicates no maximum
+   * @param reproducedEncryptionContext The reproduced encryption context MUST contain a value for
+   *     every key in the configured required encryption context keys during encryption with
+   *     Required Encryption Context CMM.
+   * @throws AwsCryptoException if the master key is null.
+   */
+  public static DecryptionHandler<?> create(
+      final ICryptographicMaterialsManager materialsManager,
+      final CommitmentPolicy commitmentPolicy,
+      final SignaturePolicy signaturePolicy,
+      final int maxEncryptedDataKeys,
+      final Map<String, String> reproducedEncryptionContext)
+      throws AwsCryptoException {
+    return new DecryptionHandler(
+        new CMMHandler(materialsManager),
+        commitmentPolicy,
+        signaturePolicy,
+        maxEncryptedDataKeys,
+        reproducedEncryptionContext);
   }
 
   /**
@@ -272,7 +360,12 @@ public class DecryptionHandler<K extends MasterKey<K>> implements MessageCryptoH
       final int maxEncryptedDataKeys)
       throws AwsCryptoException {
     return new DecryptionHandler(
-        materialsManager, headers, commitmentPolicy, signaturePolicy, maxEncryptedDataKeys);
+        new CMMHandler(materialsManager),
+        headers,
+        commitmentPolicy,
+        signaturePolicy,
+        maxEncryptedDataKeys,
+        Collections.emptyMap());
   }
 
   /**
@@ -300,7 +393,82 @@ public class DecryptionHandler<K extends MasterKey<K>> implements MessageCryptoH
       final int maxEncryptedDataKeys)
       throws AwsCryptoException {
     return new DecryptionHandler(
-        materialsManager, headers, commitmentPolicy, signaturePolicy, maxEncryptedDataKeys);
+        new CMMHandler(materialsManager),
+        headers,
+        commitmentPolicy,
+        signaturePolicy,
+        maxEncryptedDataKeys,
+        Collections.emptyMap());
+  }
+
+  /**
+   * Create a decryption handler using the provided materials manager and already parsed {@code
+   * headers}.
+   *
+   * <p>Note the methods in the provided materials manager are used in decrypting the encrypted data
+   * key parsed from the ciphertext headers.
+   *
+   * @param materialsManager the materials manager to use in decrypting the data key from the key
+   *     blobs encoded in the provided ciphertext.
+   * @param headers already parsed headers which will not be passed into {@link
+   *     #processBytes(byte[], int, int, byte[], int)}
+   * @param commitmentPolicy The commitment policy to enforce during decryption
+   * @param signaturePolicy The signature policy to enforce during decryption
+   * @param maxEncryptedDataKeys The maximum number of encrypted data keys to unwrap during
+   *     decryption; zero indicates no maximum
+   * @throws AwsCryptoException if the master key is null.
+   */
+  public static DecryptionHandler<?> create(
+      final ICryptographicMaterialsManager materialsManager,
+      final ParsedCiphertext headers,
+      final CommitmentPolicy commitmentPolicy,
+      final SignaturePolicy signaturePolicy,
+      final int maxEncryptedDataKeys)
+      throws AwsCryptoException {
+    return new DecryptionHandler(
+        new CMMHandler(materialsManager),
+        headers,
+        commitmentPolicy,
+        signaturePolicy,
+        maxEncryptedDataKeys,
+        Collections.emptyMap());
+  }
+
+  /**
+   * Create a decryption handler using the provided materials manager and already parsed {@code
+   * headers}.
+   *
+   * <p>Note the methods in the provided materials manager are used in decrypting the encrypted data
+   * key parsed from the ciphertext headers.
+   *
+   * @param materialsManager the materials manager to use in decrypting the data key from the key
+   *     blobs encoded in the provided ciphertext.
+   * @param headers already parsed headers which will not be passed into {@link
+   *     #processBytes(byte[], int, int, byte[], int)}
+   * @param commitmentPolicy The commitment policy to enforce during decryption
+   * @param signaturePolicy The signature policy to enforce during decryption
+   * @param maxEncryptedDataKeys The maximum number of encrypted data keys to unwrap during
+   *     decryption; zero indicates no maximum
+   * @param reproducedEncryptionContext The reproduced encryption context MUST contain a value for
+   *     every key in the configured required encryption context keys during encryption with
+   *     Required Encryption Context CMM.
+   * @throws AwsCryptoException if the master key is null.
+   */
+  public static DecryptionHandler<?> create(
+      final ICryptographicMaterialsManager materialsManager,
+      final ParsedCiphertext headers,
+      final CommitmentPolicy commitmentPolicy,
+      final SignaturePolicy signaturePolicy,
+      final int maxEncryptedDataKeys,
+      final Map<String, String> reproducedEncryptionContext)
+      throws AwsCryptoException {
+    return new DecryptionHandler(
+        new CMMHandler(materialsManager),
+        headers,
+        commitmentPolicy,
+        signaturePolicy,
+        maxEncryptedDataKeys,
+        reproducedEncryptionContext);
   }
 
   /**
@@ -544,9 +712,13 @@ public class DecryptionHandler<K extends MasterKey<K>> implements MessageCryptoH
    * cipher.
    *
    * @param ciphertextHeaders the ciphertext headers object whose integrity needs to be checked.
+   * @param authOnlyEncryptionContext The authenticated only encryption context is all encryption
+   *     context key-value pairs where the key exists in Required Encryption Context Keys. It is
+   *     then serialized according to the message header Key Value Pairs.
    * @return true if the integrity of the header is intact; false otherwise.
    */
-  private void verifyHeaderIntegrity(final CiphertextHeaders ciphertextHeaders)
+  private void verifyHeaderIntegrity(
+      final CiphertextHeaders ciphertextHeaders, byte[] authOnlyEncryptionContext)
       throws BadCiphertextException {
     final CipherHandler cipherHandler =
         new CipherHandler(decryptionKey_, Cipher.DECRYPT_MODE, cryptoAlgo_);
@@ -555,7 +727,11 @@ public class DecryptionHandler<K extends MasterKey<K>> implements MessageCryptoH
       final byte[] headerTag = ciphertextHeaders.getHeaderTag();
       cipherHandler.cipherData(
           ciphertextHeaders.getHeaderNonce(),
-          ciphertextHeaders.serializeAuthenticatedFields(),
+          // When verifying the header the AAD input to the authenticated encryption algorithm
+          // specified by the algorithm suite is the message header body and the serialized
+          // authenticated only encryption context.
+          org.bouncycastle.util.Arrays.concatenate(
+              ciphertextHeaders.serializeAuthenticatedFields(), authOnlyEncryptionContext),
           headerTag,
           0,
           headerTag.length);
@@ -609,16 +785,28 @@ public class DecryptionHandler<K extends MasterKey<K>> implements MessageCryptoH
               + ".");
     }
 
-    encryptionContext_ = ciphertextHeaders.getEncryptionContextMap();
-
     DecryptionMaterialsRequest request =
         DecryptionMaterialsRequest.newBuilder()
             .setAlgorithm(cryptoAlgo_)
-            .setEncryptionContext(encryptionContext_)
+            .setEncryptionContext(ciphertextHeaders.getEncryptionContextMap())
+            .setReproducedEncryptionContext(reproducedEncryptionContext_)
             .setEncryptedDataKeys(ciphertextHeaders.getEncryptedKeyBlobs())
             .build();
 
-    DecryptionMaterials result = materialsManager_.decryptMaterials(request);
+    DecryptionMaterialsHandler result = cmmHandler_.decryptMaterials(request, commitmentPolicy_);
+
+    encryptionContext_ = result.getEncryptionContext();
+
+    List<String> reqKeys = result.getRequiredEncryptionContextKeys();
+    Map<String, String> reqEncryptionContext =
+        encryptionContext_.entrySet().stream()
+            .filter(x -> reqKeys.contains(x.getKey()))
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    // The authenticated only encryption context is all encryption context key-value pairs where the
+    // key exists in Required Encryption Context Keys. It is then serialized according to the
+    // message header Key Value Pairs.
+    final byte[] authOnlyEncryptionContext =
+        EncryptionContextSerializer.serialize(reqEncryptionContext);
 
     //noinspection unchecked
     dataKey_ = (DataKey<K>) result.getDataKey();
@@ -657,7 +845,7 @@ public class DecryptionHandler<K extends MasterKey<K>> implements MessageCryptoH
     final short nonceLen = ciphertextHeaders.getNonceLength();
     final int frameLen = ciphertextHeaders.getFrameLength();
 
-    verifyHeaderIntegrity(ciphertextHeaders);
+    verifyHeaderIntegrity(ciphertextHeaders, authOnlyEncryptionContext);
 
     switch (contentType) {
       case FRAME:
