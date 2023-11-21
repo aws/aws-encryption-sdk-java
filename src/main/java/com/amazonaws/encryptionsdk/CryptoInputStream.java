@@ -248,6 +248,9 @@ public class CryptoInputStream<K extends MasterKey<K>> extends InputStream {
     }
     //noinspection unchecked
     return new CryptoResult<>(
-        this, (List<K>) cryptoHandler_.getMasterKeys(), cryptoHandler_.getHeaders());
+        this,
+        (List<K>) cryptoHandler_.getMasterKeys(),
+        cryptoHandler_.getHeaders(),
+        cryptoHandler_.getEncryptionContext());
   }
 }

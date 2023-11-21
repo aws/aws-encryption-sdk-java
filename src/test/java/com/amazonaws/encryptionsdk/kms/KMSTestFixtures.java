@@ -25,9 +25,16 @@ public final class KMSTestFixtures {
       "arn:aws:kms:us-east-1:658956600833:key/mrk-80bd8ecdcd4342aebd84b7dc9da498a7";
   public static final String US_WEST_2_MULTI_REGION_KEY_ID =
       "arn:aws:kms:us-west-2:658956600833:key/mrk-80bd8ecdcd4342aebd84b7dc9da498a7";
+  public static final String US_WEST_2_KMS_RSA_KEY_ID =
+      "arn:aws:kms:us-west-2:370957321024:key/mrk-63d386cb70614ea59b32ad65c9315297";
+
   public static final String ACCOUNT_ID = "658956600833";
   public static final String PARTITION = "aws";
   public static final String US_WEST_2 = "us-west-2";
 
   public static final String[] TEST_KEY_IDS = new String[] {US_WEST_2_KEY_ID, EU_CENTRAL_1_KEY_ID};
+  public static final String TEST_KEYSTORE_NAME = "KeyStoreDdbTable";
+  public static final String TEST_LOGICAL_KEYSTORE_NAME = "KeyStoreDdbTable";
+  public static final String TEST_KEYSTORE_KMS_KEY_ID =
+      "arn:aws:kms:us-west-2:370957321024:key/9d989aa2-2f9c-438c-a745-cc57d3ad0126";
 }

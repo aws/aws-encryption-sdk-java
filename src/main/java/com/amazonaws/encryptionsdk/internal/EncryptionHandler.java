@@ -12,7 +12,7 @@ import com.amazonaws.encryptionsdk.model.CiphertextFooters;
 import com.amazonaws.encryptionsdk.model.CiphertextHeaders;
 import com.amazonaws.encryptionsdk.model.CiphertextType;
 import com.amazonaws.encryptionsdk.model.ContentType;
-import com.amazonaws.encryptionsdk.model.EncryptionMaterials;
+import com.amazonaws.encryptionsdk.model.EncryptionMaterialsHandler;
 import com.amazonaws.encryptionsdk.model.KeyBlob;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -24,12 +24,14 @@ import java.security.SignatureException;
 import java.security.interfaces.ECPrivateKey;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.util.Arrays;
 
 /**
  * This class implements the CryptoHandler interface by providing methods for the encryption of
@@ -42,8 +44,9 @@ public class EncryptionHandler implements MessageCryptoHandler {
   private static final CiphertextType CIPHERTEXT_TYPE =
       CiphertextType.CUSTOMER_AUTHENTICATED_ENCRYPTED_DATA;
 
-  private final EncryptionMaterials encryptionMaterials_;
-  private final Map<String, String> encryptionContext_;
+  private final EncryptionMaterialsHandler encryptionMaterials_;
+  private final Map<String, String> storedEncryptionContext_;
+  private final Map<String, String> reqEncryptionContext_;
   private final CryptoAlgorithm cryptoAlgo_;
   private final List<MasterKey> masterKeys_;
   private final List<KeyBlob> keyBlobs_;
@@ -73,13 +76,25 @@ public class EncryptionHandler implements MessageCryptoHandler {
    * @throws AwsCryptoException if the encryption context or master key is null.
    */
   public EncryptionHandler(
-      int frameSize, EncryptionMaterials result, CommitmentPolicy commitmentPolicy)
+      int frameSize, EncryptionMaterialsHandler result, CommitmentPolicy commitmentPolicy)
       throws AwsCryptoException {
     Utils.assertNonNull(result, "result");
     Utils.assertNonNull(commitmentPolicy, "commitmentPolicy");
 
     this.encryptionMaterials_ = result;
-    this.encryptionContext_ = result.getEncryptionContext();
+
+    Map<String, String> encryptionContext = result.getEncryptionContext();
+    List<String> reqKeys = result.getRequiredEncryptionContextKeys();
+    Map<Boolean, Map<String, String>> partitionedEncryptionContext =
+        encryptionContext.entrySet().stream()
+            .collect(
+                Collectors.partitioningBy(
+                    entry -> reqKeys.contains(entry.getKey()),
+                    Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
+
+    storedEncryptionContext_ = partitionedEncryptionContext.get(false);
+    reqEncryptionContext_ = partitionedEncryptionContext.get(true);
+
     if (!commitmentPolicy.algorithmAllowedForEncrypt(result.getAlgorithm())) {
       if (commitmentPolicy == CommitmentPolicy.ForbidEncryptAllowDecrypt) {
         throw new AwsCryptoException(
@@ -139,10 +154,15 @@ public class EncryptionHandler implements MessageCryptoHandler {
     // Construct the headers
     // Included here rather than as a sub-routine so we can set final variables.
     // This way we can avoid calculating the keys more times than we need.
-    final byte[] encryptionContextBytes = EncryptionContextSerializer.serialize(encryptionContext_);
+    //
+    // AAD: MUST be the serialization of the encryption context in the encryption materials, and
+    // this serialization MUST NOT contain any key value pairs listed in the encryption material's
+    // required encryption context keys.
+    final byte[] storedEncryptionContextBytes =
+        EncryptionContextSerializer.serialize(storedEncryptionContext_);
     final CiphertextHeaders unsignedHeaders =
         new CiphertextHeaders(
-            type_, cryptoAlgo_, encryptionContextBytes, keyBlobs_, contentType, frameSize);
+            type_, cryptoAlgo_, storedEncryptionContextBytes, keyBlobs_, contentType, frameSize);
     // We use a deterministic IV of zero for the header authentication.
     unsignedHeaders.setHeaderNonce(new byte[nonceLen_]);
 
@@ -163,7 +183,12 @@ public class EncryptionHandler implements MessageCryptoHandler {
       }
     }
 
-    ciphertextHeaders_ = signCiphertextHeaders(unsignedHeaders);
+    // The authenticated only encryption context is all encryption context key-value pairs where the
+    // key exists in Required Encryption Context Keys. It is then serialized according to the
+    // message header Key Value Pairs.
+    final byte[] reqEncryptionContextBytes =
+        EncryptionContextSerializer.serialize(reqEncryptionContext_);
+    ciphertextHeaders_ = signCiphertextHeaders(unsignedHeaders, reqEncryptionContextBytes);
     ciphertextHeaderBytes_ = ciphertextHeaders_.toByteArray();
     byte[] messageId_ = ciphertextHeaders_.getMessageId();
 
@@ -350,7 +375,7 @@ public class EncryptionHandler implements MessageCryptoHandler {
    */
   @Override
   public Map<String, String> getEncryptionContext() {
-    return encryptionContext_;
+    return storedEncryptionContext_;
   }
 
   @Override
@@ -397,9 +422,18 @@ public class EncryptionHandler implements MessageCryptoHandler {
     return cipherHandler.cipherData(nonce, aad, new byte[0], 0, 0);
   }
 
-  private CiphertextHeaders signCiphertextHeaders(final CiphertextHeaders unsignedHeaders) {
+  private CiphertextHeaders signCiphertextHeaders(
+      final CiphertextHeaders unsignedHeaders, byte[] reqEncryptionContextBytes) {
     final byte[] headerFields = unsignedHeaders.serializeAuthenticatedFields();
-    final byte[] headerTag = computeHeaderTag(unsignedHeaders.getHeaderNonce(), headerFields);
+    // The AAD MUST be the concatenation of the serialized message header body and the serialization
+    // of encryption context to only authenticate. The encryption context to only authenticate MUST
+    // be the encryption context in the encryption materials filtered to only contain key value
+    // pairs listed in the encryption material's required encryption context keys serialized
+    // according to the encryption context serialization specification.
+    final byte[] headerTag =
+        computeHeaderTag(
+            unsignedHeaders.getHeaderNonce(),
+            Arrays.concatenate(headerFields, reqEncryptionContextBytes));
 
     unsignedHeaders.setHeaderTag(headerTag);
 

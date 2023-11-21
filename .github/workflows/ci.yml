@@ -58,6 +58,37 @@ jobs:
           env-vars-for-codebuild: JAVA_ENV_VERSION
         env:
           JAVA_ENV_VERSION: ${{ matrix.platform.distribution }}${{ matrix.version }}
+  generateTestVectors:
+    name: Generate Vectors
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 1
+      fail-fast: true
+      matrix:
+        platform:
+          - distribution: openjdk
+            image: "aws/codebuild/standard:3.0"
+          - distribution: corretto
+            image: "aws/codebuild/amazonlinux2-x86_64-standard:3.0" # Corretto only runs on AL2
+        version: [ 8, 11 ]
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.CI_AWS_ROLE_ARN }}
+          aws-region: us-west-2
+          role-duration-seconds: 3600
+      - name: Generate Test Vectors
+        uses: aws-actions/aws-codebuild-run-build@v1
+        timeout-minutes: 60
+        with:
+          project-name: AWS-ESDK-Java-CI
+          buildspec-override: codebuild/ci/vectors-generator.yml
+          compute-type-override: BUILD_GENERAL1_LARGE
+          image-override: ${{ matrix.platform.image }}
+          env-vars-for-codebuild: JAVA_ENV_VERSION
+        env:
+          JAVA_ENV_VERSION: ${{ matrix.platform.distribution }}${{ matrix.version }}
   releaseCI:
     name: Release CI
     runs-on: ubuntu-latest

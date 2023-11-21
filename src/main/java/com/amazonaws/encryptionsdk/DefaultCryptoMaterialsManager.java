@@ -142,6 +142,7 @@ public class DefaultCryptoMaterialsManager implements CryptoMaterialsManager {
     return DecryptionMaterials.newBuilder()
         .setDataKey(dataKey)
         .setTrailingSignatureKey(pubKey)
+        .setEncryptionContext(request.getEncryptionContext())
         .build();
   }
 

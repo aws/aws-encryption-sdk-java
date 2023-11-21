@@ -5,15 +5,26 @@ package com.amazonaws.encryptionsdk;
 
 import com.amazonaws.encryptionsdk.exception.AwsCryptoException;
 import com.amazonaws.encryptionsdk.exception.BadCiphertextException;
-import com.amazonaws.encryptionsdk.internal.*;
+import com.amazonaws.encryptionsdk.internal.DecryptionHandler;
+import com.amazonaws.encryptionsdk.internal.EncryptionHandler;
+import com.amazonaws.encryptionsdk.internal.LazyMessageCryptoHandler;
+import com.amazonaws.encryptionsdk.internal.MessageCryptoHandler;
+import com.amazonaws.encryptionsdk.internal.ProcessingSummary;
+import com.amazonaws.encryptionsdk.internal.SignaturePolicy;
+import com.amazonaws.encryptionsdk.internal.Utils;
 import com.amazonaws.encryptionsdk.model.CiphertextHeaders;
-import com.amazonaws.encryptionsdk.model.EncryptionMaterials;
+import com.amazonaws.encryptionsdk.model.EncryptionMaterialsHandler;
 import com.amazonaws.encryptionsdk.model.EncryptionMaterialsRequest;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Map;
+import software.amazon.cryptography.materialproviders.ICryptographicMaterialsManager;
+import software.amazon.cryptography.materialproviders.IKeyring;
+import software.amazon.cryptography.materialproviders.MaterialProviders;
+import software.amazon.cryptography.materialproviders.model.CreateDefaultCryptographicMaterialsManagerInput;
+import software.amazon.cryptography.materialproviders.model.MaterialProvidersConfig;
 
 /**
  * Provides the primary entry-point to the AWS Encryption SDK. All encryption and decryption
@@ -45,9 +56,9 @@ import java.util.Map;
  * should be used to encrypt the {@code DataKeys} by calling {@link
  * MasterKeyProvider#getMasterKeysForEncryption(MasterKeyRequest)} . When more than one {@code
  * MasterKey} is returned, the first {@code MasterKeys} is used to create the {@code DataKeys} by
- * calling {@link MasterKey#generateDataKey(CryptoAlgorithm,java.util.Map)} . All of the other
+ * calling {@link MasterKey#generateDataKey(CryptoAlgorithm, java.util.Map)} . All of the other
  * {@code MasterKeys} are then used to re-encrypt that {@code DataKey} with {@link
- * MasterKey#encryptDataKey(CryptoAlgorithm,java.util.Map,DataKey)} . This list of {@link
+ * MasterKey#encryptDataKey(CryptoAlgorithm, java.util.Map, DataKey)} . This list of {@link
  * EncryptedDataKey EncryptedDataKeys} (the same {@code DataKey} possibly encrypted multiple times)
  * is stored in the {@link com.amazonaws.encryptionsdk.model.CiphertextHeaders}.
  *
@@ -78,6 +89,7 @@ public class AwsCrypto {
   private static final CommitmentPolicy DEFAULT_COMMITMENT_POLICY =
       CommitmentPolicy.RequireEncryptRequireDecrypt;
   private final CommitmentPolicy commitmentPolicy_;
+  private final MaterialProviders materialProviders_;
 
   /**
    * The maximum number of encrypted data keys to unwrap (resp. wrap) on decrypt (resp. encrypt), if
@@ -109,6 +121,7 @@ public class AwsCrypto {
     encryptionAlgorithm_ = builder.encryptionAlgorithm_;
     encryptionFrameSize_ = builder.encryptionFrameSize_;
     maxEncryptedDataKeys_ = builder.maxEncryptedDataKeys_;
+    materialProviders_ = builder.materialProviders_;
   }
 
   public static class Builder {
@@ -116,6 +129,7 @@ public class AwsCrypto {
     private int encryptionFrameSize_ = getDefaultFrameSize();
     private CommitmentPolicy commitmentPolicy_;
     private int maxEncryptedDataKeys_ = CiphertextHeaders.NO_MAX_ENCRYPTED_DATA_KEYS;
+    private MaterialProviders materialProviders_ = null;
 
     private Builder() {}
 
@@ -124,6 +138,7 @@ public class AwsCrypto {
       encryptionFrameSize_ = client.encryptionFrameSize_;
       commitmentPolicy_ = client.commitmentPolicy_;
       maxEncryptedDataKeys_ = client.maxEncryptedDataKeys_;
+      materialProviders_ = client.materialProviders_;
     }
 
     /**
@@ -137,6 +152,17 @@ public class AwsCrypto {
      */
     public Builder withEncryptionAlgorithm(CryptoAlgorithm encryptionAlgorithm) {
       this.encryptionAlgorithm_ = encryptionAlgorithm;
+      return this;
+    }
+
+    /**
+     * Sets the {@link MaterialProviders} for cryptographic operations.
+     *
+     * @param materialProviders The {@link MaterialProviders}
+     * @return The Builder, for method chaining
+     */
+    public Builder withMaterialProviders(MaterialProviders materialProviders) {
+      this.materialProviders_ = materialProviders;
       return this;
     }
 
@@ -181,6 +207,12 @@ public class AwsCrypto {
     }
 
     public AwsCrypto build() {
+      if (materialProviders_ == null) {
+        materialProviders_ =
+            MaterialProviders.builder()
+                .MaterialProvidersConfig(MaterialProvidersConfig.builder().build())
+                .build();
+      }
       return new AwsCrypto(this);
     }
   }
@@ -262,6 +294,7 @@ public class AwsCrypto {
    * <p>This method is equivalent to calling {@link #estimateCiphertextSize(CryptoMaterialsManager,
    * int, Map)} with a {@link DefaultCryptoMaterialsManager} based on the given provider.
    */
+  @Deprecated
   public <K extends MasterKey<K>> long estimateCiphertextSize(
       final MasterKeyProvider<K> provider,
       final int plaintextSize,
@@ -273,7 +306,28 @@ public class AwsCrypto {
   /**
    * Returns the best estimate for the output length of encrypting a plaintext with the provided
    * {@code plaintextSize} and {@code encryptionContext}. The actual ciphertext may be shorter.
+   *
+   * <p>This method is equivalent to calling {@link
+   * #estimateCiphertextSize(ICryptographicMaterialsManager, int, Map)} with a {@link
+   * ICryptographicMaterialsManager} based on the given keyring.
    */
+  public <K extends MasterKey<K>> long estimateCiphertextSize(
+      final IKeyring keyring,
+      final int plaintextSize,
+      final Map<String, String> encryptionContext) {
+    CreateDefaultCryptographicMaterialsManagerInput input =
+        CreateDefaultCryptographicMaterialsManagerInput.builder().keyring(keyring).build();
+    return estimateCiphertextSize(
+        materialProviders_.CreateDefaultCryptographicMaterialsManager(input),
+        plaintextSize,
+        encryptionContext);
+  }
+
+  /**
+   * Returns the best estimate for the output length of encrypting a plaintext with the provided
+   * {@code plaintextSize} and {@code encryptionContext}. The actual ciphertext may be shorter.
+   */
+  @Deprecated
   public long estimateCiphertextSize(
       CryptoMaterialsManager materialsManager,
       final int plaintextSize,
@@ -294,7 +348,37 @@ public class AwsCrypto {
     final MessageCryptoHandler cryptoHandler =
         new EncryptionHandler(
             getEncryptionFrameSize(),
-            checkAlgorithm(materialsManager.getMaterialsForEncrypt(request)),
+            checkAlgorithm(new CMMHandler(materialsManager).getMaterialsForEncrypt(request)),
+            commitmentPolicy_);
+
+    return cryptoHandler.estimateOutputSize(plaintextSize);
+  }
+
+  /**
+   * Returns the best estimate for the output length of encrypting a plaintext with the provided
+   * {@code plaintextSize} and {@code encryptionContext}. The actual ciphertext may be shorter.
+   */
+  public long estimateCiphertextSize(
+      ICryptographicMaterialsManager materialsManager,
+      final int plaintextSize,
+      final Map<String, String> encryptionContext) {
+    EncryptionMaterialsRequest request =
+        EncryptionMaterialsRequest.newBuilder()
+            .setContext(encryptionContext)
+            .setRequestedAlgorithm(getEncryptionAlgorithm())
+            // We're not actually encrypting any data, so don't consume any bytes from the cache's
+            // limits. We do need to
+            // pass /something/ though, or the cache will be bypassed (as it'll assume this is a
+            // streaming encrypt of
+            // unknown size).
+            .setPlaintextSize(0)
+            .setCommitmentPolicy(commitmentPolicy_)
+            .build();
+
+    final MessageCryptoHandler cryptoHandler =
+        new EncryptionHandler(
+            getEncryptionFrameSize(),
+            checkAlgorithm(new CMMHandler(materialsManager).getMaterialsForEncrypt(request)),
             commitmentPolicy_);
 
     return cryptoHandler.estimateOutputSize(plaintextSize);
@@ -304,18 +388,96 @@ public class AwsCrypto {
    * Returns the equivalent to calling {@link #estimateCiphertextSize(MasterKeyProvider, int, Map)}
    * with an empty {@code encryptionContext}.
    */
+  @Deprecated
   public <K extends MasterKey<K>> long estimateCiphertextSize(
       final MasterKeyProvider<K> provider, final int plaintextSize) {
     return estimateCiphertextSize(provider, plaintextSize, EMPTY_MAP);
   }
 
   /**
+   * Returns the equivalent to calling {@link #estimateCiphertextSize(IKeyring, int, Map)} with an
+   * empty {@code encryptionContext}.
+   */
+  public <K extends MasterKey<K>> long estimateCiphertextSize(
+      final IKeyring keyring, final int plaintextSize) {
+    return estimateCiphertextSize(keyring, plaintextSize, EMPTY_MAP);
+  }
+
+  /**
    * Returns the equivalent to calling {@link #estimateCiphertextSize(CryptoMaterialsManager, int,
    * Map)} with an empty {@code encryptionContext}.
    */
+  @Deprecated
   public long estimateCiphertextSize(
       final CryptoMaterialsManager materialsManager, final int plaintextSize) {
     return estimateCiphertextSize(materialsManager, plaintextSize, EMPTY_MAP);
+  }
+
+  /**
+   * Returns the equivalent to calling {@link
+   * #estimateCiphertextSize(ICryptographicMaterialsManager, int, Map)} with an empty {@code
+   * encryptionContext}.
+   */
+  public long estimateCiphertextSize(
+      final ICryptographicMaterialsManager materialsManager, final int plaintextSize) {
+    return estimateCiphertextSize(materialsManager, plaintextSize, EMPTY_MAP);
+  }
+
+  /**
+   * Returns the equivalent to calling {@link #encryptData(IKeyring, byte[], Map)} with an empty
+   * {@code encryptionContext}.
+   */
+  public <K extends MasterKey<K>> CryptoResult<byte[], ?> encryptData(
+      final IKeyring keyring, final byte[] plaintext) {
+    return encryptData(keyring, plaintext, EMPTY_MAP);
+  }
+
+  /**
+   * Returns an encrypted form of {@code plaintext} that has been protected with {@link DataKey
+   * DataKeys} that are in turn protected by {@link IKeyring Keyrings} provided by {@code keyring}.
+   *
+   * <p>This method is equivalent to calling {@link #encryptData(ICryptographicMaterialsManager,
+   * byte[], Map)}
+   */
+  public CryptoResult<byte[], ?> encryptData(
+      final IKeyring keyring, final byte[] plaintext, final Map<String, String> encryptionContext) {
+    Utils.assertNonNull(keyring, "keyring");
+    return encryptData(createDefaultCMM(keyring), plaintext, encryptionContext);
+  }
+
+  /**
+   * Returns the equivalent to calling {@link #encryptData(ICryptographicMaterialsManager, byte[],
+   * Map)} with an empty {@code encryptionContext}.
+   */
+  public CryptoResult<byte[], ?> encryptData(
+      final ICryptographicMaterialsManager materialsManager, final byte[] plaintext) {
+    return encryptData(materialsManager, plaintext, EMPTY_MAP);
+  }
+
+  /**
+   * Returns an encrypted form of {@code plaintext} that has been protected with {@link DataKey
+   * DataKeys} that are in turn protected by the given CryptoMaterialsProvider.
+   */
+  public CryptoResult<byte[], ?> encryptData(
+      final ICryptographicMaterialsManager materialsManager,
+      final byte[] plaintext,
+      final Map<String, String> encryptionContext) {
+    Utils.assertNonNull(materialsManager, "materialsManager");
+
+    EncryptionMaterialsRequest request =
+        EncryptionMaterialsRequest.newBuilder()
+            .setContext(encryptionContext)
+            .setRequestedAlgorithm(getEncryptionAlgorithm())
+            .setPlaintext(plaintext)
+            .setCommitmentPolicy(commitmentPolicy_)
+            .build();
+    CMMHandler cmmHandler = new CMMHandler(materialsManager);
+    EncryptionMaterialsHandler encryptionMaterials =
+        checkMaxEncryptedDataKeys(checkAlgorithm(cmmHandler.getMaterialsForEncrypt(request)));
+    final MessageCryptoHandler cryptoHandler =
+        new EncryptionHandler(getEncryptionFrameSize(), encryptionMaterials, commitmentPolicy_);
+
+    return encryptData(cryptoHandler, plaintext);
   }
 
   /**
@@ -326,10 +488,12 @@ public class AwsCrypto {
    * <p>This method is equivalent to calling {@link #encryptData(CryptoMaterialsManager, byte[],
    * Map)} using a {@link DefaultCryptoMaterialsManager} based on the given provider.
    */
+  @Deprecated
   public <K extends MasterKey<K>> CryptoResult<byte[], K> encryptData(
       final MasterKeyProvider<K> provider,
       final byte[] plaintext,
       final Map<String, String> encryptionContext) {
+    Utils.assertNonNull(provider, "provider");
     //noinspection unchecked
     return (CryptoResult<byte[], K>)
         encryptData(new DefaultCryptoMaterialsManager(provider), plaintext, encryptionContext);
@@ -339,6 +503,7 @@ public class AwsCrypto {
    * Returns an encrypted form of {@code plaintext} that has been protected with {@link DataKey
    * DataKeys} that are in turn protected by the given CryptoMaterialsProvider.
    */
+  @Deprecated
   public CryptoResult<byte[], ?> encryptData(
       CryptoMaterialsManager materialsManager,
       final byte[] plaintext,
@@ -351,11 +516,18 @@ public class AwsCrypto {
             .setCommitmentPolicy(commitmentPolicy_)
             .build();
 
-    EncryptionMaterials encryptionMaterials =
-        checkMaxEncryptedDataKeys(checkAlgorithm(materialsManager.getMaterialsForEncrypt(request)));
+    EncryptionMaterialsHandler encryptionMaterials =
+        checkMaxEncryptedDataKeys(
+            checkAlgorithm(
+                new EncryptionMaterialsHandler(materialsManager.getMaterialsForEncrypt(request))));
     final MessageCryptoHandler cryptoHandler =
         new EncryptionHandler(getEncryptionFrameSize(), encryptionMaterials, commitmentPolicy_);
 
+    return encryptData(cryptoHandler, plaintext);
+  }
+
+  private <K extends MasterKey<K>> CryptoResult<byte[], K> encryptData(
+      MessageCryptoHandler cryptoHandler, byte[] plaintext) {
     final int outSizeEstimate = cryptoHandler.estimateOutputSize(plaintext.length);
     final byte[] out = new byte[outSizeEstimate];
     int outLen =
@@ -365,13 +537,18 @@ public class AwsCrypto {
     final byte[] outBytes = Utils.truncate(out, outLen);
 
     //noinspection unchecked
-    return new CryptoResult(outBytes, cryptoHandler.getMasterKeys(), cryptoHandler.getHeaders());
+    return new CryptoResult(
+        outBytes,
+        cryptoHandler.getMasterKeys(),
+        cryptoHandler.getHeaders(),
+        cryptoHandler.getEncryptionContext());
   }
 
   /**
    * Returns the equivalent to calling {@link #encryptData(MasterKeyProvider, byte[], Map)} with an
    * empty {@code encryptionContext}.
    */
+  @Deprecated
   public <K extends MasterKey<K>> CryptoResult<byte[], K> encryptData(
       final MasterKeyProvider<K> provider, final byte[] plaintext) {
     return encryptData(provider, plaintext, EMPTY_MAP);
@@ -381,6 +558,7 @@ public class AwsCrypto {
    * Returns the equivalent to calling {@link #encryptData(CryptoMaterialsManager, byte[], Map)}
    * with an empty {@code encryptionContext}.
    */
+  @Deprecated
   public CryptoResult<byte[], ?> encryptData(
       final CryptoMaterialsManager materialsManager, final byte[] plaintext) {
     return encryptData(materialsManager, plaintext, EMPTY_MAP);
@@ -429,7 +607,8 @@ public class AwsCrypto {
     return new CryptoResult<>(
         Utils.encodeBase64String(ctBytes.getResult()),
         ctBytes.getMasterKeys(),
-        ctBytes.getHeaders());
+        ctBytes.getHeaders(),
+        ctBytes.getEncryptionContext());
   }
 
   /**
@@ -471,11 +650,10 @@ public class AwsCrypto {
    * usable {@link DataKey} in the ciphertext and then decrypts the ciphertext using that {@code
    * DataKey}.
    */
+  @Deprecated
   public <K extends MasterKey<K>> CryptoResult<byte[], K> decryptData(
       final MasterKeyProvider<K> provider, final byte[] ciphertext) {
-    return decryptData(
-        Utils.assertNonNull(provider, "provider"),
-        new ParsedCiphertext(ciphertext, maxEncryptedDataKeys_));
+    return decryptData(provider, new ParsedCiphertext(ciphertext, maxEncryptedDataKeys_));
   }
 
   /**
@@ -486,15 +664,15 @@ public class AwsCrypto {
    * @param ciphertext the ciphertext to attempt to decrypt.
    * @return the {@link CryptoResult} with the decrypted data.
    */
+  @Deprecated
   public CryptoResult<byte[], ?> decryptData(
       final CryptoMaterialsManager materialsManager, final byte[] ciphertext) {
-    return decryptData(
-        Utils.assertNonNull(materialsManager, "materialsManager"),
-        new ParsedCiphertext(ciphertext, maxEncryptedDataKeys_));
+    return decryptData(materialsManager, new ParsedCiphertext(ciphertext, maxEncryptedDataKeys_));
   }
 
   /** @see #decryptData(MasterKeyProvider, byte[]) */
   @SuppressWarnings("unchecked")
+  @Deprecated
   public <K extends MasterKey<K>> CryptoResult<byte[], K> decryptData(
       final MasterKeyProvider<K> provider, final ParsedCiphertext ciphertext) {
     Utils.assertNonNull(provider, "provider");
@@ -503,6 +681,7 @@ public class AwsCrypto {
   }
 
   /** @see #decryptData(CryptoMaterialsManager, byte[]) */
+  @Deprecated
   public CryptoResult<byte[], ?> decryptData(
       final CryptoMaterialsManager materialsManager, final ParsedCiphertext ciphertext) {
     Utils.assertNonNull(materialsManager, "materialsManager");
@@ -515,6 +694,11 @@ public class AwsCrypto {
             SignaturePolicy.AllowEncryptAllowDecrypt,
             maxEncryptedDataKeys_);
 
+    return decryptData(cryptoHandler, ciphertext);
+  }
+
+  private CryptoResult<byte[], ?> decryptData(
+      final MessageCryptoHandler cryptoHandler, final ParsedCiphertext ciphertext) {
     final byte[] ciphertextBytes = ciphertext.getCiphertext();
     final int contentLen = ciphertextBytes.length - ciphertext.getOffset();
     final int outSizeEstimate = cryptoHandler.estimateOutputSize(contentLen);
@@ -531,7 +715,119 @@ public class AwsCrypto {
     final byte[] outBytes = Utils.truncate(out, outLen);
 
     //noinspection unchecked
-    return new CryptoResult(outBytes, cryptoHandler.getMasterKeys(), cryptoHandler.getHeaders());
+    return new CryptoResult(
+        outBytes,
+        cryptoHandler.getMasterKeys(),
+        cryptoHandler.getHeaders(),
+        cryptoHandler.getEncryptionContext());
+  }
+
+  /**
+   * Decrypts the provided ciphertext by delegating to the provided materialsManager to obtain the
+   * decrypted {@link DataKey}.
+   *
+   * @param keyring the {@link IKeyring} to use for decryption operations.
+   * @param ciphertext the ciphertext to attempt to decrypt.
+   * @return the {@link CryptoResult} with the decrypted data.
+   */
+  public CryptoResult<byte[], ?> decryptData(final IKeyring keyring, final byte[] ciphertext) {
+    return decryptData(keyring, new ParsedCiphertext(ciphertext, maxEncryptedDataKeys_));
+  }
+
+  /**
+   * Decrypts the provided ciphertext by delegating to the provided materialsManager to obtain the
+   * decrypted {@link DataKey}.
+   *
+   * @param keyring the {@link IKeyring} to use for decryption operations.
+   * @param ciphertext the ciphertext to attempt to decrypt.
+   * @param encryptionContext The encryption context MUST contain a value for every key in the
+   *     configured required encryption context keys during encryption with Required Encryption
+   *     Context CMM.
+   * @return the {@link CryptoResult} with the decrypted data.
+   */
+  public CryptoResult<byte[], ?> decryptData(
+      final IKeyring keyring,
+      final byte[] ciphertext,
+      final Map<String, String> encryptionContext) {
+    return decryptData(
+        keyring, new ParsedCiphertext(ciphertext, maxEncryptedDataKeys_), encryptionContext);
+  }
+
+  /** @see #decryptData(IKeyring, byte[]) */
+  public CryptoResult<byte[], ?> decryptData(
+      final IKeyring keyring, final ParsedCiphertext ciphertext) {
+    return decryptData(keyring, ciphertext, EMPTY_MAP);
+  }
+
+  /** @see #decryptData(IKeyring, byte[], Map<String, String>) */
+  private CryptoResult<byte[], ?> decryptData(
+      IKeyring keyring, ParsedCiphertext ciphertext, Map<String, String> encryptionContext) {
+    //noinspection unchecked
+    Utils.assertNonNull(keyring, "keyring");
+
+    return decryptData(createDefaultCMM(keyring), ciphertext, encryptionContext);
+  }
+
+  /**
+   * Decrypts the provided ciphertext by delegating to the provided materialsManager to obtain the
+   * decrypted {@link DataKey}.
+   *
+   * @param materialsManager the {@link ICryptographicMaterialsManager} to use for decryption
+   *     operations.
+   * @param ciphertext the ciphertext to attempt to decrypt.
+   * @return the {@link CryptoResult} with the decrypted data.
+   */
+  public CryptoResult<byte[], ?> decryptData(
+      final ICryptographicMaterialsManager materialsManager, final byte[] ciphertext) {
+    return decryptData(materialsManager, new ParsedCiphertext(ciphertext, maxEncryptedDataKeys_));
+  }
+
+  /**
+   * Decrypts the provided ciphertext by delegating to the provided materialsManager to obtain the
+   * decrypted {@link DataKey}.
+   *
+   * @param materialsManager the {@link ICryptographicMaterialsManager} to use for decryption
+   *     operations.
+   * @param ciphertext the ciphertext to attempt to decrypt.
+   * @param encryptionContext The encryption context MUST contain a value for every key in the
+   *     configured required encryption context keys during encryption with Required Encryption
+   *     Context CMM.
+   * @return the {@link CryptoResult} with the decrypted data.
+   */
+  public CryptoResult<byte[], ?> decryptData(
+      final ICryptographicMaterialsManager materialsManager,
+      final byte[] ciphertext,
+      final Map<String, String> encryptionContext) {
+    return decryptData(
+        materialsManager,
+        new ParsedCiphertext(ciphertext, maxEncryptedDataKeys_),
+        encryptionContext);
+  }
+
+  /** @see #decryptData(ICryptographicMaterialsManager, byte[]) */
+  public CryptoResult<byte[], ?> decryptData(
+      final ICryptographicMaterialsManager materialsManager, final ParsedCiphertext ciphertext) {
+
+    return decryptData(materialsManager, ciphertext, EMPTY_MAP);
+  }
+
+  /** @see #decryptData(ICryptographicMaterialsManager, byte[]) */
+  public CryptoResult<byte[], ?> decryptData(
+      final ICryptographicMaterialsManager materialsManager,
+      final ParsedCiphertext ciphertext,
+      final Map<String, String> encryptionContext) {
+    Utils.assertNonNull(materialsManager, "materialsManager");
+
+    final MessageCryptoHandler cryptoHandler =
+        DecryptionHandler.create(
+            materialsManager,
+            ciphertext,
+            commitmentPolicy_,
+            SignaturePolicy.AllowEncryptAllowDecrypt,
+            maxEncryptedDataKeys_,
+            encryptionContext);
+
+    return decryptData(cryptoHandler, ciphertext);
   }
 
   /**
@@ -581,7 +877,8 @@ public class AwsCrypto {
     return new CryptoResult(
         new String(ptBytes.getResult(), StandardCharsets.UTF_8),
         ptBytes.getMasterKeys(),
-        ptBytes.getHeaders());
+        ptBytes.getHeaders(),
+        ptBytes.getEncryptionContext());
   }
 
   /**
@@ -591,6 +888,7 @@ public class AwsCrypto {
    * @see #encryptData(MasterKeyProvider, byte[], Map)
    * @see javax.crypto.CipherOutputStream
    */
+  @Deprecated
   public <K extends MasterKey<K>> CryptoOutputStream<K> createEncryptingStream(
       final MasterKeyProvider<K> provider,
       final OutputStream os,
@@ -604,32 +902,83 @@ public class AwsCrypto {
    * Returns a {@link CryptoOutputStream} which encrypts the data prior to passing it onto the
    * underlying {@link OutputStream}.
    *
+   * @see #encryptData(IKeyring, byte[], Map)
+   * @see javax.crypto.CipherOutputStream
+   */
+  public <K extends MasterKey<K>> CryptoOutputStream<K> createEncryptingStream(
+      final IKeyring keyring, final OutputStream os, final Map<String, String> encryptionContext) {
+    //noinspection unchecked
+    return (CryptoOutputStream<K>)
+        createEncryptingStream(createDefaultCMM(keyring), os, encryptionContext);
+  }
+
+  /**
+   * Returns a {@link CryptoOutputStream} which encrypts the data prior to passing it onto the
+   * underlying {@link OutputStream}.
+   *
    * @see #encryptData(MasterKeyProvider, byte[], Map)
    * @see javax.crypto.CipherOutputStream
    */
+  @Deprecated
   public CryptoOutputStream<?> createEncryptingStream(
       final CryptoMaterialsManager materialsManager,
       final OutputStream os,
       final Map<String, String> encryptionContext) {
     return new CryptoOutputStream<>(
-        os, getEncryptingStreamHandler(materialsManager, encryptionContext));
+        os, getEncryptingStreamHandler(new CMMHandler(materialsManager), encryptionContext));
+  }
+
+  /**
+   * Returns a {@link CryptoOutputStream} which encrypts the data prior to passing it onto the
+   * underlying {@link OutputStream}.
+   *
+   * @see #encryptData(IKeyring, byte[], Map)
+   * @see javax.crypto.CipherOutputStream
+   */
+  public CryptoOutputStream<?> createEncryptingStream(
+      final ICryptographicMaterialsManager materialsManager,
+      final OutputStream os,
+      final Map<String, String> encryptionContext) {
+    return new CryptoOutputStream<>(
+        os, getEncryptingStreamHandler(new CMMHandler(materialsManager), encryptionContext));
   }
 
   /**
    * Returns the equivalent to calling {@link #createEncryptingStream(MasterKeyProvider,
    * OutputStream, Map)} with an empty {@code encryptionContext}.
    */
+  @Deprecated
   public <K extends MasterKey<K>> CryptoOutputStream<K> createEncryptingStream(
       final MasterKeyProvider<K> provider, final OutputStream os) {
     return createEncryptingStream(provider, os, EMPTY_MAP);
   }
 
   /**
+   * Returns the equivalent to calling {@link #createEncryptingStream(IKeyring, OutputStream, Map)}
+   * with an empty {@code encryptionContext}.
+   */
+  public <K extends MasterKey<K>> CryptoOutputStream<K> createEncryptingStream(
+      final IKeyring keyring, final OutputStream os) {
+    return createEncryptingStream(keyring, os, EMPTY_MAP);
+  }
+
+  /**
    * Returns the equivalent to calling {@link #createEncryptingStream(CryptoMaterialsManager,
    * OutputStream, Map)} with an empty {@code encryptionContext}.
    */
+  @Deprecated
   public CryptoOutputStream<?> createEncryptingStream(
       final CryptoMaterialsManager materialsManager, final OutputStream os) {
+    return createEncryptingStream(materialsManager, os, EMPTY_MAP);
+  }
+
+  /**
+   * Returns the equivalent to calling {@link
+   * #createEncryptingStream(ICryptographicMaterialsManager, OutputStream, Map)} with an empty
+   * {@code encryptionContext}.
+   */
+  public CryptoOutputStream<?> createEncryptingStream(
+      final ICryptographicMaterialsManager materialsManager, final OutputStream os) {
     return createEncryptingStream(materialsManager, os, EMPTY_MAP);
   }
 
@@ -640,6 +989,7 @@ public class AwsCrypto {
    * @see #encryptData(MasterKeyProvider, byte[], Map)
    * @see javax.crypto.CipherInputStream
    */
+  @Deprecated
   public <K extends MasterKey<K>> CryptoInputStream<K> createEncryptingStream(
       final MasterKeyProvider<K> provider,
       final InputStream is,
@@ -653,15 +1003,47 @@ public class AwsCrypto {
    * Returns a {@link CryptoInputStream} which encrypts the data after reading it from the
    * underlying {@link InputStream}.
    *
+   * @see #encryptData(IKeyring, byte[], Map)
+   * @see javax.crypto.CipherInputStream
+   */
+  public <K extends MasterKey<K>> CryptoInputStream<K> createEncryptingStream(
+      final IKeyring keyring, final InputStream is, final Map<String, String> encryptionContext) {
+    ICryptographicMaterialsManager materialsManager = createDefaultCMM(keyring);
+    //noinspection unchecked
+    return (CryptoInputStream<K>) createEncryptingStream(materialsManager, is, encryptionContext);
+  }
+
+  /**
+   * Returns a {@link CryptoInputStream} which encrypts the data after reading it from the
+   * underlying {@link InputStream}.
+   *
    * @see #encryptData(MasterKeyProvider, byte[], Map)
    * @see javax.crypto.CipherInputStream
    */
+  @Deprecated
   public CryptoInputStream<?> createEncryptingStream(
       CryptoMaterialsManager materialsManager,
       final InputStream is,
       final Map<String, String> encryptionContext) {
     final MessageCryptoHandler cryptoHandler =
-        getEncryptingStreamHandler(materialsManager, encryptionContext);
+        getEncryptingStreamHandler(new CMMHandler(materialsManager), encryptionContext);
+
+    return new CryptoInputStream<>(is, cryptoHandler);
+  }
+
+  /**
+   * Returns a {@link CryptoInputStream} which encrypts the data after reading it from the
+   * underlying {@link InputStream}.
+   *
+   * @see #encryptData(IKeyring, byte[], Map)
+   * @see javax.crypto.CipherInputStream
+   */
+  public CryptoInputStream<?> createEncryptingStream(
+      ICryptographicMaterialsManager materialsManager,
+      final InputStream is,
+      final Map<String, String> encryptionContext) {
+    final MessageCryptoHandler cryptoHandler =
+        getEncryptingStreamHandler(new CMMHandler(materialsManager), encryptionContext);
 
     return new CryptoInputStream<>(is, cryptoHandler);
   }
@@ -670,17 +1052,38 @@ public class AwsCrypto {
    * Returns the equivalent to calling {@link #createEncryptingStream(MasterKeyProvider,
    * InputStream, Map)} with an empty {@code encryptionContext}.
    */
+  @Deprecated
   public <K extends MasterKey<K>> CryptoInputStream<K> createEncryptingStream(
       final MasterKeyProvider<K> provider, final InputStream is) {
     return createEncryptingStream(provider, is, EMPTY_MAP);
   }
 
   /**
+   * Returns the equivalent to calling {@link #createEncryptingStream(MasterKeyProvider,
+   * InputStream, Map)} with an empty {@code encryptionContext}.
+   */
+  public <K extends MasterKey<K>> CryptoInputStream<K> createEncryptingStream(
+      final IKeyring keyring, final InputStream is) {
+    return createEncryptingStream(keyring, is, EMPTY_MAP);
+  }
+
+  /**
    * Returns the equivalent to calling {@link #createEncryptingStream(CryptoMaterialsManager,
    * InputStream, Map)} with an empty {@code encryptionContext}.
    */
+  @Deprecated
   public CryptoInputStream<?> createEncryptingStream(
       final CryptoMaterialsManager materialsManager, final InputStream is) {
+    return createEncryptingStream(materialsManager, is, EMPTY_MAP);
+  }
+
+  /**
+   * Returns the equivalent to calling {@link
+   * #createEncryptingStream(ICryptographicMaterialsManager, InputStream, Map)} with an empty {@code
+   * encryptionContext}.
+   */
+  public CryptoInputStream<?> createEncryptingStream(
+      final ICryptographicMaterialsManager materialsManager, final InputStream is) {
     return createEncryptingStream(materialsManager, is, EMPTY_MAP);
   }
 
@@ -691,6 +1094,7 @@ public class AwsCrypto {
    * @see #decryptData(MasterKeyProvider, byte[])
    * @see javax.crypto.CipherOutputStream
    */
+  @Deprecated
   public <K extends MasterKey<K>> CryptoOutputStream<K> createUnsignedMessageDecryptingStream(
       final MasterKeyProvider<K> provider, final OutputStream os) {
     final MessageCryptoHandler cryptoHandler =
@@ -703,12 +1107,50 @@ public class AwsCrypto {
   }
 
   /**
+   * Returns a {@link CryptoOutputStream} which decrypts the data prior to passing it onto the
+   * underlying {@link OutputStream}. This version only accepts unsigned messages.
+   *
+   * @see #decryptData(IKeyring, byte[])
+   * @see javax.crypto.CipherOutputStream
+   */
+  public <K extends MasterKey<K>> CryptoOutputStream<K> createUnsignedMessageDecryptingStream(
+      final IKeyring keyring, final OutputStream os) {
+    final MessageCryptoHandler cryptoHandler =
+        DecryptionHandler.create(
+            createDefaultCMM(keyring),
+            commitmentPolicy_,
+            SignaturePolicy.AllowEncryptForbidDecrypt,
+            maxEncryptedDataKeys_);
+    return new CryptoOutputStream<K>(os, cryptoHandler);
+  }
+
+  /**
+   * Returns a {@link CryptoOutputStream} which decrypts the data prior to passing it onto the
+   * underlying {@link OutputStream}. This version only accepts unsigned messages.
+   *
+   * @see #decryptData(IKeyring, byte[], Map<String, String>)
+   * @see javax.crypto.CipherOutputStream
+   */
+  public <K extends MasterKey<K>> CryptoOutputStream<K> createUnsignedMessageDecryptingStream(
+      final IKeyring keyring, final OutputStream os, final Map<String, String> encryptionContext) {
+    final MessageCryptoHandler cryptoHandler =
+        DecryptionHandler.create(
+            createDefaultCMM(keyring),
+            commitmentPolicy_,
+            SignaturePolicy.AllowEncryptForbidDecrypt,
+            maxEncryptedDataKeys_,
+            encryptionContext);
+    return new CryptoOutputStream<K>(os, cryptoHandler);
+  }
+
+  /**
    * Returns a {@link CryptoInputStream} which decrypts the data after reading it from the
    * underlying {@link InputStream}. This version only accepts unsigned messages.
    *
    * @see #decryptData(MasterKeyProvider, byte[])
    * @see javax.crypto.CipherInputStream
    */
+  @Deprecated
   public <K extends MasterKey<K>> CryptoInputStream<K> createUnsignedMessageDecryptingStream(
       final MasterKeyProvider<K> provider, final InputStream is) {
     final MessageCryptoHandler cryptoHandler =
@@ -721,12 +1163,50 @@ public class AwsCrypto {
   }
 
   /**
+   * Returns a {@link CryptoInputStream} which decrypts the data after reading it from the
+   * underlying {@link InputStream}. This version only accepts unsigned messages.
+   *
+   * @see #decryptData(IKeyring, byte[])
+   * @see javax.crypto.CipherInputStream
+   */
+  public <K extends MasterKey<K>> CryptoInputStream<K> createUnsignedMessageDecryptingStream(
+      final IKeyring keyring, final InputStream is) {
+    final MessageCryptoHandler cryptoHandler =
+        DecryptionHandler.create(
+            createDefaultCMM(keyring),
+            commitmentPolicy_,
+            SignaturePolicy.AllowEncryptForbidDecrypt,
+            maxEncryptedDataKeys_);
+    return new CryptoInputStream<K>(is, cryptoHandler);
+  }
+
+  /**
+   * Returns a {@link CryptoInputStream} which decrypts the data after reading it from the
+   * underlying {@link InputStream}. This version only accepts unsigned messages.
+   *
+   * @see #decryptData(IKeyring, byte[], Map<String, String>)
+   * @see javax.crypto.CipherInputStream
+   */
+  public <K extends MasterKey<K>> CryptoInputStream<K> createUnsignedMessageDecryptingStream(
+      final IKeyring keyring, final InputStream is, final Map<String, String> encryptionContext) {
+    final MessageCryptoHandler cryptoHandler =
+        DecryptionHandler.create(
+            createDefaultCMM(keyring),
+            commitmentPolicy_,
+            SignaturePolicy.AllowEncryptForbidDecrypt,
+            maxEncryptedDataKeys_,
+            encryptionContext);
+    return new CryptoInputStream<K>(is, cryptoHandler);
+  }
+
+  /**
    * Returns a {@link CryptoOutputStream} which decrypts the data prior to passing it onto the
    * underlying {@link OutputStream}. This version only accepts unsigned messages.
    *
    * @see #decryptData(CryptoMaterialsManager, byte[])
    * @see javax.crypto.CipherOutputStream
    */
+  @Deprecated
   public CryptoOutputStream<?> createUnsignedMessageDecryptingStream(
       final CryptoMaterialsManager materialsManager, final OutputStream os) {
     final MessageCryptoHandler cryptoHandler =
@@ -739,12 +1219,52 @@ public class AwsCrypto {
   }
 
   /**
+   * Returns a {@link CryptoOutputStream} which decrypts the data prior to passing it onto the
+   * underlying {@link OutputStream}. This version only accepts unsigned messages.
+   *
+   * @see #decryptData(ICryptographicMaterialsManager, byte[])
+   * @see javax.crypto.CipherOutputStream
+   */
+  public CryptoOutputStream<?> createUnsignedMessageDecryptingStream(
+      final ICryptographicMaterialsManager materialsManager, final OutputStream os) {
+    final MessageCryptoHandler cryptoHandler =
+        DecryptionHandler.create(
+            materialsManager,
+            commitmentPolicy_,
+            SignaturePolicy.AllowEncryptForbidDecrypt,
+            maxEncryptedDataKeys_);
+    return new CryptoOutputStream(os, cryptoHandler);
+  }
+
+  /**
+   * Returns a {@link CryptoOutputStream} which decrypts the data prior to passing it onto the
+   * underlying {@link OutputStream}. This version only accepts unsigned messages.
+   *
+   * @see #decryptData(ICryptographicMaterialsManager, byte[], Map<String, String>)
+   * @see javax.crypto.CipherOutputStream
+   */
+  public CryptoOutputStream<?> createUnsignedMessageDecryptingStream(
+      final ICryptographicMaterialsManager materialsManager,
+      final OutputStream os,
+      final Map<String, String> encryptionContext) {
+    final MessageCryptoHandler cryptoHandler =
+        DecryptionHandler.create(
+            materialsManager,
+            commitmentPolicy_,
+            SignaturePolicy.AllowEncryptForbidDecrypt,
+            maxEncryptedDataKeys_,
+            encryptionContext);
+    return new CryptoOutputStream(os, cryptoHandler);
+  }
+
+  /**
    * Returns a {@link CryptoInputStream} which decrypts the data after reading it from the
    * underlying {@link InputStream}. This version only accepts unsigned messages.
    *
    * @see #encryptData(CryptoMaterialsManager, byte[], Map)
    * @see javax.crypto.CipherInputStream
    */
+  @Deprecated
   public CryptoInputStream<?> createUnsignedMessageDecryptingStream(
       final CryptoMaterialsManager materialsManager, final InputStream is) {
     final MessageCryptoHandler cryptoHandler =
@@ -753,6 +1273,45 @@ public class AwsCrypto {
             commitmentPolicy_,
             SignaturePolicy.AllowEncryptForbidDecrypt,
             maxEncryptedDataKeys_);
+    return new CryptoInputStream(is, cryptoHandler);
+  }
+
+  /**
+   * Returns a {@link CryptoInputStream} which decrypts the data after reading it from the
+   * underlying {@link InputStream}. This version only accepts unsigned messages.
+   *
+   * @see #encryptData(ICryptographicMaterialsManager, byte[])
+   * @see javax.crypto.CipherInputStream
+   */
+  public CryptoInputStream<?> createUnsignedMessageDecryptingStream(
+      final ICryptographicMaterialsManager materialsManager, final InputStream is) {
+    final MessageCryptoHandler cryptoHandler =
+        DecryptionHandler.create(
+            materialsManager,
+            commitmentPolicy_,
+            SignaturePolicy.AllowEncryptForbidDecrypt,
+            maxEncryptedDataKeys_);
+    return new CryptoInputStream(is, cryptoHandler);
+  }
+
+  /**
+   * Returns a {@link CryptoInputStream} which decrypts the data after reading it from the
+   * underlying {@link InputStream}. This version only accepts unsigned messages.
+   *
+   * @see #encryptData(ICryptographicMaterialsManager, byte[], Map<String, String>)
+   * @see javax.crypto.CipherInputStream
+   */
+  public CryptoInputStream<?> createUnsignedMessageDecryptingStream(
+      final ICryptographicMaterialsManager materialsManager,
+      final InputStream is,
+      final Map<String, String> encryptionContext) {
+    final MessageCryptoHandler cryptoHandler =
+        DecryptionHandler.create(
+            materialsManager,
+            commitmentPolicy_,
+            SignaturePolicy.AllowEncryptForbidDecrypt,
+            maxEncryptedDataKeys_,
+            encryptionContext);
     return new CryptoInputStream(is, cryptoHandler);
   }
 
@@ -771,6 +1330,7 @@ public class AwsCrypto {
    * @see #createUnsignedMessageDecryptingStream(MasterKeyProvider, OutputStream)
    * @see javax.crypto.CipherOutputStream
    */
+  @Deprecated
   public <K extends MasterKey<K>> CryptoOutputStream<K> createDecryptingStream(
       final MasterKeyProvider<K> provider, final OutputStream os) {
     final MessageCryptoHandler cryptoHandler =
@@ -779,6 +1339,58 @@ public class AwsCrypto {
             commitmentPolicy_,
             SignaturePolicy.AllowEncryptAllowDecrypt,
             maxEncryptedDataKeys_);
+    return new CryptoOutputStream<K>(os, cryptoHandler);
+  }
+
+  /**
+   * Returns a {@link CryptoOutputStream} which decrypts the data prior to passing it onto the
+   * underlying {@link OutputStream}.
+   *
+   * <p>Note that if the encrypted message includes a trailing signature, by necessity it cannot be
+   * verified until after the decrypted plaintext has been released to the underlying {@link
+   * OutputStream}! This behavior can be avoided by using the non-streaming #decryptData(IKeyring,
+   * byte[]) method instead, or #createUnsignedMessageDecryptingStream(IKeyring, OutputStream) if
+   * you do not need to decrypt signed messages.
+   *
+   * @see #decryptData(IKeyring, byte[])
+   * @see #createUnsignedMessageDecryptingStream(IKeyring, OutputStream)
+   * @see javax.crypto.CipherOutputStream
+   */
+  public <K extends MasterKey<K>> CryptoOutputStream<K> createDecryptingStream(
+      final IKeyring keyring, final OutputStream os) {
+    final MessageCryptoHandler cryptoHandler =
+        DecryptionHandler.create(
+            createDefaultCMM(keyring),
+            commitmentPolicy_,
+            SignaturePolicy.AllowEncryptAllowDecrypt,
+            maxEncryptedDataKeys_);
+    return new CryptoOutputStream<K>(os, cryptoHandler);
+  }
+
+  /**
+   * Returns a {@link CryptoOutputStream} which decrypts the data prior to passing it onto the
+   * underlying {@link OutputStream}.
+   *
+   * <p>Note that if the encrypted message includes a trailing signature, by necessity it cannot be
+   * verified until after the decrypted plaintext has been released to the underlying {@link
+   * OutputStream}! This behavior can be avoided by using the non-streaming #decryptData(IKeyring,
+   * byte[], Map<String, String>) method instead, or
+   * #createUnsignedMessageDecryptingStream(IKeyring, OutputStream, Map<String, String>) if you do
+   * not need to decrypt signed messages.
+   *
+   * @see #decryptData(IKeyring, byte[], Map<String, String>)
+   * @see #createUnsignedMessageDecryptingStream(IKeyring, OutputStream, Map<String, String>)
+   * @see javax.crypto.CipherOutputStream
+   */
+  public <K extends MasterKey<K>> CryptoOutputStream<K> createDecryptingStream(
+      final IKeyring keyring, final OutputStream os, final Map<String, String> encryptionContext) {
+    final MessageCryptoHandler cryptoHandler =
+        DecryptionHandler.create(
+            createDefaultCMM(keyring),
+            commitmentPolicy_,
+            SignaturePolicy.AllowEncryptAllowDecrypt,
+            maxEncryptedDataKeys_,
+            encryptionContext);
     return new CryptoOutputStream<K>(os, cryptoHandler);
   }
 
@@ -796,6 +1408,7 @@ public class AwsCrypto {
    * @see #createUnsignedMessageDecryptingStream(MasterKeyProvider, InputStream)
    * @see javax.crypto.CipherInputStream
    */
+  @Deprecated
   public <K extends MasterKey<K>> CryptoInputStream<K> createDecryptingStream(
       final MasterKeyProvider<K> provider, final InputStream is) {
     final MessageCryptoHandler cryptoHandler =
@@ -804,6 +1417,57 @@ public class AwsCrypto {
             commitmentPolicy_,
             SignaturePolicy.AllowEncryptAllowDecrypt,
             maxEncryptedDataKeys_);
+    return new CryptoInputStream<K>(is, cryptoHandler);
+  }
+
+  /**
+   * Returns a {@link CryptoInputStream} which decrypts the data after reading it from the
+   * underlying {@link InputStream}.
+   *
+   * <p>Note that if the encrypted message includes a trailing signature, by necessity it cannot be
+   * verified until after the decrypted plaintext has been produced from the {@link InputStream}!
+   * This behavior can be avoided by using the non-streaming #decryptData(IKeyring, byte[]) method
+   * instead, or #createUnsignedMessageDecryptingStream(IKeyring, InputStream) if you do not need to
+   * decrypt signed messages.
+   *
+   * @see #decryptData(IKeyring, byte[])
+   * @see #createUnsignedMessageDecryptingStream(IKeyring, InputStream)
+   * @see javax.crypto.CipherInputStream
+   */
+  public <K extends MasterKey<K>> CryptoInputStream<K> createDecryptingStream(
+      final IKeyring keyring, final InputStream is) {
+    final MessageCryptoHandler cryptoHandler =
+        DecryptionHandler.create(
+            createDefaultCMM(keyring),
+            commitmentPolicy_,
+            SignaturePolicy.AllowEncryptAllowDecrypt,
+            maxEncryptedDataKeys_);
+    return new CryptoInputStream<K>(is, cryptoHandler);
+  }
+
+  /**
+   * Returns a {@link CryptoInputStream} which decrypts the data after reading it from the
+   * underlying {@link InputStream}.
+   *
+   * <p>Note that if the encrypted message includes a trailing signature, by necessity it cannot be
+   * verified until after the decrypted plaintext has been produced from the {@link InputStream}!
+   * This behavior can be avoided by using the non-streaming #decryptData(IKeyring, byte[],
+   * Map<String, String>) method instead, or #createUnsignedMessageDecryptingStream(IKeyring,
+   * InputStream, Map<String, String>) if you do not need to decrypt signed messages.
+   *
+   * @see #decryptData(IKeyring, byte[], Map<String, String>)
+   * @see #createUnsignedMessageDecryptingStream(IKeyring, InputStream, Map<String, String>)
+   * @see javax.crypto.CipherInputStream
+   */
+  public <K extends MasterKey<K>> CryptoInputStream<K> createDecryptingStream(
+      final IKeyring keyring, final InputStream is, final Map<String, String> encryptionContext) {
+    final MessageCryptoHandler cryptoHandler =
+        DecryptionHandler.create(
+            createDefaultCMM(keyring),
+            commitmentPolicy_,
+            SignaturePolicy.AllowEncryptAllowDecrypt,
+            maxEncryptedDataKeys_,
+            encryptionContext);
     return new CryptoInputStream<K>(is, cryptoHandler);
   }
 
@@ -822,6 +1486,7 @@ public class AwsCrypto {
    * @see #createUnsignedMessageDecryptingStream(CryptoMaterialsManager, OutputStream)
    * @see javax.crypto.CipherOutputStream
    */
+  @Deprecated
   public CryptoOutputStream<?> createDecryptingStream(
       final CryptoMaterialsManager materialsManager, final OutputStream os) {
     final MessageCryptoHandler cryptoHandler =
@@ -830,6 +1495,62 @@ public class AwsCrypto {
             commitmentPolicy_,
             SignaturePolicy.AllowEncryptAllowDecrypt,
             maxEncryptedDataKeys_);
+    return new CryptoOutputStream(os, cryptoHandler);
+  }
+
+  /**
+   * Returns a {@link CryptoOutputStream} which decrypts the data prior to passing it onto the
+   * underlying {@link OutputStream}.
+   *
+   * <p>Note that if the encrypted message includes a trailing signature, by necessity it cannot be
+   * verified until after the decrypted plaintext has been released to the underlying {@link
+   * OutputStream}! This behavior can be avoided by using the non-streaming
+   * #decryptData(ICryptographicMaterialsManager, byte[]) method instead, or
+   * #createUnsignedMessageDecryptingStream(ICryptographicMaterialsManager, OutputStream) if you do
+   * not need to decrypt signed messages.
+   *
+   * @see #decryptData(ICryptographicMaterialsManager, byte[])
+   * @see #createUnsignedMessageDecryptingStream(ICryptographicMaterialsManager, OutputStream)
+   * @see javax.crypto.CipherOutputStream
+   */
+  public CryptoOutputStream<?> createDecryptingStream(
+      final ICryptographicMaterialsManager materialsManager, final OutputStream os) {
+    final MessageCryptoHandler cryptoHandler =
+        DecryptionHandler.create(
+            materialsManager,
+            commitmentPolicy_,
+            SignaturePolicy.AllowEncryptAllowDecrypt,
+            maxEncryptedDataKeys_);
+    return new CryptoOutputStream(os, cryptoHandler);
+  }
+
+  /**
+   * Returns a {@link CryptoOutputStream} which decrypts the data prior to passing it onto the
+   * underlying {@link OutputStream}.
+   *
+   * <p>Note that if the encrypted message includes a trailing signature, by necessity it cannot be
+   * verified until after the decrypted plaintext has been released to the underlying {@link
+   * OutputStream}! This behavior can be avoided by using the non-streaming
+   * #decryptData(ICryptographicMaterialsManager, byte[], Map<String, String>) method instead, or
+   * #createUnsignedMessageDecryptingStream(ICryptographicMaterialsManager, OutputStream,
+   * Map<String, String>) if you do not need to decrypt signed messages.
+   *
+   * @see #decryptData(ICryptographicMaterialsManager, byte[], Map<String, String>)
+   * @see #createUnsignedMessageDecryptingStream(ICryptographicMaterialsManager, OutputStream,
+   *     Map<String, String>)
+   * @see javax.crypto.CipherOutputStream
+   */
+  public CryptoOutputStream<?> createDecryptingStream(
+      final ICryptographicMaterialsManager materialsManager,
+      final OutputStream os,
+      final Map<String, String> encryptionContext) {
+    final MessageCryptoHandler cryptoHandler =
+        DecryptionHandler.create(
+            materialsManager,
+            commitmentPolicy_,
+            SignaturePolicy.AllowEncryptAllowDecrypt,
+            maxEncryptedDataKeys_,
+            encryptionContext);
     return new CryptoOutputStream(os, cryptoHandler);
   }
 
@@ -847,6 +1568,7 @@ public class AwsCrypto {
    * @see #createUnsignedMessageDecryptingStream(CryptoMaterialsManager, InputStream)
    * @see javax.crypto.CipherInputStream
    */
+  @Deprecated
   public CryptoInputStream<?> createDecryptingStream(
       final CryptoMaterialsManager materialsManager, final InputStream is) {
     final MessageCryptoHandler cryptoHandler =
@@ -858,9 +1580,65 @@ public class AwsCrypto {
     return new CryptoInputStream(is, cryptoHandler);
   }
 
+  /**
+   * Returns a {@link CryptoInputStream} which decrypts the data after reading it from the
+   * underlying {@link InputStream}.
+   *
+   * <p>Note that if the encrypted message includes a trailing signature, by necessity it cannot be
+   * verified until after the decrypted plaintext has been produced from the {@link InputStream}!
+   * This behavior can be avoided by using the non-streaming
+   * #decryptData(ICryptographicMaterialsManager, byte[]) method instead, or
+   * #createUnsignedMessageDecryptingStream(ICryptographicMaterialsManager, InputStream) if you do
+   * not need to decrypt signed messages.
+   *
+   * @see #decryptData(ICryptographicMaterialsManager, byte[])
+   * @see #createUnsignedMessageDecryptingStream(ICryptographicMaterialsManager, InputStream)
+   * @see javax.crypto.CipherInputStream
+   */
+  public CryptoInputStream<?> createDecryptingStream(
+      final ICryptographicMaterialsManager materialsManager, final InputStream is) {
+    final MessageCryptoHandler cryptoHandler =
+        DecryptionHandler.create(
+            materialsManager,
+            commitmentPolicy_,
+            SignaturePolicy.AllowEncryptAllowDecrypt,
+            maxEncryptedDataKeys_);
+    return new CryptoInputStream(is, cryptoHandler);
+  }
+
+  /**
+   * Returns a {@link CryptoInputStream} which decrypts the data after reading it from the
+   * underlying {@link InputStream}.
+   *
+   * <p>Note that if the encrypted message includes a trailing signature, by necessity it cannot be
+   * verified until after the decrypted plaintext has been produced from the {@link InputStream}!
+   * This behavior can be avoided by using the non-streaming
+   * #decryptData(ICryptographicMaterialsManager, byte[], Map<String, String>) method instead, or
+   * #createUnsignedMessageDecryptingStream(ICryptographicMaterialsManager, InputStream, Map<String,
+   * String>) if you do not need to decrypt signed messages.
+   *
+   * @see #decryptData(ICryptographicMaterialsManager, byte[], Map<String, String>)
+   * @see #createUnsignedMessageDecryptingStream(ICryptographicMaterialsManager, InputStream,
+   *     Map<String, String>)
+   * @see javax.crypto.CipherInputStream
+   */
+  public CryptoInputStream<?> createDecryptingStream(
+      final ICryptographicMaterialsManager materialsManager,
+      final InputStream is,
+      final Map<String, String> encryptionContext) {
+    final MessageCryptoHandler cryptoHandler =
+        DecryptionHandler.create(
+            materialsManager,
+            commitmentPolicy_,
+            SignaturePolicy.AllowEncryptAllowDecrypt,
+            maxEncryptedDataKeys_,
+            encryptionContext);
+    return new CryptoInputStream(is, cryptoHandler);
+  }
+
   private MessageCryptoHandler getEncryptingStreamHandler(
-      CryptoMaterialsManager materialsManager, Map<String, String> encryptionContext) {
-    Utils.assertNonNull(materialsManager, "materialsManager");
+      CMMHandler cmmHandler, Map<String, String> encryptionContext) {
+    Utils.assertNonNull(cmmHandler, "cmmHandler");
     Utils.assertNonNull(encryptionContext, "encryptionContext");
 
     EncryptionMaterialsRequest.Builder requestBuilder =
@@ -879,12 +1657,18 @@ public class AwsCrypto {
           return new EncryptionHandler(
               getEncryptionFrameSize(),
               checkMaxEncryptedDataKeys(
-                  checkAlgorithm(materialsManager.getMaterialsForEncrypt(requestBuilder.build()))),
+                  checkAlgorithm(cmmHandler.getMaterialsForEncrypt(requestBuilder.build()))),
               commitmentPolicy_);
         });
   }
 
-  private EncryptionMaterials checkAlgorithm(EncryptionMaterials result) {
+  private ICryptographicMaterialsManager createDefaultCMM(IKeyring keyring) {
+    CreateDefaultCryptographicMaterialsManagerInput input =
+        CreateDefaultCryptographicMaterialsManagerInput.builder().keyring(keyring).build();
+    return materialProviders_.CreateDefaultCryptographicMaterialsManager(input);
+  }
+
+  private EncryptionMaterialsHandler checkAlgorithm(EncryptionMaterialsHandler result) {
     if (encryptionAlgorithm_ != null && result.getAlgorithm() != encryptionAlgorithm_) {
       throw new AwsCryptoException(
           String.format(
@@ -896,7 +1680,8 @@ public class AwsCrypto {
     return result;
   }
 
-  private EncryptionMaterials checkMaxEncryptedDataKeys(EncryptionMaterials materials) {
+  private EncryptionMaterialsHandler checkMaxEncryptedDataKeys(
+      EncryptionMaterialsHandler materials) {
     if (maxEncryptedDataKeys_ > 0
         && materials.getEncryptedDataKeys().size() > maxEncryptedDataKeys_) {
       throw new AwsCryptoException("Encrypted data keys exceed maxEncryptedDataKeys");
