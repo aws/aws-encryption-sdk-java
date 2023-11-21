@@ -141,7 +141,6 @@ Resources:
         - !Ref SecretsManagerPolicyCI
         - !Ref ParameterStorePolicy
         - !Ref CodeBuildBasePolicyCI
-        - !Ref HierarchicalKeyringTestTableUsage
         - !Ref CodeBuildCISTSAllow
         - "arn:aws:iam::aws:policy/AWSCodeArtifactReadOnlyAccess"
         - "arn:aws:iam::aws:policy/AWSCodeArtifactAdminAccess"
@@ -161,7 +160,6 @@ Resources:
         - !Ref CodeBuildBasePolicy
         - !Ref SecretsManagerPolicyRelease
         - !Ref ParameterStorePolicy
-        - !Ref HierarchicalKeyringTestTableUsage
         - !Ref CodeBuildCISTSAllow
         - "arn:aws:iam::aws:policy/AWSCodeArtifactReadOnlyAccess"
         - "arn:aws:iam::aws:policy/AWSCodeArtifactAdminAccess"
