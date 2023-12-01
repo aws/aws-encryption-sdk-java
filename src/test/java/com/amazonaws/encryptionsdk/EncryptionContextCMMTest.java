@@ -5,8 +5,8 @@ import static com.amazonaws.encryptionsdk.kms.KMSTestFixtures.TEST_KEYSTORE_KMS_
 import static com.amazonaws.encryptionsdk.kms.KMSTestFixtures.TEST_KEYSTORE_NAME;
 import static com.amazonaws.encryptionsdk.kms.KMSTestFixtures.TEST_LOGICAL_KEYSTORE_NAME;
 
-import com.amazonaws.crypto.keyrings.RawAesKeyringExample;
-import com.amazonaws.crypto.keyrings.RawRsaKeyringExample;
+import com.amazonaws.crypto.examples.keyrings.RawAesKeyringExample;
+import com.amazonaws.crypto.examples.keyrings.RawRsaKeyringExample;
 import com.amazonaws.encryptionsdk.kms.KMSTestFixtures;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
