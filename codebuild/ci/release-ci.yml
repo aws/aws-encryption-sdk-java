@@ -26,7 +26,7 @@ phases:
       - tar -xvf ~/mvn_gpg.tgz -C ~
   build:
     commands:
-      - VERSION_HASH="$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)-$CODEBUILD_RESOLVED_SOURCE_VERSION"
+      - VERSION_HASH="$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)-$CODEBUILD_RESOLVED_SOURCE_VERSION-$CODEBUILD_WEBHOOK_TRIGGER"
 
       # Remove any old artifacts with the same commit ID. This allows CI to run more than once for the same commit
       - |
