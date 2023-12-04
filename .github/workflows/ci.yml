@@ -76,9 +76,9 @@ jobs:
           buildspec-override: codebuild/ci/release-ci.yml
           compute-type-override: BUILD_GENERAL1_LARGE
           image-override: aws/codebuild/standard:3.0
-          env-vars-for-codebuild: GITHUB_REF_NAME
+          env-vars-for-codebuild: GITHUB_EVENT_NAME
         env:
-          GITHUB_REF_NAME: $GITHUB_REF_NAME
+          GITHUB_EVENT_NAME: $GITHUB_EVENT_NAME
   validateCI:
     name: Validate CI
     runs-on: ubuntu-latest
@@ -110,8 +110,8 @@ jobs:
           env-vars-for-codebuild: |
             JAVA_ENV_VERSION,
             JAVA_NUMERIC_VERSION,
-            GITHUB_REF_NAME
+            GITHUB_EVENT_NAME
         env:
           JAVA_ENV_VERSION: ${{ matrix.platform.distribution }}${{ matrix.version }}
           JAVA_NUMERIC_VERSION: ${{ matrix.version }}
-          GITHUB_REF_NAME: $GITHUB_REF_NAME
+          GITHUB_EVENT_NAME: $GITHUB_EVENT_NAME
