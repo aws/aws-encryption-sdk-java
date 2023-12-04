@@ -16,12 +16,31 @@ phases:
   install:
     runtime-versions:
       java: corretto11
+    commands:
+      - git submodule update --init submodules/MaterialProviders
+      # Get Dafny
+      - curl https://github.com/dafny-lang/dafny/releases/download/v4.2.0/dafny-4.2.0-x64-ubuntu-20.04.zip  -L -o dafny.zip
+      - unzip -qq dafny.zip && rm dafny.zip
+      - export PATH="$PWD/dafny:$PATH"
+      # Get Gradle 7.6
+      - curl https://services.gradle.org/distributions/gradle-7.6-all.zip -L -o gradle.zip
+      - unzip -qq gradle.zip && rm gradle.zip
+      - export PATH="$PWD/gradle-7.6/bin:$PATH"
   pre_build:
     commands:
       - git checkout $BRANCH
       - export SETTINGS_FILE=$(pwd)/codebuild/release/settings.xml
       - aws secretsmanager get-secret-value --region us-west-2 --secret-id Maven-GPG-Keys-Release --query SecretBinary --output text | base64 -d > ~/mvn_gpg.tgz
       - tar -xvf ~/mvn_gpg.tgz -C ~
+      # Build and deploy TestVectorsAwsCryptographicMaterialProviders to maven local
+      - cd submodules/MaterialProviders
+      - git checkout $BRANCH
+      - cd TestVectorsAwsCryptographicMaterialProviders/
+      # This works because `node` is installed by default on GHA runners
+      - CORES=$(node -e 'console.log(os.cpus().length)')
+      - make build_java CORES=$CORES
+      - ./runtimes/java/gradlew -p runtimes/java publishMavenLocalPublicationToMavenLocal
+      - cd $CODEBUILD_SRC_DIR
   build:
     commands:
       - |
