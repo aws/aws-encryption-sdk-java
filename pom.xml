@@ -83,12 +83,16 @@
             <groupId>software.amazon.smithy.dafny</groupId>
             <artifactId>conversion</artifactId>
             <version>0.1</version>
+            <optional>true</optional>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.dafny</groupId>
             <artifactId>DafnyRuntime</artifactId>
             <version>4.2.0</version>
+            <optional>true</optional>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
