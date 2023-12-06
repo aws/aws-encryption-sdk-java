@@ -46,6 +46,14 @@ phases:
       - cd $CODEBUILD_SRC_DIR
   build:
     commands:
+      # Assume Role to access non-prod resources
+      - TMP_ROLE=$(aws sts assume-role --role-arn "arn:aws:iam::370957321024:role/GitHub-CI-Public-ESDK-Java-Role-us-west-2" --role-session-name "CB-TestVectorResources")
+      - export TMP_ROLE
+      - export AWS_ACCESS_KEY_ID=$(echo "${TMP_ROLE}" | jq -r '.Credentials.AccessKeyId')
+      - export AWS_SECRET_ACCESS_KEY=$(echo "${TMP_ROLE}" | jq -r '.Credentials.SecretAccessKey')
+      - export AWS_SESSION_TOKEN=$(echo "${TMP_ROLE}" | jq -r '.Credentials.SessionToken')
+      - aws sts get-caller-identity
+
       - VERSION_HASH="$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)-$CODEBUILD_RESOLVED_SOURCE_VERSION"
 #      See https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-env-vars.html
       - echo "Setting version in POM to $VERSION_HASH"
