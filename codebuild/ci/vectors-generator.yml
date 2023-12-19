@@ -28,14 +28,9 @@ phases:
       - export AWS_SESSION_TOKEN=$(echo "${TMP_ROLE}" | jq -r '.Credentials.SessionToken')
       - aws sts get-caller-identity
 
-      # Build and deploy to maven local
-      - cd submodules/MaterialProviders
-      - git checkout $BRANCH
-      - cd TestVectorsAwsCryptographicMaterialProviders/
-      # This works because `node` is installed by default on GHA runners
-      - CORES=$(node -e 'console.log(os.cpus().length)')
-      - make build_java CORES=$CORES
-      - ./runtimes/java/gradlew -p runtimes/java publishMavenLocalPublicationToMavenLocal
+      # Build and deploy TestVectors to maven local
+      - cd submodules/MaterialProviders/TestVectorsAwsCryptographicMaterialProviders/
+      - make build_java && make mvn_local_deploy
       - cd $CODEBUILD_SRC_DIR
   build:
     commands:
