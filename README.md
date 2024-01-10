@@ -166,7 +166,7 @@ public class StringExample {
         final byte[] ciphertext = encryptResult.getResult();
         System.out.println("Ciphertext: " + Arrays.toString(ciphertext));
 
-        // 5. Decrypt the data
+        // Decrypt the data
         final CryptoResult<byte[], ?> decryptResult = 
                 crypto.decryptData(
                         kmsKeyring, 
