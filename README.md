@@ -21,67 +21,67 @@ To use the AWS Encryption SDK for Java you must have:
 
   **Note:** If you use the Oracle JDK, you must also download and install the [Java Cryptography Extension (JCE) Unlimited Strength Jurisdiction Policy Files](http://www.oracle.com/technetwork/java/javase/downloads/jce8-download-2133166.html).
 
-* **Declare a Dependency on the AWS Encryption SDK in Java and it's dependencies**
+  * **Declare a Dependency on the AWS Encryption SDK in Java and it's dependencies**
 
-  This library requires the AwsCryptographicMaterialProviders library and KMS client from the AWS SDK for Java V2.
+    This library requires the AwsCryptographicMaterialProviders library and KMS client from the AWS SDK for Java V2.
 
-  The KMS client from the AWS SDK for Java V1 is an **optional** dependency.
+    The KMS client from the AWS SDK for Java V1 is an **optional** dependency.
 
-  **Note:** The AwsCryptographicMaterialProviders library only supports the AWS SDK for Java V2 and requires a HARD dependency on the AWS SDK for Java V2's KMS module, regardless of whether a KMS Keyring is used.
+    **Note:** The AwsCryptographicMaterialProviders library only supports the AWS SDK for Java V2 and requires a HARD dependency on the AWS SDK for Java V2's KMS module, regardless of whether a KMS Keyring is used.
 
-  * **Via Apache Maven**  
-    Add the following to your project's `pom.xml`.
-  ```xml
-  <project>
-  ...
-  <dependencyManagement>
-   <dependencies>
+    * **Via Apache Maven**  
+      Add the following to your project's `pom.xml`.
+    ```xml
+    <project>
+    ...
+    <dependencyManagement>
+     <dependencies>
+        <dependency>
+          <groupId>software.amazon.awssdk</groupId>
+          <artifactId>bom</artifactId>
+          <version>2.20.91</version>
+          <type>pom</type>
+          <scope>import</scope>
+        </dependency>
+     </dependencies>
+    </dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>com.amazonaws</groupId>
+        <artifactId>aws-encryption-sdk-java</artifactId>
+        <version>3.0.0</version>
+      </dependency>
+      <dependency>
+        <groupId>software.amazon.cryptography</groupId>
+        <artifactId>aws-cryptographic-material-providers</artifactId>
+        <version>1.0.2</version>
+      </dependency>
       <dependency>
         <groupId>software.amazon.awssdk</groupId>
-        <artifactId>bom</artifactId>
-        <version>2.20.91</version>
-        <type>pom</type>
-        <scope>import</scope>
+        <artifactId>kms</artifactId>
       </dependency>
-   </dependencies>
-  </dependencyManagement>
-  <dependencies>
-    <dependency>
-      <groupId>com.amazonaws</groupId>
-      <artifactId>aws-encryption-sdk-java</artifactId>
-      <version>3.0.0</version>
-    </dependency>
-    <dependency>
-      <groupId>software.amazon.cryptography</groupId>
-      <artifactId>aws-cryptographic-material-providers</artifactId>
-      <version>1.0.2</version>
-    </dependency>
-    <dependency>
-      <groupId>software.amazon.awssdk</groupId>
-      <artifactId>kms</artifactId>
-    </dependency>
-    <!-- The following are optional -->
-    <dependency>
-        <groupId>com.amazonaws</groupId>
-        <artifactId>aws-java-sdk</artifactId>
-        <version>1.12.394</version>
-        <optional>true</optional>
-    </dependency>
-  </dependencies>
-  ...
-  </project>
-  ```
+      <!-- The following are optional -->
+      <dependency>
+          <groupId>com.amazonaws</groupId>
+          <artifactId>aws-java-sdk</artifactId>
+          <version>1.12.394</version>
+          <optional>true</optional>
+      </dependency>
+    </dependencies>
+    ...
+    </project>
+    ```
 
-* **Via Gradle Kotlin**  
-  In a Gradle Java Project, add the following to the _dependencies_ section:
-   ```kotlin
-   implementation("com.amazonaws:aws-encryption-sdk-java:3.0.0")
-   implementation("software.amazon.cryptography:aws-cryptographic-material-providers:1.0.2")
-   implementation(platform("software.amazon.awssdk:bom:2.20.91"))
-   implementation("software.amazon.awssdk:kms")
-   // The following are optional:
-   implementation("com.amazonaws:aws-java-sdk:1.12.394")
-   ```
+    * **Via Gradle Kotlin**  
+      In a Gradle Java Project, add the following to the _dependencies_ section:
+    ```kotlin
+    implementation("com.amazonaws:aws-encryption-sdk-java:3.0.0")
+    implementation("software.amazon.cryptography:aws-cryptographic-material-providers:1.0.2")
+    implementation(platform("software.amazon.awssdk:bom:2.20.91"))
+    implementation("software.amazon.awssdk:kms")
+    // The following are optional:
+    implementation("com.amazonaws:aws-java-sdk:1.12.394")
+    ```
 
 * **Bouncy Castle** or **Bouncy Castle FIPS**
 
