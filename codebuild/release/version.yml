@@ -12,7 +12,7 @@ env:
 phases:
   install:
     commands:
-      - n 18
+      - n 20
       - node -v
       - npm install --save-dev semantic-release
       - npm install @semantic-release/changelog -d
