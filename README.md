@@ -23,11 +23,11 @@ To use the AWS Encryption SDK for Java you must have:
 
 * **Declare a Dependency on the AWS Encryption SDK in Java and it's dependencies**
 
-  This library requires the AwsCryptographicMaterialProviders library and KMS client from the AWS SDK for Java V2.
+  This library requires the AWS Material Providers Library in Java, and the KMS and DynamoDB clients from the AWS Java SDK V2.
 
   The KMS client from the AWS SDK for Java V1 is an **optional** dependency.
 
-  **Note:** The AwsCryptographicMaterialProviders library only supports the AWS SDK for Java V2 and requires a HARD dependency on the AWS SDK for Java V2's KMS module, regardless of whether a KMS Keyring is used.
+  **Note:** The AWS Material Providers Library in Java only supports the AWS SDK for Java V2 and requires a HARD dependency on the AWS SDK for Java V2's KMS and DynamoDB clients, regardless of whether a KMS Keyring or Hierarchical Keyring is used.
 
   * **Via Apache Maven**  
     Add the following to your project's `pom.xml`.
@@ -58,6 +58,10 @@ To use the AWS Encryption SDK for Java you must have:
       </dependency>
       <dependency>
         <groupId>software.amazon.awssdk</groupId>
+        <artifactId>dynamodb</artifactId>
+      </dependency>
+      <dependency>
+        <groupId>software.amazon.awssdk</groupId>
         <artifactId>kms</artifactId>
       </dependency>
       <!-- The following are optional -->
@@ -79,6 +83,7 @@ To use the AWS Encryption SDK for Java you must have:
     implementation("software.amazon.cryptography:aws-cryptographic-material-providers:1.0.2")
     implementation(platform("software.amazon.awssdk:bom:2.20.91"))
     implementation("software.amazon.awssdk:kms")
+    implementation("software.amazon.awssdk:dynamodb")
     // The following are optional:
     implementation("com.amazonaws:aws-java-sdk:1.12.394")
     ```
