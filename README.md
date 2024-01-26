@@ -23,11 +23,11 @@ To use the AWS Encryption SDK for Java you must have:
 
 * **Declare a Dependency on the AWS Encryption SDK in Java and it's dependencies**
 
-  This library requires the AWS Material Providers Library in Java, and the KMS and DynamoDB clients from the AWS Java SDK V2.
+  This library requires the AWS Cryptographic Material Providers Library in Java, and the KMS and DynamoDB clients from the AWS Java SDK V2.
 
   The KMS client from the AWS SDK for Java V1 is an **optional** dependency.
 
-  **Note:** The AWS Material Providers Library in Java only supports the AWS SDK for Java V2 and requires a HARD dependency on the AWS SDK for Java V2's KMS and DynamoDB clients, regardless of whether a KMS Keyring or Hierarchical Keyring is used.
+  **Note:** The AWS Cryptographic Material Providers Library in Java only supports the AWS SDK for Java V2 and requires a HARD dependency on the AWS SDK for Java V2's KMS and DynamoDB clients, regardless of whether a KMS Keyring or Hierarchical Keyring is used.
 
   * **Via Apache Maven**  
     Add the following to your project's `pom.xml`.
@@ -122,7 +122,7 @@ For help installing and using ACCP, see the [amazon-corretto-crypto-provider rep
 To get started with the AWS Encryption SDK for Java
 
 1. Instantiate the AWS Encryption SDK.
-2. Create a Keyring from AwsCryptographicMaterialProviders Library.
+2. Create a Keyring from the AWS Cryptographic Material Providers Library.
 3. Encrypt and decrypt data.
 
 ```java
