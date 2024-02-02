@@ -69,6 +69,7 @@ public class CryptoResult<T, K extends MasterKey<K>> {
   }
 
   /** Convenience method for retrieving the keyIds in the results from {@link #getMasterKeys()}. */
+  @Deprecated
   public List<String> getMasterKeyIds() {
     final List<String> result = new ArrayList<>(masterKeys_.size());
     for (final MasterKey<K> mk : masterKeys_) {
