@@ -115,7 +115,7 @@ public class AwsCryptoIntegrationTest {
     List<?> masterKeys = encryptResult.getMasterKeys();
     List<String> masterKeyIds = encryptResult.getMasterKeyIds();
     // Assert CryptoResult returns empty list if keyrings are used.
-    assert masterKeys.size() == 0;
+    assert masterKeys.isEmpty();
     assert masterKeyIds.isEmpty();
 
     final byte[] ciphertext = encryptResult.getResult();
@@ -126,7 +126,7 @@ public class AwsCryptoIntegrationTest {
     masterKeys = decryptResult.getMasterKeys();
     masterKeyIds = decryptResult.getMasterKeyIds();
     // Assert CryptoResult returns empty list if keyrings are used.
-    assert masterKeys.size() == 0;
+    assert masterKeys.isEmpty();
     assert masterKeyIds.isEmpty();
 
     // Verify that the decrypted plaintext matches the original plaintext
