@@ -113,21 +113,21 @@ public class AwsCryptoIntegrationTest {
         crypto.encryptData(kmsKeyring, EXAMPLE_DATA, encryptionContext);
 
     List<?> masterKeys = encryptResult.getMasterKeys();
+    List<String> masterKeyIds = encryptResult.getMasterKeyIds();
     // Assert CryptoResult returns empty list if keyrings are used.
     assert masterKeys.size() == 0;
+    assert masterKeyIds.isEmpty();
 
     final byte[] ciphertext = encryptResult.getResult();
 
     // Decrypt the data
-    final CryptoResult<byte[], ?> decryptResult = crypto.decryptData(kmsKeyring, ciphertext);
+    final CryptoResult<byte[], ?> decryptResult =
+        crypto.decryptData(kmsKeyring, ciphertext, encryptionContext);
+    masterKeys = decryptResult.getMasterKeys();
+    masterKeyIds = decryptResult.getMasterKeyIds();
+    // Assert CryptoResult returns empty list if keyrings are used.
     assert masterKeys.size() == 0;
-
-    // Verify that the encryption context in the result contains the
-    // encryption context supplied to the encryptData method.
-    if (!encryptionContext.entrySet().stream()
-        .allMatch(e -> e.getValue().equals(decryptResult.getEncryptionContext().get(e.getKey())))) {
-      throw new IllegalStateException("Wrong Encryption Context!");
-    }
+    assert masterKeyIds.isEmpty();
 
     // Verify that the decrypted plaintext matches the original plaintext
     assert Arrays.equals(decryptResult.getResult(), EXAMPLE_DATA);
