@@ -890,7 +890,9 @@ public class DecryptionHandler<K extends MasterKey<K>> implements MessageCryptoH
 
   @Override
   public List<K> getMasterKeys() {
-    return Collections.singletonList(dataKey_.getMasterKey());
+    return dataKey_.getMasterKey() == null
+        ? Collections.emptyList()
+        : Collections.singletonList(dataKey_.getMasterKey());
   }
 
   @Override

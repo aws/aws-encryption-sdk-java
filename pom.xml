@@ -54,8 +54,8 @@
     <dependencies>
         <dependency>
             <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk</artifactId>
-            <version>1.12.394</version>
+            <artifactId>aws-java-sdk-kms</artifactId>
+            <version>1.12.531</version>
             <optional>true</optional>
         </dependency>
 
@@ -75,22 +75,6 @@
             <groupId>software.amazon.cryptography</groupId>
             <artifactId>TestAwsCryptographicMaterialProviders</artifactId>
             <version>1.0-SNAPSHOT</version>
-            <optional>true</optional>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>software.amazon.smithy.dafny</groupId>
-            <artifactId>conversion</artifactId>
-            <version>0.1</version>
-            <optional>true</optional>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.dafny</groupId>
-            <artifactId>DafnyRuntime</artifactId>
-            <version>4.2.0</version>
             <optional>true</optional>
             <scope>test</scope>
         </dependency>
@@ -129,15 +113,9 @@
         </dependency>
 
         <dependency>
-            <groupId>com.google.code.findbugs</groupId>
-            <artifactId>jsr305</artifactId>
-            <version>3.0.2</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.google.code.findbugs</groupId>
-            <artifactId>annotations</artifactId>
-            <version>3.0.1</version>
+            <groupId>com.github.spotbugs</groupId>
+            <artifactId>spotbugs-annotations</artifactId>
+            <version>4.7.3</version>
             <scope>provided</scope>
         </dependency>
 
