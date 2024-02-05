@@ -21,7 +21,7 @@ To use the AWS Encryption SDK for Java you must have:
 
   **Note:** If you use the Oracle JDK, you must also download and install the [Java Cryptography Extension (JCE) Unlimited Strength Jurisdiction Policy Files](http://www.oracle.com/technetwork/java/javase/downloads/jce8-download-2133166.html).
 
-* **Declare a Dependency on the AWS Encryption SDK in Java and it's dependencies**
+* **Declare a Dependency on the AWS Encryption SDK in Java and its dependencies**
 
   This library requires the AWS Cryptographic Material Providers Library in Java, and the KMS and DynamoDB clients from the AWS Java SDK V2.
 
