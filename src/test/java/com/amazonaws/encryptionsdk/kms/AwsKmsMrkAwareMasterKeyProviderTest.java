@@ -231,7 +231,6 @@ public class AwsKmsMrkAwareMasterKeyProviderTest {
               AwsKmsMrkAwareMasterKeyProvider.builder()
                   .withDefaultRegion(null)
                   .buildStrict("mrk-edb7fe6942894d32ac46dbb1c922d574"));
-
       AwsKmsMrkAwareMasterKeyProvider.builder()
           .withDefaultRegion("us-east-1")
           .buildStrict("mrk-edb7fe6942894d32ac46dbb1c922d574");
