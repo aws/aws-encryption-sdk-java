@@ -330,7 +330,7 @@ public class TestVectorGenerator {
       KmsMasterKeyProvider kmsProv) {
 
     String testName = testEntry.getKey();
-    Map<String, Object> data = testEntry.getValue();
+    Map<String, Object> data = (Map<String, Object>) testEntry.getValue().get("encryption-scenario");
 
     String plaintext = (String) data.get("plaintext");
     String algorithmId = (String) data.get("algorithm");
