@@ -65,7 +65,8 @@ import software.amazon.cryptography.materialproviderstestvectorkeys.model.TestVe
 @RunWith(Parameterized.class)
 public class TestVectorGenerator {
 
-  private static final String encryptManifestList = "https://raw.githubusercontent.com/awslabs/aws-crypto-tools-test-vector-framework/master/features/CANONICAL-GENERATED-MANIFESTS/0006-awses-message-decryption-generation.v2.json";
+  private static final String encryptManifestList =
+      "https://raw.githubusercontent.com/awslabs/aws-crypto-tools-test-vector-framework/master/features/CANONICAL-GENERATED-MANIFESTS/0006-awses-message-decryption-generation.v2.json";
   // We save the files in memory to avoid repeatedly retrieving them. This won't work if the
   // plaintexts are too
   // large or numerous
@@ -195,7 +196,7 @@ public class TestVectorGenerator {
     final Map<String, Object> manifest = mapper.readValue(new URL(encryptManifestList), Map.class);
     mapper
         .writerWithDefaultPrettyPrinter()
-        .writeValue (decryptManifest, createDecryptManifest(manifest));
+        .writeValue(decryptManifest, createDecryptManifest(manifest));
 
     try (InputStream in = new FileInputStream(encryptKeyManifest)) {
       Files.copy(in, keyManifest.toPath(), StandardCopyOption.REPLACE_EXISTING);
@@ -302,7 +303,8 @@ public class TestVectorGenerator {
                     Collectors.toMap(
                         Map.Entry::getKey,
                         entry -> {
-                          Map<String, Object> scenario = (Map<String, Object>) entry.getValue().get("encryption-scenario");
+                          Map<String, Object> scenario =
+                              (Map<String, Object>) entry.getValue().get("encryption-scenario");
                           return new LinkedHashMap<String, Object>() {
                             {
                               put("ciphertext", "file://ciphertexts/" + entry.getKey());
@@ -398,7 +400,8 @@ public class TestVectorGenerator {
       MaterialProviders materialProviders,
       KeyVectors keyVectors) {
     String testName = testEntry.getKey();
-    Map<String, Object> data = (Map<String, Object>) testEntry.getValue().get("encryption-scenario");
+    Map<String, Object> data =
+        (Map<String, Object>) testEntry.getValue().get("encryption-scenario");
 
     String plaintext = (String) data.get("plaintext");
     String algorithmId = (String) data.get("algorithm");
