@@ -30,6 +30,7 @@ import java.security.PublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -42,6 +43,7 @@ import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import junit.framework.TestCase;
 import org.bouncycastle.util.encoders.Base64;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -49,9 +51,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.cryptography.materialproviders.ICryptographicMaterialsManager;
 import software.amazon.cryptography.materialproviders.IKeyring;
 import software.amazon.cryptography.materialproviders.MaterialProviders;
+import software.amazon.cryptography.materialproviders.model.CreateDefaultCryptographicMaterialsManagerInput;
 import software.amazon.cryptography.materialproviders.model.CreateMultiKeyringInput;
+import software.amazon.cryptography.materialproviders.model.CreateRequiredEncryptionContextCMMInput;
 import software.amazon.cryptography.materialproviders.model.MaterialProvidersConfig;
 import software.amazon.cryptography.materialproviderstestvectorkeys.KeyVectors;
 import software.amazon.cryptography.materialproviderstestvectorkeys.model.GetKeyDescriptionInput;
@@ -62,7 +67,8 @@ import software.amazon.cryptography.materialproviderstestvectorkeys.model.TestVe
 @RunWith(Parameterized.class)
 public class TestVectorRunner {
 
-  private static final int MANIFEST_VERSION = 2;
+  // TODO: Standardize Manifest Version
+  private static final List<Integer> MANIFEST_VERSIONS = Arrays.asList(2, 4);
 
   // We save the files in memory to avoid repeatedly retrieving them. This won't work if the
   // plaintexts are too
@@ -91,7 +97,10 @@ public class TestVectorRunner {
       decryptor =
           () ->
               decryptionMethod.decryptMessage(
-                  crypto, testCase.keyringSupplier.get(), cachedData.get(testCase.ciphertextPath));
+                  crypto,
+                  testCase.cmmSupplier.get(),
+                  cachedData.get(testCase.ciphertextPath),
+                  testCase.encryptionContext);
     } else {
       decryptor =
           () ->
@@ -105,6 +114,7 @@ public class TestVectorRunner {
   @SuppressWarnings("unchecked")
   public static Collection<Object[]> data() throws Exception {
     final String zipPath = System.getProperty("testVectorZip");
+    final String interfaceOption = System.getProperty("masterkey");
     if (zipPath == null) {
       return Collections.emptyList();
     }
@@ -113,6 +123,7 @@ public class TestVectorRunner {
         (JarURLConnection) new URL("jar:" + zipPath + "!/").openConnection();
 
     try (JarFile jar = jarConnection.getJarFile()) {
+
       final Map<String, Object> manifest = readJsonMapFromJar(jar, "manifest.json");
       final Map<String, Object> keysManifest = readJsonMapFromJar(jar, "keys.json");
 
@@ -128,8 +139,8 @@ public class TestVectorRunner {
       if (!"awses-decrypt".equals(metaData.get("type"))) {
         throw new IllegalArgumentException("Unsupported manifest type: " + metaData.get("type"));
       }
-
-      if (!Integer.valueOf(MANIFEST_VERSION).equals(metaData.get("version"))) {
+      Integer readVersion = (Integer) metaData.get("version");
+      if (!MANIFEST_VERSIONS.contains(readVersion)) {
         throw new IllegalArgumentException(
             "Unsupported manifest version: " + metaData.get("version"));
       }
@@ -158,21 +169,36 @@ public class TestVectorRunner {
       List<Object[]> testCases = new ArrayList<>();
       for (Map.Entry<String, Map<String, Object>> testEntry :
           ((Map<String, Map<String, Object>>) manifest.get("tests")).entrySet()) {
-        String testName = testEntry.getKey();
+        if (interfaceOption != null && interfaceOption.equals("true")) {
+          String testName = testEntry.getKey();
 
-        TestCase testCaseV1 =
-            parseTest(testEntry.getKey(), testEntry.getValue(), keys, jar, kmsProvV1);
-        TestCase testCaseV2 =
-            parseTest(testEntry.getKey(), testEntry.getValue(), keys, jar, kmsProvV2);
-        TestCase testCaseKeyring =
-            parseTest(
-                testEntry.getKey(), testEntry.getValue(), keys, jar, materialProviders, keyVectors);
+          TestCase testCaseV1 =
+              parseTest(testEntry.getKey(), testEntry.getValue(), keys, jar, kmsProvV1);
+          TestCase testCaseV2 =
+              parseTest(testEntry.getKey(), testEntry.getValue(), keys, jar, kmsProvV2);
 
-        for (DecryptionMethod decryptionMethod : DecryptionMethod.values()) {
-          if (testCaseV1.signaturePolicy.equals(decryptionMethod.signaturePolicy())) {
-            testCases.add(new Object[] {testName, testCaseV1, decryptionMethod});
-            testCases.add(new Object[] {testName + "-V2", testCaseV2, decryptionMethod});
-            testCases.add(new Object[] {testName + "-Keyrings", testCaseKeyring, decryptionMethod});
+          for (DecryptionMethod decryptionMethod : DecryptionMethod.values()) {
+            if (testCaseV1.signaturePolicy.equals(decryptionMethod.signaturePolicy())) {
+              testCases.add(new Object[] {testName, testCaseV1, decryptionMethod});
+              testCases.add(new Object[] {testName + "-V2", testCaseV2, decryptionMethod});
+            }
+          }
+        } else {
+          String testName = testEntry.getKey();
+          TestCase testCaseKeyring =
+              parseTest(
+                  testEntry.getKey(),
+                  testEntry.getValue(),
+                  keys,
+                  jar,
+                  materialProviders,
+                  keyVectors);
+
+          for (DecryptionMethod decryptionMethod : DecryptionMethod.values()) {
+            if (testCaseKeyring.signaturePolicy.equals(decryptionMethod.signaturePolicy())) {
+              testCases.add(
+                  new Object[] {testName + "-Keyrings", testCaseKeyring, decryptionMethod});
+            }
           }
         }
       }
@@ -212,6 +238,7 @@ public class TestVectorRunner {
     }
   }
 
+  /** Parse Test to Keyring */
   @SuppressWarnings("unchecked")
   private static TestCase parseTest(
       String testName,
@@ -224,7 +251,7 @@ public class TestVectorRunner {
     final String ciphertextURL = (String) data.get("ciphertext");
     cacheData(jar, ciphertextURL);
 
-    Supplier<IKeyring> keyringSupplier =
+    Supplier<ICryptographicMaterialsManager> cmmSupplier =
         () -> {
           final List<IKeyring> keyrings = new ArrayList<>();
           for (Map<String, String> mkEntry : (List<Map<String, String>>) data.get("master-keys")) {
@@ -250,17 +277,43 @@ public class TestVectorRunner {
               throw new RuntimeException(e);
             }
           }
+
           IKeyring multiKeyring =
               materialProviders.CreateMultiKeyring(
                   CreateMultiKeyringInput.builder()
                       .generator(keyrings.get(0))
                       .childKeyrings(keyrings)
                       .build());
-          return multiKeyring;
+
+          CreateDefaultCryptographicMaterialsManagerInput defaultInput =
+              CreateDefaultCryptographicMaterialsManagerInput.builder()
+                  .keyring(multiKeyring)
+                  .build();
+          ICryptographicMaterialsManager cmm =
+              materialProviders.CreateDefaultCryptographicMaterialsManager(defaultInput);
+          if (data.containsKey("cmm") && data.get("cmm").equals("RequiredEncryptionContext")) {
+            List<String> requiredKeys = new ArrayList<String>(2);
+            requiredKeys.add("key1");
+            requiredKeys.add("key2");
+            CreateRequiredEncryptionContextCMMInput requiredCMMInput =
+                CreateRequiredEncryptionContextCMMInput.builder()
+                    .underlyingCMM(
+                        materialProviders.CreateDefaultCryptographicMaterialsManager(defaultInput))
+                    .requiredEncryptionContextKeys(requiredKeys)
+                    .build();
+            cmm = materialProviders.CreateRequiredEncryptionContextCMM(requiredCMMInput);
+          }
+          return cmm;
         };
     @SuppressWarnings("unchecked")
     final Map<String, Object> resultSpec = (Map<String, Object>) data.get("result");
     final ResultMatcher matcher = parseResultMatcher(jar, resultSpec);
+
+    Map<String, String> ec = Collections.emptyMap();
+
+    if (data.get("encryption-context") != null) {
+      ec = (Map<String, String>) data.get("encryption-context");
+    }
 
     String decryptionMethodSpec = (String) data.get("decryption-method");
     SignaturePolicy signaturePolicy = SignaturePolicy.AllowEncryptAllowDecrypt;
@@ -274,9 +327,10 @@ public class TestVectorRunner {
     }
 
     return new TestCase(
-        testName, ciphertextURL, true, null, keyringSupplier, matcher, signaturePolicy);
+        testName, ciphertextURL, true, null, cmmSupplier, ec, matcher, signaturePolicy);
   }
 
+  /** Parse Test to MasterKey for AWS SDK v1 */
   @SuppressWarnings("unchecked")
   private static <T> TestCase parseTest(
       String testName,
@@ -380,9 +434,17 @@ public class TestVectorRunner {
     }
 
     return new TestCase(
-        testName, ciphertextURL, false, mkpSupplier, null, matcher, signaturePolicy);
+        testName,
+        ciphertextURL,
+        false,
+        mkpSupplier,
+        null,
+        Collections.emptyMap(),
+        matcher,
+        signaturePolicy);
   }
 
+  /** Parse Test to MasterKey for AWS SDK v2 */
   @SuppressWarnings("unchecked")
   private static TestCase parseTest(
       String testName,
@@ -487,7 +549,14 @@ public class TestVectorRunner {
     }
 
     return new TestCase(
-        testName, ciphertextURL, false, mkpSupplier, null, matcher, signaturePolicy);
+        testName,
+        ciphertextURL,
+        false,
+        mkpSupplier,
+        null,
+        Collections.emptyMap(),
+        matcher,
+        signaturePolicy);
   }
 
   private static ResultMatcher parseResultMatcher(
@@ -611,7 +680,8 @@ public class TestVectorRunner {
     private final ResultMatcher matcher;
     private final boolean isKeyring;
     private final Supplier<MasterKeyProvider<?>> mkpSupplier;
-    private final Supplier<IKeyring> keyringSupplier;
+    private final Supplier<ICryptographicMaterialsManager> cmmSupplier;
+    private final Map<String, String> encryptionContext;
     private final SignaturePolicy signaturePolicy;
 
     private TestCase(
@@ -619,7 +689,8 @@ public class TestVectorRunner {
         String ciphertextPath,
         boolean isKeyring,
         Supplier<MasterKeyProvider<?>> mkpSupplier,
-        Supplier<IKeyring> keyringSupplier,
+        Supplier<ICryptographicMaterialsManager> cmmSupplier,
+        Map<String, String> encryptionContext,
         ResultMatcher matcher,
         SignaturePolicy signaturePolicy) {
       this.name = name;
@@ -627,7 +698,8 @@ public class TestVectorRunner {
       this.matcher = matcher;
       this.isKeyring = isKeyring;
       this.mkpSupplier = mkpSupplier;
-      this.keyringSupplier = keyringSupplier;
+      this.cmmSupplier = cmmSupplier;
+      this.encryptionContext = encryptionContext;
       this.signaturePolicy = signaturePolicy;
     }
   }
