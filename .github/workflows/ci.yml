@@ -36,7 +36,7 @@ jobs:
       matrix:
         platform:
           - distribution: corretto
-            image: "aws/codebuild/amazonlinux2-x86_64-standard:corretto17" # Corretto only runs on AL2
+            image: "aws/codebuild/standard:5"
         version: [ 17 ]
     steps:
       - name: Configure AWS Credentials
@@ -65,7 +65,7 @@ jobs:
       matrix:
         platform:
           - distribution: corretto
-            image: "aws/codebuild/amazonlinux2-x86_64-standard:corretto17" # Corretto only runs on AL2
+            image: "aws/codebuild/standard:5"
         version: [ 17 ]
     steps:
       - name: Configure AWS Credentials
@@ -115,7 +115,7 @@ jobs:
       matrix:
         platform:
           - distribution: corretto
-            image: "aws/codebuild/amazonlinux2-x86_64-standard:corretto17" # Corretto only runs on AL2
+            image: "aws/codebuild/standard:5"
         version: [ 17 ]
     steps:
       - name: Configure AWS Credentials
