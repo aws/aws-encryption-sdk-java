@@ -35,11 +35,9 @@ jobs:
       fail-fast: true
       matrix:
         platform:
-          - distribution: openjdk
-            image: "aws/codebuild/standard:3.0"
           - distribution: corretto
-            image: "aws/codebuild/amazonlinux2-x86_64-standard:3.0" # Corretto only runs on AL2
-        version: [ 8, 11 ]
+            image: "aws/codebuild/amazonlinux2-x86_64-standard:corretto17" # Corretto only runs on AL2
+        version: [ 17 ]
     steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -66,11 +64,9 @@ jobs:
       fail-fast: true
       matrix:
         platform:
-          - distribution: openjdk
-            image: "aws/codebuild/standard:3.0"
           - distribution: corretto
-            image: "aws/codebuild/amazonlinux2-x86_64-standard:3.0" # Corretto only runs on AL2
-        version: [ 8, 11 ]
+            image: "aws/codebuild/amazonlinux2-x86_64-standard:corretto17" # Corretto only runs on AL2
+        version: [ 17 ]
     steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -118,11 +114,9 @@ jobs:
       fail-fast: true
       matrix:
         platform:
-          - distribution: openjdk
-            image: "aws/codebuild/standard:3.0"
           - distribution: corretto
-            image: "aws/codebuild/amazonlinux2-x86_64-standard:3.0" # Corretto only runs on AL2
-        version: [ 8, 11 ]
+            image: "aws/codebuild/amazonlinux2-x86_64-standard:corretto17" # Corretto only runs on AL2
+        version: [ 17 ]
     steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
