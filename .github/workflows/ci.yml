@@ -36,7 +36,7 @@ jobs:
       matrix:
         platform:
           - distribution: corretto
-            image: "aws/codebuild/standard:5"
+            image: "aws/codebuild/standard:5.0"
         version: [ 17 ]
     steps:
       - name: Configure AWS Credentials
@@ -65,7 +65,7 @@ jobs:
       matrix:
         platform:
           - distribution: corretto
-            image: "aws/codebuild/standard:5"
+            image: "aws/codebuild/standard:5.0"
         version: [ 17 ]
     steps:
       - name: Configure AWS Credentials
@@ -80,7 +80,6 @@ jobs:
         with:
           project-name: AWS-ESDK-Java-CI
           buildspec-override: codebuild/ci/vectors-generator.yml
-          compute-type-override: BUILD_GENERAL1_LARGE
           image-override: ${{ matrix.platform.image }}
           env-vars-for-codebuild: JAVA_ENV_VERSION
         env:
@@ -101,8 +100,7 @@ jobs:
         with:
           project-name: AWS-ESDK-Java-CI
           buildspec-override: codebuild/ci/release-ci.yml
-          compute-type-override: BUILD_GENERAL1_LARGE
-          image-override: aws/codebuild/standard:3.0
+          image-override: aws/codebuild/standard:5.0
           env-vars-for-codebuild: GITHUB_EVENT_NAME
         env:
           GITHUB_EVENT_NAME: $GITHUB_EVENT_NAME
@@ -115,7 +113,7 @@ jobs:
       matrix:
         platform:
           - distribution: corretto
-            image: "aws/codebuild/standard:5"
+            image: "aws/codebuild/standard:5.0"
         version: [ 17 ]
     steps:
       - name: Configure AWS Credentials
