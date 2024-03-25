@@ -36,7 +36,7 @@ jobs:
       matrix:
         platform:
           - distribution: corretto
-            image: "aws/codebuild/standard:5.0"
+            image: "aws/codebuild/standard:7.0"
         version: [ 17 ]
     steps:
       - name: Configure AWS Credentials
@@ -65,7 +65,7 @@ jobs:
       matrix:
         platform:
           - distribution: corretto
-            image: "aws/codebuild/standard:5.0"
+            image: "aws/codebuild/standard:7.0"
         version: [ 17 ]
     steps:
       - name: Configure AWS Credentials
@@ -100,7 +100,7 @@ jobs:
         with:
           project-name: AWS-ESDK-Java-CI
           buildspec-override: codebuild/ci/release-ci.yml
-          image-override: aws/codebuild/standard:5.0
+          image-override: aws/codebuild/standard:7.0
           env-vars-for-codebuild: GITHUB_EVENT_NAME
         env:
           GITHUB_EVENT_NAME: $GITHUB_EVENT_NAME
@@ -113,7 +113,7 @@ jobs:
       matrix:
         platform:
           - distribution: corretto
-            image: "aws/codebuild/standard:5.0"
+            image: "aws/codebuild/standard:7.0"
         version: [ 17 ]
     steps:
       - name: Configure AWS Credentials
