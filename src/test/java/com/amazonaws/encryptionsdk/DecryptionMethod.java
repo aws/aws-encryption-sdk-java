@@ -7,7 +7,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import software.amazon.cryptography.materialproviders.IKeyring;
+import java.util.Map;
+import software.amazon.cryptography.materialproviders.ICryptographicMaterialsManager;
 
 public enum DecryptionMethod {
   OneShot {
@@ -19,9 +20,13 @@ public enum DecryptionMethod {
     }
 
     @Override
-    public byte[] decryptMessage(AwsCrypto crypto, IKeyring keyring, byte[] ciphertext)
+    public byte[] decryptMessage(
+        AwsCrypto crypto,
+        ICryptographicMaterialsManager cmm,
+        byte[] ciphertext,
+        Map<String, String> encryptionContext)
         throws IOException {
-      return crypto.decryptData(keyring, ciphertext).getResult();
+      return crypto.decryptData(cmm, ciphertext, encryptionContext).getResult();
     }
   },
   // Note for the record that changing the readLen parameter of copyInStreamToOutStream has minimal
@@ -45,9 +50,15 @@ public enum DecryptionMethod {
     }
 
     @Override
-    public byte[] decryptMessage(AwsCrypto crypto, IKeyring keyring, byte[] ciphertext)
+    public byte[] decryptMessage(
+        AwsCrypto crypto,
+        ICryptographicMaterialsManager cmm,
+        byte[] ciphertext,
+        Map<String, String> encryptionContext)
         throws IOException {
-      InputStream in = crypto.createDecryptingStream(keyring, new ByteArrayInputStream(ciphertext));
+      InputStream in =
+          crypto.createDecryptingStream(
+              cmm, new ByteArrayInputStream(ciphertext), encryptionContext);
       ByteArrayOutputStream out = new ByteArrayOutputStream();
       TestIOUtils.copyInStreamToOutStream(in, out, 1);
       return out.toByteArray();
@@ -66,9 +77,15 @@ public enum DecryptionMethod {
     }
 
     @Override
-    public byte[] decryptMessage(AwsCrypto crypto, IKeyring keyring, byte[] ciphertext)
+    public byte[] decryptMessage(
+        AwsCrypto crypto,
+        ICryptographicMaterialsManager cmm,
+        byte[] ciphertext,
+        Map<String, String> encryptionContext)
         throws IOException {
-      InputStream in = crypto.createDecryptingStream(keyring, new ByteArrayInputStream(ciphertext));
+      InputStream in =
+          crypto.createDecryptingStream(
+              cmm, new ByteArrayInputStream(ciphertext), encryptionContext);
       ByteArrayOutputStream out = new ByteArrayOutputStream();
       TestIOUtils.copyInStreamToOutStream(in, out, SMALL_CHUNK_SIZE);
       return out.toByteArray();
@@ -87,9 +104,15 @@ public enum DecryptionMethod {
     }
 
     @Override
-    public byte[] decryptMessage(AwsCrypto crypto, IKeyring keyring, byte[] ciphertext)
+    public byte[] decryptMessage(
+        AwsCrypto crypto,
+        ICryptographicMaterialsManager cmm,
+        byte[] ciphertext,
+        Map<String, String> encryptionContext)
         throws IOException {
-      InputStream in = crypto.createDecryptingStream(keyring, new ByteArrayInputStream(ciphertext));
+      InputStream in =
+          crypto.createDecryptingStream(
+              cmm, new ByteArrayInputStream(ciphertext), encryptionContext);
       ByteArrayOutputStream out = new ByteArrayOutputStream();
       TestIOUtils.copyInStreamToOutStream(in, out, ciphertext.length);
       return out.toByteArray();
@@ -109,11 +132,15 @@ public enum DecryptionMethod {
     }
 
     @Override
-    public byte[] decryptMessage(AwsCrypto crypto, IKeyring keyring, byte[] ciphertext)
+    public byte[] decryptMessage(
+        AwsCrypto crypto,
+        ICryptographicMaterialsManager cmm,
+        byte[] ciphertext,
+        Map<String, String> encryptionContext)
         throws IOException {
       InputStream in =
           crypto.createUnsignedMessageDecryptingStream(
-              keyring, new ByteArrayInputStream(ciphertext));
+              cmm, new ByteArrayInputStream(ciphertext), encryptionContext);
       ByteArrayOutputStream out = new ByteArrayOutputStream();
       TestIOUtils.copyInStreamToOutStream(in, out, 1);
       return out.toByteArray();
@@ -138,11 +165,15 @@ public enum DecryptionMethod {
     }
 
     @Override
-    public byte[] decryptMessage(AwsCrypto crypto, IKeyring keyring, byte[] ciphertext)
+    public byte[] decryptMessage(
+        AwsCrypto crypto,
+        ICryptographicMaterialsManager cmm,
+        byte[] ciphertext,
+        Map<String, String> encryptionContext)
         throws IOException {
       InputStream in =
           crypto.createUnsignedMessageDecryptingStream(
-              keyring, new ByteArrayInputStream(ciphertext));
+              cmm, new ByteArrayInputStream(ciphertext), encryptionContext);
       ByteArrayOutputStream out = new ByteArrayOutputStream();
       TestIOUtils.copyInStreamToOutStream(in, out, SMALL_CHUNK_SIZE);
       return out.toByteArray();
@@ -167,11 +198,15 @@ public enum DecryptionMethod {
     }
 
     @Override
-    public byte[] decryptMessage(AwsCrypto crypto, IKeyring keyring, byte[] ciphertext)
+    public byte[] decryptMessage(
+        AwsCrypto crypto,
+        ICryptographicMaterialsManager cmm,
+        byte[] ciphertext,
+        Map<String, String> encryptionContext)
         throws IOException {
       InputStream in =
           crypto.createUnsignedMessageDecryptingStream(
-              keyring, new ByteArrayInputStream(ciphertext));
+              cmm, new ByteArrayInputStream(ciphertext), encryptionContext);
       ByteArrayOutputStream out = new ByteArrayOutputStream();
       TestIOUtils.copyInStreamToOutStream(in, out, ciphertext.length);
       return out.toByteArray();
@@ -195,11 +230,15 @@ public enum DecryptionMethod {
     }
 
     @Override
-    public byte[] decryptMessage(AwsCrypto crypto, IKeyring keyring, byte[] ciphertext)
+    public byte[] decryptMessage(
+        AwsCrypto crypto,
+        ICryptographicMaterialsManager cmm,
+        byte[] ciphertext,
+        Map<String, String> encryptionContext)
         throws IOException {
       InputStream in = new ByteArrayInputStream(ciphertext);
       ByteArrayOutputStream out = new ByteArrayOutputStream();
-      OutputStream decryptingOut = crypto.createDecryptingStream(keyring, out);
+      OutputStream decryptingOut = crypto.createDecryptingStream(cmm, out, encryptionContext);
       TestIOUtils.copyInStreamToOutStream(in, decryptingOut, 1);
       return out.toByteArray();
     }
@@ -217,11 +256,15 @@ public enum DecryptionMethod {
     }
 
     @Override
-    public byte[] decryptMessage(AwsCrypto crypto, IKeyring keyring, byte[] ciphertext)
+    public byte[] decryptMessage(
+        AwsCrypto crypto,
+        ICryptographicMaterialsManager cmm,
+        byte[] ciphertext,
+        Map<String, String> encryptionContext)
         throws IOException {
       InputStream in = new ByteArrayInputStream(ciphertext);
       ByteArrayOutputStream out = new ByteArrayOutputStream();
-      OutputStream decryptingOut = crypto.createDecryptingStream(keyring, out);
+      OutputStream decryptingOut = crypto.createDecryptingStream(cmm, out, encryptionContext);
       TestIOUtils.copyInStreamToOutStream(in, decryptingOut, SMALL_CHUNK_SIZE);
       return out.toByteArray();
     }
@@ -239,11 +282,15 @@ public enum DecryptionMethod {
     }
 
     @Override
-    public byte[] decryptMessage(AwsCrypto crypto, IKeyring keyring, byte[] ciphertext)
+    public byte[] decryptMessage(
+        AwsCrypto crypto,
+        ICryptographicMaterialsManager cmm,
+        byte[] ciphertext,
+        Map<String, String> encryptionContext)
         throws IOException {
       InputStream in = new ByteArrayInputStream(ciphertext);
       ByteArrayOutputStream out = new ByteArrayOutputStream();
-      OutputStream decryptingOut = crypto.createDecryptingStream(keyring, out);
+      OutputStream decryptingOut = crypto.createDecryptingStream(cmm, out, encryptionContext);
       TestIOUtils.copyInStreamToOutStream(in, decryptingOut, ciphertext.length);
       return out.toByteArray();
     }
@@ -262,11 +309,16 @@ public enum DecryptionMethod {
     }
 
     @Override
-    public byte[] decryptMessage(AwsCrypto crypto, IKeyring keyring, byte[] ciphertext)
+    public byte[] decryptMessage(
+        AwsCrypto crypto,
+        ICryptographicMaterialsManager cmm,
+        byte[] ciphertext,
+        Map<String, String> encryptionContext)
         throws IOException {
       InputStream in = new ByteArrayInputStream(ciphertext);
       ByteArrayOutputStream out = new ByteArrayOutputStream();
-      OutputStream decryptingOut = crypto.createUnsignedMessageDecryptingStream(keyring, out);
+      OutputStream decryptingOut =
+          crypto.createUnsignedMessageDecryptingStream(cmm, out, encryptionContext);
       TestIOUtils.copyInStreamToOutStream(in, decryptingOut, 1);
       return out.toByteArray();
     }
@@ -290,11 +342,16 @@ public enum DecryptionMethod {
     }
 
     @Override
-    public byte[] decryptMessage(AwsCrypto crypto, IKeyring keyring, byte[] ciphertext)
+    public byte[] decryptMessage(
+        AwsCrypto crypto,
+        ICryptographicMaterialsManager cmm,
+        byte[] ciphertext,
+        Map<String, String> encryptionContext)
         throws IOException {
       InputStream in = new ByteArrayInputStream(ciphertext);
       ByteArrayOutputStream out = new ByteArrayOutputStream();
-      OutputStream decryptingOut = crypto.createUnsignedMessageDecryptingStream(keyring, out);
+      OutputStream decryptingOut =
+          crypto.createUnsignedMessageDecryptingStream(cmm, out, encryptionContext);
       TestIOUtils.copyInStreamToOutStream(in, decryptingOut, SMALL_CHUNK_SIZE);
       return out.toByteArray();
     }
@@ -317,11 +374,16 @@ public enum DecryptionMethod {
       return out.toByteArray();
     }
 
-    public byte[] decryptMessage(AwsCrypto crypto, IKeyring keyring, byte[] ciphertext)
+    public byte[] decryptMessage(
+        AwsCrypto crypto,
+        ICryptographicMaterialsManager cmm,
+        byte[] ciphertext,
+        Map<String, String> encryptionContext)
         throws IOException {
       InputStream in = new ByteArrayInputStream(ciphertext);
       ByteArrayOutputStream out = new ByteArrayOutputStream();
-      OutputStream decryptingOut = crypto.createUnsignedMessageDecryptingStream(keyring, out);
+      OutputStream decryptingOut =
+          crypto.createUnsignedMessageDecryptingStream(cmm, out, encryptionContext);
       TestIOUtils.copyInStreamToOutStream(in, decryptingOut, ciphertext.length);
       return out.toByteArray();
     }
@@ -340,7 +402,11 @@ public enum DecryptionMethod {
       AwsCrypto crypto, MasterKeyProvider<?> masterKeyProvider, byte[] ciphertext)
       throws IOException;
 
-  public abstract byte[] decryptMessage(AwsCrypto crypto, IKeyring keyring, byte[] ciphertext)
+  public abstract byte[] decryptMessage(
+      AwsCrypto crypto,
+      ICryptographicMaterialsManager cmm,
+      byte[] ciphertext,
+      Map<String, String> encryptionContext)
       throws IOException;
 
   public SignaturePolicy signaturePolicy() {
