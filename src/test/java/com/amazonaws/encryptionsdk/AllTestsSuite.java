@@ -80,6 +80,8 @@ import org.junit.runners.Suite;
   AwsCryptoTest.class,
   CryptoInputStreamTest.class,
   CryptoOutputStreamTest.class,
+  TestVectorRunner.class,
+  TestVectorGenerator.class,
   XCompatDecryptTest.class,
   DefaultCryptoMaterialsManagerTest.class,
   NullCryptoMaterialsCacheTest.class,
