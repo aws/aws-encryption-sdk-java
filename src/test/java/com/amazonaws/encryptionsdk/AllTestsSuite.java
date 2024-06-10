@@ -13,6 +13,7 @@ import com.amazonaws.crypto.examples.keyrings.RawRsaKeyringExampleTest;
 import com.amazonaws.crypto.examples.keyrings.SetEncryptionAlgorithmKeyringExampleTest;
 import com.amazonaws.crypto.examples.v2.BasicEncryptionExampleTest;
 import com.amazonaws.crypto.examples.v2.BasicMultiRegionKeyEncryptionExampleTest;
+import com.amazonaws.crypto.examples.v2.CustomCMMExampleTest;
 import com.amazonaws.crypto.examples.v2.DiscoveryDecryptionExampleTest;
 import com.amazonaws.crypto.examples.v2.DiscoveryMultiRegionDecryptionExampleTest;
 import com.amazonaws.crypto.examples.v2.MultipleCmkEncryptExampleTest;
@@ -80,8 +81,6 @@ import org.junit.runners.Suite;
   AwsCryptoTest.class,
   CryptoInputStreamTest.class,
   CryptoOutputStreamTest.class,
-  TestVectorRunner.class,
-  TestVectorGenerator.class,
   XCompatDecryptTest.class,
   DefaultCryptoMaterialsManagerTest.class,
   NullCryptoMaterialsCacheTest.class,
@@ -102,6 +101,7 @@ import org.junit.runners.Suite;
   CommitmentKATRunner.class,
   BasicEncryptionExampleTest.class,
   BasicMultiRegionKeyEncryptionExampleTest.class,
+  CustomCMMExampleTest.class,
   DiscoveryDecryptionExampleTest.class,
   DiscoveryMultiRegionDecryptionExampleTest.class,
   MultipleCmkEncryptExampleTest.class,

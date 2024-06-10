@@ -84,10 +84,10 @@ public class CMMHandler {
         // But custom CMMs' behavior was not updated.
         // However, there is no custom CMM before version 3.0 that could set an encryptionContext attribute.
         // The encryptionContext attribute was only introduced to decryptMaterials objects
-        // in ESDK 3.0, so no CMM could have set this attribute before 3.0.
-        // As a result, the ESDK assumes that any legacy native CMM
+        // in ESDK 3.0, so no CMM could have configured this attribute before 3.0.
+        // As a result, the ESDK assumes that any native CMM
         // that does not add encryptionContext to its decryptMaterials
-        // SHOULD add encryptionContext to its decryptMaterials.
+        // SHOULD add encryptionContext to its decryptMaterials,
         //
         // If a custom CMM implementation conflicts with this assumption.
         // that CMM implementation MUST move to the MPL.
