@@ -46,12 +46,7 @@ import com.amazonaws.encryptionsdk.kms.DiscoveryFilterTest;
 import com.amazonaws.encryptionsdk.kms.KMSProviderBuilderMockTests;
 import com.amazonaws.encryptionsdk.kms.KmsMasterKeyProviderTest;
 import com.amazonaws.encryptionsdk.kms.KmsMasterKeyTest;
-import com.amazonaws.encryptionsdk.model.CipherBlockHeadersTest;
-import com.amazonaws.encryptionsdk.model.CipherFrameHeadersTest;
-import com.amazonaws.encryptionsdk.model.CiphertextHeadersTest;
-import com.amazonaws.encryptionsdk.model.DecryptionMaterialsRequestTest;
-import com.amazonaws.encryptionsdk.model.EncryptionMaterialsRequestTest;
-import com.amazonaws.encryptionsdk.model.KeyBlobTest;
+import com.amazonaws.encryptionsdk.model.*;
 import com.amazonaws.encryptionsdk.multi.MultipleMasterKeyTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -73,6 +68,7 @@ import org.junit.runners.Suite;
   CipherBlockHeadersTest.class,
   CipherFrameHeadersTest.class,
   KeyBlobTest.class,
+  DecryptionMaterialsTest.class,
   DecryptionMaterialsRequestTest.class,
   MultipleMasterKeyTest.class,
   AwsCryptoTest.class,
