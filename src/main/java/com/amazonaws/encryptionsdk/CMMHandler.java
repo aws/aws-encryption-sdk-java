@@ -4,11 +4,8 @@
 package com.amazonaws.encryptionsdk;
 
 import com.amazonaws.encryptionsdk.internal.Utils;
-import com.amazonaws.encryptionsdk.model.DecryptionMaterialsHandler;
-import com.amazonaws.encryptionsdk.model.DecryptionMaterialsRequest;
-import com.amazonaws.encryptionsdk.model.EncryptionMaterialsHandler;
-import com.amazonaws.encryptionsdk.model.EncryptionMaterialsRequest;
-import com.amazonaws.encryptionsdk.model.KeyBlob;
+import com.amazonaws.encryptionsdk.model.*;
+
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -63,7 +60,30 @@ public class CMMHandler {
   public DecryptionMaterialsHandler decryptMaterials(
       DecryptionMaterialsRequest request, CommitmentPolicy commitmentPolicy) {
     if (cmm != null && mplCMM == null) {
-      return new DecryptionMaterialsHandler(cmm.decryptMaterials(request));
+      // This is an implementation of the legacy native CryptoMaterialsManager interface from ESDK-Java.
+      DecryptionMaterials materials = cmm.decryptMaterials(request);
+      if (materials.getEncryptionContext().isEmpty()
+        && !request.getEncryptionContext().isEmpty()) {
+        // If the request specified an encryption context,
+        // and we are using the legacy native CMM,
+        // add the encryptionContext to the materials.
+        //
+        // ESDK-Java 3.0 changed the expected behavior for CMMs.
+        // After 3.0, the ESDK assumes that CMMs' implementations of decryptMaterials
+        // will return DecryptionMaterials with a set encryptionContext attribute.
+        // The default CMM's behavior was changed in 3.0 to set the encryptionContext attribute
+        // with the value from the ciphertext's headers.
+        // However, this assumption is not true for custom CMMs from earlier ESDK versions.
+        //
+        // After 3.0, CMMs MUST set the encryptionContext on the returned decryptMaterials.
+        // If the materials' encryptionContext is empty but the request's is not,
+        // we assume the CMM never set the decryptMaterials' encryptionContext attribute
+        // and set its attribute from the request.
+        materials = materials.toBuilder()
+                .setEncryptionContext(request.getEncryptionContext())
+                .build();
+      }
+      return new DecryptionMaterialsHandler(materials);
     } else {
       DecryptMaterialsInput input = getDecryptMaterialsInput(request, commitmentPolicy);
       DecryptMaterialsOutput output = mplCMM.DecryptMaterials(input);
