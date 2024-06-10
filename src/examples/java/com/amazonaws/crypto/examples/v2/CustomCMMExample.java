@@ -3,7 +3,12 @@
 
 package com.amazonaws.crypto.examples.v2;
 
-import com.amazonaws.encryptionsdk.*;
+import com.amazonaws.encryptionsdk.AwsCrypto;
+import com.amazonaws.encryptionsdk.CommitmentPolicy;
+import com.amazonaws.encryptionsdk.CryptoMaterialsManager;
+import com.amazonaws.encryptionsdk.CryptoResult;
+import com.amazonaws.encryptionsdk.DefaultCryptoMaterialsManager;
+import com.amazonaws.encryptionsdk.MasterKeyProvider;
 import com.amazonaws.encryptionsdk.kmssdkv2.KmsMasterKeyProvider;
 import com.amazonaws.encryptionsdk.model.DecryptionMaterials;
 import com.amazonaws.encryptionsdk.model.DecryptionMaterialsRequest;
@@ -13,9 +18,20 @@ import com.amazonaws.encryptionsdk.model.EncryptionMaterialsRequest;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 
+/**
+ * <p>
+ * Creates a custom implementation of the CryptoMaterialsManager interface,
+ * then uses that implementation to encrypt and decrypt a file using an AWS KMS CMK.
+ *
+ * <p>
+ * Arguments:
+ * <ol>
+ * <li>Key ARN: For help finding the Amazon Resource Name (ARN) of your AWS KMS customer master
+ *    key (CMK), see 'Viewing Keys' at http://docs.aws.amazon.com/kms/latest/developerguide/viewing-keys.html
+ * </ol>
+ */
 public class CustomCMMExample {
 
     private static final byte[] EXAMPLE_DATA = "Hello World".getBytes(StandardCharsets.UTF_8);
@@ -68,17 +84,13 @@ public class CustomCMMExample {
         assert Arrays.equals(decryptResult.getResult(), EXAMPLE_DATA);
     }
 
+    // Custom CMM implementation.
+    // This CMM only allows encryption/decryption using signing algorithms.
+    // It wraps an underlying CMM implementation and checks its materials
+    // to ensure that it is only using signed encryption algorithms.
     public static class SigningSuiteOnlyCMM implements CryptoMaterialsManager {
 
-        private final HashSet<CryptoAlgorithm> approvedAlgorithms = new HashSet<>(Arrays.asList(
-            CryptoAlgorithm.ALG_AES_128_GCM_IV12_TAG16_HKDF_SHA256_ECDSA_P256,
-            CryptoAlgorithm.ALG_AES_192_GCM_IV12_TAG16_HKDF_SHA384_ECDSA_P384,
-            CryptoAlgorithm.ALG_AES_256_GCM_IV12_TAG16_HKDF_SHA384_ECDSA_P384,
-            CryptoAlgorithm.ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY
-        ));
-
         // The underlying CMM.
-        // The SigningSuiteOnlyCMM will ensure that any operations TODO
         private CryptoMaterialsManager underlyingCMM;
 
         // If only a MasterKeyProvider is constructed, the underlying CMM is the default CMM.
@@ -86,6 +98,7 @@ public class CustomCMMExample {
             this.underlyingCMM = new DefaultCryptoMaterialsManager(mkp);
         }
 
+        // This CMM can wrap any other CMM implementation.
         public SigningSuiteOnlyCMM(CryptoMaterialsManager underlyingCMM) {
             this.underlyingCMM = underlyingCMM;
         }

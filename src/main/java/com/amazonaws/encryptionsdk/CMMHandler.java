@@ -4,7 +4,12 @@
 package com.amazonaws.encryptionsdk;
 
 import com.amazonaws.encryptionsdk.internal.Utils;
-import com.amazonaws.encryptionsdk.model.*;
+import com.amazonaws.encryptionsdk.model.DecryptionMaterials;
+import com.amazonaws.encryptionsdk.model.DecryptionMaterialsHandler;
+import com.amazonaws.encryptionsdk.model.DecryptionMaterialsRequest;
+import com.amazonaws.encryptionsdk.model.EncryptionMaterialsHandler;
+import com.amazonaws.encryptionsdk.model.EncryptionMaterialsRequest;
+import com.amazonaws.encryptionsdk.model.KeyBlob;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -68,17 +73,24 @@ public class CMMHandler {
         // and we are using the legacy native CMM,
         // add the encryptionContext to the materials.
         //
-        // ESDK-Java 3.0 changed the expected behavior for CMMs.
-        // After 3.0, the ESDK assumes that CMMs' implementations of decryptMaterials
-        // will return DecryptionMaterials with a set encryptionContext attribute.
-        // The default CMM's behavior was changed in 3.0 to set the encryptionContext attribute
-        // with the value from the ciphertext's headers.
-        // However, this assumption is not true for custom CMMs from earlier ESDK versions.
+        // ESDK-Java 3.0 changed internals of decrypt behavior,
+        // This code makes earlier CMM implementations compatible with post-3.0 behavior.
         //
-        // After 3.0, CMMs MUST set the encryptionContext on the returned decryptMaterials.
-        // If the materials' encryptionContext is empty but the request's is not,
-        // we assume the CMM never set the decryptMaterials' encryptionContext attribute
-        // and set its attribute from the request.
+        // Version 3.0 assumes that CMMs' implementations of decryptMaterials
+        // will set an encryptionContext attribute on returned DecryptionMaterials.
+        // The DefaultCryptoMaterialsManager's behavior was changed in 3.0.
+        // It now sets the encryptionContext attribute with the value from the ciphertext's headers.
+        //
+        // But custom CMMs' behavior was not updated.
+        // However, there is no custom CMM before version 3.0 that could set an encryptionContext attribute.
+        // The encryptionContext attribute was only introduced to decryptMaterials objects
+        // in ESDK 3.0, so no CMM could have set this attribute before 3.0.
+        // As a result, the ESDK assumes that any legacy native CMM
+        // that does not add encryptionContext to its decryptMaterials
+        // SHOULD add encryptionContext to its decryptMaterials.
+        //
+        // If a custom CMM implementation conflicts with this assumption.
+        // that CMM implementation MUST move to the MPL.
         materials = materials.toBuilder()
                 .setEncryptionContext(request.getEncryptionContext())
                 .build();

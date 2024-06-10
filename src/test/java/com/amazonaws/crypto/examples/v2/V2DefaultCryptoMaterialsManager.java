@@ -1,6 +1,12 @@
 package com.amazonaws.crypto.examples.v2;
 
-import com.amazonaws.encryptionsdk.*;
+import com.amazonaws.encryptionsdk.CommitmentPolicy;
+import com.amazonaws.encryptionsdk.CryptoAlgorithm;
+import com.amazonaws.encryptionsdk.CryptoMaterialsManager;
+import com.amazonaws.encryptionsdk.DataKey;
+import com.amazonaws.encryptionsdk.MasterKey;
+import com.amazonaws.encryptionsdk.MasterKeyProvider;
+import com.amazonaws.encryptionsdk.MasterKeyRequest;
 import com.amazonaws.encryptionsdk.exception.AwsCryptoException;
 import com.amazonaws.encryptionsdk.exception.CannotUnwrapDataKeyException;
 import com.amazonaws.encryptionsdk.internal.Constants;
@@ -17,6 +23,21 @@ import java.util.Map;
 
 import static com.amazonaws.encryptionsdk.internal.Utils.assertNonNull;
 
+/*
+  This is a copy-paste of the DefaultCryptoMaterialsManager implementation
+  from the final commit of the V2 ESDK: 1870a082358d59e32c60d74116d6f43c0efa466b
+  ESDK V3 implicitly changed the contract between CMMs and the ESDK.
+  After V3, DecryptMaterials has an `encryptionContext` attribute,
+  and CMMs are expected to set this attribute.
+  The V3 commit modified this DefaultCMM's `decryptMaterials` implementation
+  to set encryptionContext on returned DecryptionMaterials objects.
+  However, there are custom implementations of the legacy native CMM
+  that do not set encryptionContext.
+  This CMM is used to explicitly assert that the V2 implementation of
+  the DefaultCMM is compatible with V3 logic,
+  which implicitly asserts that custom implementations of V2-compatible CMMs
+  are also compatible with V3 logic.
+ */
 public class V2DefaultCryptoMaterialsManager implements CryptoMaterialsManager {
   private final MasterKeyProvider<?> mkp;
 
