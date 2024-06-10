@@ -23,7 +23,6 @@ import static org.mockito.Mockito.when;
 
 public class CMMHandlerTest {
 
-  //
   private static final CryptoAlgorithm SOME_CRYPTO_ALGORITHM = CryptoAlgorithm.ALG_AES_256_GCM_IV12_TAG16_HKDF_SHA384_ECDSA_P384;
   private static final List<KeyBlob> SOME_EDK_LIST = new ArrayList<>(Collections.singletonList(new KeyBlob()));
   private static final CommitmentPolicy SOME_COMMITMENT_POLICY = CommitmentPolicy.RequireEncryptRequireDecrypt;
