@@ -11,7 +11,11 @@ import com.amazonaws.encryptionsdk.exception.AwsCryptoException;
 import com.amazonaws.encryptionsdk.exception.CannotUnwrapDataKeyException;
 import com.amazonaws.encryptionsdk.internal.Constants;
 import com.amazonaws.encryptionsdk.internal.TrailingSignatureAlgorithm;
-import com.amazonaws.encryptionsdk.model.*;
+import com.amazonaws.encryptionsdk.model.DecryptionMaterials;
+import com.amazonaws.encryptionsdk.model.DecryptionMaterialsRequest;
+import com.amazonaws.encryptionsdk.model.EncryptionMaterials;
+import com.amazonaws.encryptionsdk.model.EncryptionMaterialsRequest;
+import com.amazonaws.encryptionsdk.model.KeyBlob;
 
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;

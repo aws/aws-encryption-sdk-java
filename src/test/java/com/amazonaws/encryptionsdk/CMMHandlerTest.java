@@ -10,7 +10,11 @@ import com.amazonaws.encryptionsdk.model.KeyBlob;
 import org.junit.Test;
 
 import java.security.PublicKey;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

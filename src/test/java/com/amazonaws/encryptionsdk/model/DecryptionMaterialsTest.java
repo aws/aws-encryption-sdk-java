@@ -14,8 +14,8 @@ import static org.mockito.Mockito.mock;
 public class DecryptionMaterialsTest {
 
   @Test
-  public void GIVEN_builder_with_null_EC_WHEN_constructor_THEN_object_EC_is_empty_map() {
-    // Given: null encryption context
+  public void GIVEN_builder_with_unset_EC_WHEN_constructor_THEN_object_EC_is_empty_map() {
+    // Given: DecryptionMaterials.Builder with unset encryption context
     DecryptionMaterials.Builder builder = DecryptionMaterials.newBuilder();
 
     // When: constructor
@@ -27,15 +27,15 @@ public class DecryptionMaterialsTest {
 
   @Test
   public void GIVEN_builder_with_EC_WHEN_constructor_THEN_object_EC_is_builder_EC() {
-    // Given: any non-null encryption context map
-    Map<String, String> mockEncryptionContext = mock(Map.class);
+    // Given: DecryptionMaterials.Builder with any encryption context map set
+    Map<String, String> anyEncryptionContext = mock(Map.class);
     DecryptionMaterials.Builder builder = DecryptionMaterials.newBuilder();
-    builder.setEncryptionContext(mockEncryptionContext);
+    builder.setEncryptionContext(anyEncryptionContext);
 
     // When: constructor
     DecryptionMaterials decryptionMaterials = builder.build();
 
     // Then: constructor assigns that encryption context map to DecryptionMaterials objects
-    assertEquals(mockEncryptionContext, decryptionMaterials.getEncryptionContext());
+    assertEquals(anyEncryptionContext, decryptionMaterials.getEncryptionContext());
   }
 }
