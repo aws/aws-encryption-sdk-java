@@ -13,8 +13,9 @@ public final class DecryptionMaterials {
   private DecryptionMaterials(Builder b) {
     dataKey = b.getDataKey();
     trailingSignatureKey = b.getTrailingSignatureKey();
-    encryptionContext = b.getEncryptionContext();
-    if (encryptionContext == null) {
+    if (b.getEncryptionContext() != null) {
+      encryptionContext = b.getEncryptionContext();
+    } else {
       encryptionContext = Collections.emptyMap();
     }
   }
