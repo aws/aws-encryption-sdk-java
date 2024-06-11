@@ -1,5 +1,7 @@
 package com.amazonaws.crypto.examples.v2;
 
+import static com.amazonaws.encryptionsdk.internal.Utils.assertNonNull;
+
 import com.amazonaws.encryptionsdk.CommitmentPolicy;
 import com.amazonaws.encryptionsdk.CryptoAlgorithm;
 import com.amazonaws.encryptionsdk.CryptoMaterialsManager;
@@ -16,7 +18,6 @@ import com.amazonaws.encryptionsdk.model.DecryptionMaterialsRequest;
 import com.amazonaws.encryptionsdk.model.EncryptionMaterials;
 import com.amazonaws.encryptionsdk.model.EncryptionMaterialsRequest;
 import com.amazonaws.encryptionsdk.model.KeyBlob;
-
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.PublicKey;
@@ -24,8 +25,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static com.amazonaws.encryptionsdk.internal.Utils.assertNonNull;
 
 /*
  This is a copy-paste of the DefaultCryptoMaterialsManager implementation
