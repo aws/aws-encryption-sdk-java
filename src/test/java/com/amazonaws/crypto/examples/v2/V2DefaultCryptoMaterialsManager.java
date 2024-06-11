@@ -28,27 +28,29 @@ import java.util.Map;
 import static com.amazonaws.encryptionsdk.internal.Utils.assertNonNull;
 
 /*
-  This is a copy-paste of the DefaultCryptoMaterialsManager implementation
-  from the final commit of the V2 ESDK: 1870a082358d59e32c60d74116d6f43c0efa466b
-  ESDK V3 implicitly changed the contract between CMMs and the ESDK.
-  After V3, DecryptMaterials has an `encryptionContext` attribute,
-  and CMMs are expected to set this attribute.
-  The V3 commit modified this DefaultCMM's `decryptMaterials` implementation
-  to set encryptionContext on returned DecryptionMaterials objects.
-  However, there are custom implementations of the legacy native CMM
-  that do not set encryptionContext.
-  This CMM is used to explicitly assert that the V2 implementation of
-  the DefaultCMM is compatible with V3 logic,
-  which implicitly asserts that custom implementations of V2-compatible CMMs
-  are also compatible with V3 logic.
- */
+ This is a copy-paste of the DefaultCryptoMaterialsManager implementation
+ from the final commit of the V2 ESDK: 1870a082358d59e32c60d74116d6f43c0efa466b
+ ESDK V3 implicitly changed the contract between CMMs and the ESDK.
+ After V3, DecryptMaterials has an `encryptionContext` attribute,
+ and CMMs are expected to set this attribute.
+ The V3 commit modified this DefaultCMM's `decryptMaterials` implementation
+ to set encryptionContext on returned DecryptionMaterials objects.
+ However, there are custom implementations of the legacy native CMM
+ that do not set encryptionContext.
+ This CMM is used to explicitly assert that the V2 implementation of
+ the DefaultCMM is compatible with V3 logic,
+ which implicitly asserts that custom implementations of V2-compatible CMMs
+ are also compatible with V3 logic.
+*/
 public class V2DefaultCryptoMaterialsManager implements CryptoMaterialsManager {
   private final MasterKeyProvider<?> mkp;
 
   private final CryptoAlgorithm DEFAULT_CRYPTO_ALGORITHM =
-          CryptoAlgorithm.ALG_AES_256_GCM_IV12_TAG16_HKDF_SHA384_ECDSA_P384;
+      CryptoAlgorithm.ALG_AES_256_GCM_IV12_TAG16_HKDF_SHA384_ECDSA_P384;
 
-  /** @param mkp The master key provider to delegate to */
+  /**
+   * @param mkp The master key provider to delegate to
+   */
   public V2DefaultCryptoMaterialsManager(MasterKeyProvider<?> mkp) {
     assertNonNull(mkp, "mkp");
     this.mkp = mkp;
@@ -73,7 +75,7 @@ public class V2DefaultCryptoMaterialsManager implements CryptoMaterialsManager {
         trailingKeys = generateTrailingSigKeyPair(algo);
         if (context.containsKey(Constants.EC_PUBLIC_KEY_FIELD)) {
           throw new IllegalArgumentException(
-                  "EncryptionContext contains reserved field " + Constants.EC_PUBLIC_KEY_FIELD);
+              "EncryptionContext contains reserved field " + Constants.EC_PUBLIC_KEY_FIELD);
         }
         // make mutable
         context = new HashMap<>(context);
@@ -95,8 +97,8 @@ public class V2DefaultCryptoMaterialsManager implements CryptoMaterialsManager {
 
     @SuppressWarnings("unchecked")
     final List<MasterKey> mks =
-            (List<MasterKey>)
-                    assertNonNull(mkp, "provider").getMasterKeysForEncryption(mkRequestBuilder.build());
+        (List<MasterKey>)
+            assertNonNull(mkp, "provider").getMasterKeysForEncryption(mkRequestBuilder.build());
 
     if (mks.isEmpty()) {
       throw new IllegalArgumentException("No master keys provided");
@@ -114,20 +116,20 @@ public class V2DefaultCryptoMaterialsManager implements CryptoMaterialsManager {
 
     //noinspection unchecked
     return EncryptionMaterials.newBuilder()
-            .setAlgorithm(algo)
-            .setCleartextDataKey(dataKey.getKey())
-            .setEncryptedDataKeys(keyBlobs)
-            .setEncryptionContext(context)
-            .setTrailingSignatureKey(trailingKeys == null ? null : trailingKeys.getPrivate())
-            .setMasterKeys(mks)
-            .build();
+        .setAlgorithm(algo)
+        .setCleartextDataKey(dataKey.getKey())
+        .setEncryptedDataKeys(keyBlobs)
+        .setEncryptionContext(context)
+        .setTrailingSignatureKey(trailingKeys == null ? null : trailingKeys.getPrivate())
+        .setMasterKeys(mks)
+        .build();
   }
 
   @Override
   public DecryptionMaterials decryptMaterials(DecryptionMaterialsRequest request) {
     DataKey<?> dataKey =
-            mkp.decryptDataKey(
-                    request.getAlgorithm(), request.getEncryptedDataKeys(), request.getEncryptionContext());
+        mkp.decryptDataKey(
+            request.getAlgorithm(), request.getEncryptedDataKeys(), request.getEncryptionContext());
 
     if (dataKey == null) {
       throw new CannotUnwrapDataKeyException("Could not decrypt any data keys");
@@ -151,9 +153,9 @@ public class V2DefaultCryptoMaterialsManager implements CryptoMaterialsManager {
     }
 
     return DecryptionMaterials.newBuilder()
-            .setDataKey(dataKey)
-            .setTrailingSignatureKey(pubKey)
-            .build();
+        .setDataKey(dataKey)
+        .setTrailingSignatureKey(pubKey)
+        .build();
   }
 
   private PublicKey deserializeTrailingKeyFromEc(CryptoAlgorithm algo, String pubKey) {
@@ -162,11 +164,11 @@ public class V2DefaultCryptoMaterialsManager implements CryptoMaterialsManager {
 
   private static String serializeTrailingKeyForEc(CryptoAlgorithm algo, KeyPair trailingKeys) {
     return TrailingSignatureAlgorithm.forCryptoAlgorithm(algo)
-            .serializePublicKey(trailingKeys.getPublic());
+        .serializePublicKey(trailingKeys.getPublic());
   }
 
   private static KeyPair generateTrailingSigKeyPair(CryptoAlgorithm algo)
-          throws GeneralSecurityException {
+      throws GeneralSecurityException {
     return TrailingSignatureAlgorithm.forCryptoAlgorithm(algo).generateKey();
   }
 }

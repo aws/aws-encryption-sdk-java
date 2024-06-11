@@ -3,13 +3,12 @@
 
 package com.amazonaws.encryptionsdk.model;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
 
 import java.util.Collections;
 import java.util.Map;
-
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
+import org.junit.Test;
 
 public class DecryptionMaterialsTest {
 

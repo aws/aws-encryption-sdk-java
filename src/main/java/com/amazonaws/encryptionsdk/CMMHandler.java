@@ -10,7 +10,6 @@ import com.amazonaws.encryptionsdk.model.DecryptionMaterialsRequest;
 import com.amazonaws.encryptionsdk.model.EncryptionMaterialsHandler;
 import com.amazonaws.encryptionsdk.model.EncryptionMaterialsRequest;
 import com.amazonaws.encryptionsdk.model.KeyBlob;
-
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -65,10 +64,10 @@ public class CMMHandler {
   public DecryptionMaterialsHandler decryptMaterials(
       DecryptionMaterialsRequest request, CommitmentPolicy commitmentPolicy) {
     if (cmm != null && mplCMM == null) {
-      // This is an implementation of the legacy native CryptoMaterialsManager interface from ESDK-Java.
+      // This is an implementation of the legacy native CryptoMaterialsManager interface from
+      // ESDK-Java.
       DecryptionMaterials materials = cmm.decryptMaterials(request);
-      if (materials.getEncryptionContext().isEmpty()
-        && !request.getEncryptionContext().isEmpty()) {
+      if (materials.getEncryptionContext().isEmpty() && !request.getEncryptionContext().isEmpty()) {
         // If the request specified an encryption context,
         // and we are using the legacy native CMM,
         // add the encryptionContext to the materials.
@@ -82,7 +81,8 @@ public class CMMHandler {
         // It now sets the encryptionContext attribute with the value from the ciphertext's headers.
         //
         // But custom CMMs' behavior was not updated.
-        // However, there is no custom CMM before version 3.0 that could set an encryptionContext attribute.
+        // However, there is no custom CMM before version 3.0 that could set an encryptionContext
+        // attribute.
         // The encryptionContext attribute was only introduced to decryptMaterials objects
         // in ESDK 3.0, so no CMM could have configured this attribute before 3.0.
         // As a result, the ESDK assumes that any native CMM
@@ -91,9 +91,8 @@ public class CMMHandler {
         //
         // If a custom CMM implementation conflicts with this assumption.
         // that CMM implementation MUST move to the MPL.
-        materials = materials.toBuilder()
-                .setEncryptionContext(request.getEncryptionContext())
-                .build();
+        materials =
+            materials.toBuilder().setEncryptionContext(request.getEncryptionContext()).build();
       }
       return new DecryptionMaterialsHandler(materials);
     } else {
