@@ -1,5 +1,3 @@
-// @formatter:off
-// This is copy-paste and has formatting issues.
 package com.amazonaws.crypto.examples.v2;
 
 import static com.amazonaws.encryptionsdk.internal.Utils.assertNonNull;
@@ -49,9 +47,7 @@ public class V2DefaultCryptoMaterialsManager implements CryptoMaterialsManager {
   private final CryptoAlgorithm DEFAULT_CRYPTO_ALGORITHM =
       CryptoAlgorithm.ALG_AES_256_GCM_IV12_TAG16_HKDF_SHA384_ECDSA_P384;
 
-  /**
-   * @param mkp The master key provider to delegate to
-   */
+  /** @param mkp The master key provider to delegate to */
   public V2DefaultCryptoMaterialsManager(MasterKeyProvider<?> mkp) {
     assertNonNull(mkp, "mkp");
     this.mkp = mkp;
@@ -173,4 +169,3 @@ public class V2DefaultCryptoMaterialsManager implements CryptoMaterialsManager {
     return TrailingSignatureAlgorithm.forCryptoAlgorithm(algo).generateKey();
   }
 }
-// @formatter:on
