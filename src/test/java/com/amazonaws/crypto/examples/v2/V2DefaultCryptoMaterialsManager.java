@@ -1,3 +1,5 @@
+// @formatter:off
+// This is copy-paste and has formatting issues.
 package com.amazonaws.crypto.examples.v2;
 
 import static com.amazonaws.encryptionsdk.internal.Utils.assertNonNull;
@@ -171,3 +173,4 @@ public class V2DefaultCryptoMaterialsManager implements CryptoMaterialsManager {
     return TrailingSignatureAlgorithm.forCryptoAlgorithm(algo).generateKey();
   }
 }
+// @formatter:on
