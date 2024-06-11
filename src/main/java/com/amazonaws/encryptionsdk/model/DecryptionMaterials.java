@@ -2,6 +2,7 @@ package com.amazonaws.encryptionsdk.model;
 
 import com.amazonaws.encryptionsdk.DataKey;
 import java.security.PublicKey;
+import java.util.Collections;
 import java.util.Map;
 
 public final class DecryptionMaterials {
@@ -12,7 +13,11 @@ public final class DecryptionMaterials {
   private DecryptionMaterials(Builder b) {
     dataKey = b.getDataKey();
     trailingSignatureKey = b.getTrailingSignatureKey();
-    encryptionContext = b.getEncryptionContext();
+    if (b.getEncryptionContext() != null) {
+      encryptionContext = b.getEncryptionContext();
+    } else {
+      encryptionContext = Collections.emptyMap();
+    }
   }
 
   public DataKey<?> getDataKey() {
