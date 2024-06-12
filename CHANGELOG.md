@@ -1,5 +1,24 @@
 # Changelog
 
+## [3.0.1](https://github.com/aws/aws-encryption-sdk-java/compare/v3.0.0...v3.0.1) (2024-06-12)
+
+### Fixes
+
+* Add Locale.ROOT to String uppercase conversions ([#1880](https://github.com/aws/aws-encryption-sdk-java/issues/1880)) ([9a9950e](https://github.com/aws/aws-encryption-sdk-java/commit/9a9950e880a137ed75b6c9329cbb77cbcdae7ef8)), closes [#1879](https://github.com/aws/aws-encryption-sdk-java/issues/1879)
+* Update DecryptionMaterials code to support legacy custom CMMs ([#2037](https://github.com/aws/aws-encryption-sdk-java/issues/2037)) ([8807d79](https://github.com/aws/aws-encryption-sdk-java/commit/8807d79614394ce5a05a4f356e868470aa0b0f78))
+
+### Maintenance
+
+* deprecate getMasterKeyIds() in CryptoResult ([#1976](https://github.com/aws/aws-encryption-sdk-java/issues/1976)) ([1890ebb](https://github.com/aws/aws-encryption-sdk-java/commit/1890ebbd1baf40906f819a6b93ded8f936e20b50))
+* **deps:** bump bcprov-jdk18on from 1.77 to 1.78.1 ([#2032](https://github.com/aws/aws-encryption-sdk-java/issues/2032)) ([713ca11](https://github.com/aws/aws-encryption-sdk-java/commit/713ca11a3f3eaf6d8b8926bf29340d30cda35b4b))
+* **deps:** udpate org.bouncycastle to bcprov-jdk18on ([#1891](https://github.com/aws/aws-encryption-sdk-java/issues/1891)) ([32a92a9](https://github.com/aws/aws-encryption-sdk-java/commit/32a92a9333858cad1c40cebbc5cafc4637a81504))
+* **deps:** update dependencies ([#1973](https://github.com/aws/aws-encryption-sdk-java/issues/1973)) ([800bd01](https://github.com/aws/aws-encryption-sdk-java/commit/800bd0137c53f58bae2588945dab143a4c760224))
+* **Examples:** Customize KMS Client ([#2001](https://github.com/aws/aws-encryption-sdk-java/issues/2001)) ([e94ee85](https://github.com/aws/aws-encryption-sdk-java/commit/e94ee8538501f270138feab0a6138bed7ce640ea))
+* fix release script ([#1912](https://github.com/aws/aws-encryption-sdk-java/issues/1912)) ([57e8a0b](https://github.com/aws/aws-encryption-sdk-java/commit/57e8a0b603c542e708aab5d04e13c2c314ec6aa5))
+* **README:** update README.md ([#1940](https://github.com/aws/aws-encryption-sdk-java/issues/1940)) ([7a0899e](https://github.com/aws/aws-encryption-sdk-java/commit/7a0899e969b7b03ed73851fad44664d59d6b0bb5))
+* update node version in version step ([#1959](https://github.com/aws/aws-encryption-sdk-java/issues/1959)) ([905385d](https://github.com/aws/aws-encryption-sdk-java/commit/905385d790011e2402543c6eddef400350b1229d))
+* Update SUPPORT_POLICY.rst ([#1924](https://github.com/aws/aws-encryption-sdk-java/issues/1924)) ([57e40b5](https://github.com/aws/aws-encryption-sdk-java/commit/57e40b5788c80811bc3de972a48cb5b36940729d))
+
 ## [3.0.0](https://github.com/aws/aws-encryption-sdk-java/compare/v2.4.1...v3.0.0) (2023-12-06)
 
 

@@ -4,7 +4,7 @@
 
     <groupId>com.amazonaws</groupId>
     <artifactId>aws-encryption-sdk-java</artifactId>
-    <version>3.0.0</version>
+    <version>3.0.1</version>
     <packaging>jar</packaging>
 
     <name>aws-encryption-sdk-java</name>
