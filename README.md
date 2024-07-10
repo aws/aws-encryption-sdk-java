@@ -23,7 +23,7 @@ To use the AWS Encryption SDK for Java you must have:
 
 * **Declare a Dependency on the AWS Encryption SDK in Java and its dependencies**
 
-  This library requires the AWS Cryptographic Material Providers Library in Java from the AWS Java SDK V2.
+  This library requires the AWS Cryptographic Material Providers Library in Java, and the KMS client from the AWS Java SDK V2.
 
   The KMS client from the AWS SDK for Java V1 is an **optional** dependency.
 
@@ -39,7 +39,7 @@ To use the AWS Encryption SDK for Java you must have:
         <dependency>
           <groupId>software.amazon.awssdk</groupId>
           <artifactId>bom</artifactId>
-          <version>3.0.1</version>
+          <version>2.19.1</version>
           <type>pom</type>
           <scope>import</scope>
         </dependency>
@@ -54,7 +54,7 @@ To use the AWS Encryption SDK for Java you must have:
       <dependency>
         <groupId>software.amazon.cryptography</groupId>
         <artifactId>aws-cryptographic-material-providers</artifactId>
-        <version>3.0.1</version>
+        <version>1.0.2</version>
       </dependency>
       <dependency>
         <groupId>software.amazon.awssdk</groupId>
