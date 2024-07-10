@@ -60,12 +60,6 @@
         </dependency>
 
         <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>kms</artifactId>
-            <version>2.20.91</version>
-        </dependency>
-
-        <dependency>
             <groupId>software.amazon.cryptography</groupId>
             <artifactId>aws-cryptographic-material-providers</artifactId>
             <version>1.0.2</version>
