@@ -137,10 +137,9 @@ Resources:
       ManagedPolicyArns:
         - !Ref CryptoToolsKMS
         - !Ref CodeBuildBatchPolicy
-        - !Ref CodeBuildBasePolicy
+        - !Ref CodeBuildBasePolicyCI
         - !Ref SecretsManagerPolicyCI
         - !Ref ParameterStorePolicy
-        - !Ref CodeBuildBasePolicyCI
         - !Ref CodeBuildCISTSAllow
         - "arn:aws:iam::aws:policy/AWSCodeArtifactReadOnlyAccess"
         - "arn:aws:iam::aws:policy/AWSCodeArtifactAdminAccess"
@@ -194,9 +193,7 @@ Resources:
             {
               "Effect": "Allow",
               "Resource": [
-                "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${ProjectName}-Release",
-                "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${ProjectName}-CI",
-                "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${ProjectName}"
+                "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${ProjectName}-CI"
               ],
               "Action": [
                 "codebuild:StartBuild",
@@ -221,7 +218,7 @@ Resources:
                 {
                     "Effect": "Allow",
                     "Resource": [
-                        "arn:aws:codebuild:us-west-2:${AWS::AccountId}:project/AWS-ESDK-Java-Release"
+                        "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${ProjectName}-Release"
                     ],
                     "Action": [
                         "codebuild:StartBuild",
@@ -244,8 +241,6 @@ Resources:
             {
               "Effect": "Allow",
               "Resource": [
-                "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${ProjectName}",
-                "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${ProjectName}:*",
                 "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${ProjectName}-CI",
                 "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${ProjectName}-CI:*",
                 "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${ProjectName}-Release",
@@ -305,7 +300,8 @@ Resources:
                       "Action": [
                           "logs:CreateLogGroup",
                           "logs:CreateLogStream",
-                          "logs:PutLogEvents"
+                          "logs:PutLogEvents",
+                          "logs:GetLogEvents"
                       ]
                   },
                   {
@@ -331,7 +327,7 @@ Resources:
                           "codebuild:BatchPutCodeCoverages"
                       ],
                       "Resource": [
-                          "arn:aws:codebuild:us-west-2:${AWS::AccountId}:report-group/AWS-ESDK-Java-CI-*"
+                          "arn:aws:codebuild:us-west-2:${AWS::AccountId}:report-group/${ProjectName}-CI-*"
                       ]
                   }
               ]
