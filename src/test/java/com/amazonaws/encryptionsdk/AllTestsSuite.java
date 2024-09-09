@@ -4,6 +4,7 @@
 package com.amazonaws.encryptionsdk;
 
 import com.amazonaws.crypto.examples.keyrings.AwsKmsHierarchicalKeyringExampleTest;
+import com.amazonaws.crypto.examples.keyrings.SharedCacheAcrossHierarchicalKeyringsExampleTest;
 import com.amazonaws.crypto.examples.keyrings.AwsKmsRsaKeyringExampleTest;
 import com.amazonaws.crypto.examples.keyrings.BasicEncryptionKeyringExampleTest;
 import com.amazonaws.crypto.examples.keyrings.DiscoveryDecryptionKeyringExampleTest;
@@ -120,6 +121,7 @@ import org.junit.runners.Suite;
   AwsKmsRsaKeyringExampleTest.class,
   DiscoveryDecryptionKeyringExampleTest.class,
   AwsKmsHierarchicalKeyringExampleTest.class,
+  SharedCacheAcrossHierarchicalKeyringsExampleTest.class,
   SetCommitmentPolicyExampleTest.class,
   SetEncryptionAlgorithmKeyringExampleTest.class,
   ParsedCiphertextTest.class,
