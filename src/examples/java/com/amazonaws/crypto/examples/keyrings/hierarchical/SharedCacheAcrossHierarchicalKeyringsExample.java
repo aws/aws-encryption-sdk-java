@@ -110,13 +110,13 @@ public class SharedCacheAcrossHierarchicalKeyringsExample {
 		final ICryptographicMaterialsCache sharedCryptographicMaterialsCache =
 			matProv.CreateCryptographicMaterialsCache(cryptographicMaterialsCacheInput);
 
-    // Create a CacheType object for the sharedCryptographicMaterialsCache
+    	// Create a CacheType object for the sharedCryptographicMaterialsCache
 		// Note that the `cache` parameter in the Hierarchical Keyring Input takes a `CacheType` as input
 		final CacheType sharedCache =
-      CacheType.builder()
-        // This is the `Shared` CacheType that passes an already initialized shared cache
-        .Shared(sharedCryptographicMaterialsCache)
-        .build();
+      		CacheType.builder()
+				// This is the `Shared` CacheType that passes an already initialized shared cache
+				.Shared(sharedCryptographicMaterialsCache)
+				.build();
 
 		// Instantiate the SDK
 		// This builds the AwsCrypto client with the RequireEncryptRequireDecrypt commitment policy,
@@ -133,7 +133,7 @@ public class SharedCacheAcrossHierarchicalKeyringsExample {
 		//    to initially create and populate your physical KeyStore.
 		// Note that ddbTableName keyStoreTableName is the physical Key Store,
 		// and keystore1 is instances of this physical Key Store.
-    final KeyStore keystore1 =
+    	final KeyStore keystore1 =
 			KeyStore.builder()
 				.KeyStoreConfig(
 					KeyStoreConfig.builder()
@@ -150,17 +150,17 @@ public class SharedCacheAcrossHierarchicalKeyringsExample {
 			keystore1.CreateKey(CreateKeyInput.builder().build()).branchKeyIdentifier();
 
 		// Create the Hierarchical Keyring HK1 with Key Store instance K1, partitionId,
-    // the shared Cache and the BranchKeyId.
-    // Note that we are now providing an already initialized shared cache instead of just mentioning
-    // the cache type and the Hierarchical Keyring initializing a cache at initialization.
+		// the shared Cache and the BranchKeyId.
+		// Note that we are now providing an already initialized shared cache instead of just mentioning
+		// the cache type and the Hierarchical Keyring initializing a cache at initialization.
 		final CreateAwsKmsHierarchicalKeyringInput keyringInput1 =
 			CreateAwsKmsHierarchicalKeyringInput.builder()
-				.keyStore(keystore1)
-				.branchKeyId(branchKeyId)
-				.ttlSeconds(600)
-				.cache(sharedCache)
-        .partitionId(partitionId)
-				.build();
+			.keyStore(keystore1)
+			.branchKeyId(branchKeyId)
+			.ttlSeconds(600)
+			.cache(sharedCache)
+			.partitionId(partitionId)
+			.build();
 		final IKeyring hierarchicalKeyring1 = matProv.CreateAwsKmsHierarchicalKeyring(keyringInput1);
 
 		// Create example encryption context
@@ -180,54 +180,55 @@ public class SharedCacheAcrossHierarchicalKeyringsExample {
 			crypto.decryptData(hierarchicalKeyring1, encryptResult1.getResult());
 		assert Arrays.equals(decryptResult1.getResult(), EXAMPLE_DATA);
 
-    // Through the above encrypt and decrypt roundtrip, the cache will be populated and
-    // the cache entries can be used by another Hierarchical Keyring with the
-    // - Same Partition ID
-    // - Same Logical Key Store Name of the Key Store for the Hierarchical Keyring 
-    // - Same Branch Key ID
+		// Through the above encrypt and decrypt roundtrip, the cache will be populated and
+		// the cache entries can be used by another Hierarchical Keyring with the
+		// - Same Partition ID
+		// - Same Logical Key Store Name of the Key Store for the Hierarchical Keyring 
+		// - Same Branch Key ID
 
-    // Configure your KeyStore resource keystore2.
-		//    This SHOULD be the same configuration that you used
-		//    to initially create and populate your physical KeyStore.
-		// Note that ddbTableName keyStoreTableName is the physical Key Store,
-		// and keystore2 is instances of this physical Key Store.
-    
-    // Note that for this example, keystore2 is identical to keystore1.
-    // You can optionally change configurations like KMS Client or KMS Key ID based
-    // on your use-case.
-    // Make sure you have the required permissions to use different configurations.
+		// Configure your KeyStore resource keystore2.
+			//    This SHOULD be the same configuration that you used
+			//    to initially create and populate your physical KeyStore.
+			// Note that ddbTableName keyStoreTableName is the physical Key Store,
+			// and keystore2 is instances of this physical Key Store.
+		
+		// Note that for this example, keystore2 is identical to keystore1.
+		// You can optionally change configurations like KMS Client or KMS Key ID based
+		// on your use-case.
+		// Make sure you have the required permissions to use different configurations.
 
-    // - If you want to share cache entries across two keyrings HK1 and HK2,
-    //   you should set the Logical Key Store Names for both
-    //   Key Store instances (K1 and K2) to be the same.
-    // - If you set the Logical Key Store Names for K1 and K2 to be different,
-    //   HK1 (which uses Key Store instance K1) and HK2 (which uses Key Store
-    //   instance K2) will NOT be able to share cache entries.
-    final KeyStore keystore2 =
-			KeyStore.builder()
-				.KeyStoreConfig(
-					KeyStoreConfig.builder()
-						.ddbClient(DynamoDbClient.create())
-						.ddbTableName(keyStoreTableName)
-						.logicalKeyStoreName(logicalKeyStoreName)
-						.kmsClient(KmsClient.create())
-						.kmsConfiguration(KMSConfiguration.builder().kmsKeyArn(kmsKeyId).build())
-						.build())
-				.build();
+		// - If you want to share cache entries across two keyrings HK1 and HK2,
+		//   you should set the Logical Key Store Names for both
+		//   Key Store instances (K1 and K2) to be the same.
+		// - If you set the Logical Key Store Names for K1 and K2 to be different,
+		//   HK1 (which uses Key Store instance K1) and HK2 (which uses Key Store
+		//   instance K2) will NOT be able to share cache entries.
+		final KeyStore keystore2 =
+				KeyStore.builder()
+					.KeyStoreConfig(
+						KeyStoreConfig.builder()
+							.ddbClient(DynamoDbClient.create())
+							.ddbTableName(keyStoreTableName)
+							.logicalKeyStoreName(logicalKeyStoreName)
+							.kmsClient(KmsClient.create())
+							.kmsConfiguration(KMSConfiguration.builder().kmsKeyArn(kmsKeyId).build())
+							.build())
+					.build();
 
 		// Create the Hierarchical Keyring HK2 with Key Store instance K2, the shared Cache
-    // and the same partitionId and BranchKeyId used in HK1 because we want to share cache entries
-    // (and experience cache HITS).
+		// and the same partitionId and BranchKeyId used in HK1 because we want to share cache entries
+		// (and experience cache HITS).
 		final CreateAwsKmsHierarchicalKeyringInput keyringInput2 =
-      CreateAwsKmsHierarchicalKeyringInput.builder()
-        .keyStore(keystore2)
-        .branchKeyId(branchKeyId)
-        .ttlSeconds(600)
-        .cache(sharedCache)
-        .partitionId(partitionId)
-        .build();
-    final IKeyring hierarchicalKeyring2 = matProv.CreateAwsKmsHierarchicalKeyring(keyringInput2);
+		CreateAwsKmsHierarchicalKeyringInput.builder()
+			.keyStore(keystore2)
+			.branchKeyId(branchKeyId)
+			.ttlSeconds(600)
+			.cache(sharedCache)
+			.partitionId(partitionId)
+			.build();
+		final IKeyring hierarchicalKeyring2 = matProv.CreateAwsKmsHierarchicalKeyring(keyringInput2);
 
+		// This encrypt-decrypt roundtrip with HK2 will experience Cache HITS from previous HK1 roundtrip
 		// Encrypt the data for encryptionContext using hierarchicalKeyring2
 		final CryptoResult<byte[], ?> encryptResult2 =
 			crypto.encryptData(hierarchicalKeyring2, EXAMPLE_DATA, encryptionContext);
