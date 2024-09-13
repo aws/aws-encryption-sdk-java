@@ -20,7 +20,7 @@ phases:
     commands:
       - git submodule update --init submodules/MaterialProviders
       # Get Dafny
-      - curl https://github.com/dafny-lang/dafny/releases/download/v4.2.0/dafny-4.2.0-x64-ubuntu-20.04.zip  -L -o dafny.zip
+      - curl https://github.com/dafny-lang/dafny/releases/download/v4.8.0/dafny-4.8.0-x64-ubuntu-20.04.zip  -L -o dafny.zip
       - unzip -qq dafny.zip && rm dafny.zip
       - export PATH="$PWD/dafny:$PATH"
       # Get Gradle 7.6
