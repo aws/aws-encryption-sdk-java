@@ -68,7 +68,7 @@
         <dependency>
             <groupId>software.amazon.cryptography</groupId>
             <artifactId>aws-cryptographic-material-providers</artifactId>
-            <version>1.0.2</version>
+            <version>1.6.0</version>
         </dependency>
 
         <dependency>
