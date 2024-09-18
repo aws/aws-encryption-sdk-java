@@ -75,6 +75,8 @@
             <groupId>software.amazon.cryptography</groupId>
             <artifactId>TestAwsCryptographicMaterialProviders</artifactId>
             <version>1.6.0-SNAPSHOT</version>
+            <optional>true</optional>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
