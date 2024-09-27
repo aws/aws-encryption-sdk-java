@@ -151,7 +151,7 @@ public class TestVectorRunner {
       KeyVectors keyVectors =
           KeyVectors.builder()
               .KeyVectorsConfig(
-                  KeyVectorsConfig.builder().keyManifiestPath(tempFile.getPath()).build())
+                  KeyVectorsConfig.builder().keyManifestPath(tempFile.getPath()).build())
               .build();
 
       MaterialProvidersConfig config = MaterialProvidersConfig.builder().build();
