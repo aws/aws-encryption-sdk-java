@@ -85,170 +85,170 @@ import java.util.concurrent.atomic.AtomicInteger;
  * - Decrypt
  */
 public class SharedCacheAcrossHierarchicalKeyringsExample {
-  	private static final byte[] EXAMPLE_DATA = "Hello World".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] EXAMPLE_DATA = "Hello World".getBytes(StandardCharsets.UTF_8);
 
-  	public static void encryptAndDecryptWithKeyring(
-		String keyStoreTableName, String logicalKeyStoreName, String partitionId, String kmsKeyId) {
-		// Create the CryptographicMaterialsCache (CMC) to share across multiple Hierarchical Keyrings
-		// using the Material Providers Library
-		//    This CMC takes in:
-		//     - CacheType
-		final MaterialProviders matProv =
-			MaterialProviders.builder()
-				.MaterialProvidersConfig(MaterialProvidersConfig.builder().build())
-				.build();
+    public static void encryptAndDecryptWithKeyring(
+        String keyStoreTableName, String logicalKeyStoreName, String partitionId, String kmsKeyId) {
+        // Create the CryptographicMaterialsCache (CMC) to share across multiple Hierarchical Keyrings
+        // using the Material Providers Library
+        //    This CMC takes in:
+        //     - CacheType
+        final MaterialProviders matProv =
+            MaterialProviders.builder()
+                .MaterialProvidersConfig(MaterialProvidersConfig.builder().build())
+                .build();
 
-		final CacheType cache =
-			CacheType.builder() 
-				.Default(DefaultCache.builder().entryCapacity(100).build())
-				.build();
+        final CacheType cache =
+            CacheType.builder() 
+                .Default(DefaultCache.builder().entryCapacity(100).build())
+                .build();
 
-		final CreateCryptographicMaterialsCacheInput cryptographicMaterialsCacheInput =
-			CreateCryptographicMaterialsCacheInput.builder()
-				.cache(cache)
-				.build();
+        final CreateCryptographicMaterialsCacheInput cryptographicMaterialsCacheInput =
+            CreateCryptographicMaterialsCacheInput.builder()
+                .cache(cache)
+                .build();
 
-		final ICryptographicMaterialsCache sharedCryptographicMaterialsCache =
-			matProv.CreateCryptographicMaterialsCache(cryptographicMaterialsCacheInput);
+        final ICryptographicMaterialsCache sharedCryptographicMaterialsCache =
+            matProv.CreateCryptographicMaterialsCache(cryptographicMaterialsCacheInput);
 
-    	// Create a CacheType object for the sharedCryptographicMaterialsCache
-		// Note that the `cache` parameter in the Hierarchical Keyring Input takes a `CacheType` as input
-		final CacheType sharedCache =
-      		CacheType.builder()
-				// This is the `Shared` CacheType that passes an already initialized shared cache
-				.Shared(sharedCryptographicMaterialsCache)
-				.build();
+        // Create a CacheType object for the sharedCryptographicMaterialsCache
+        // Note that the `cache` parameter in the Hierarchical Keyring Input takes a `CacheType` as input
+        final CacheType sharedCache =
+              CacheType.builder()
+                // This is the `Shared` CacheType that passes an already initialized shared cache
+                .Shared(sharedCryptographicMaterialsCache)
+                .build();
 
-		// Instantiate the SDK
-		// This builds the AwsCrypto client with the RequireEncryptRequireDecrypt commitment policy,
-		// which enforces that this client only encrypts using committing algorithm suites and enforces
-		// that this client will only decrypt encrypted messages that were created with a committing
-		// algorithm suite.
-		// This is the default commitment policy if you build the client with
-		// `AwsCrypto.builder().build()`
-		// or `AwsCrypto.standard()`.
-		final AwsCrypto crypto = AwsCrypto.builder().build();
+        // Instantiate the SDK
+        // This builds the AwsCrypto client with the RequireEncryptRequireDecrypt commitment policy,
+        // which enforces that this client only encrypts using committing algorithm suites and enforces
+        // that this client will only decrypt encrypted messages that were created with a committing
+        // algorithm suite.
+        // This is the default commitment policy if you build the client with
+        // `AwsCrypto.builder().build()`
+        // or `AwsCrypto.standard()`.
+        final AwsCrypto crypto = AwsCrypto.builder().build();
 
-		// Configure your KeyStore resource keystore1.
-		//    This SHOULD be the same configuration that you used
-		//    to initially create and populate your physical KeyStore.
-		// Note that ddbTableName keyStoreTableName is the physical Key Store,
-		// and keystore1 is instances of this physical Key Store.
-    	final KeyStore keystore1 =
-			KeyStore.builder()
-				.KeyStoreConfig(
-					KeyStoreConfig.builder()
-						.ddbClient(DynamoDbClient.create())
-						.ddbTableName(keyStoreTableName)
-						.logicalKeyStoreName(logicalKeyStoreName)
-						.kmsClient(KmsClient.create())
-						.kmsConfiguration(KMSConfiguration.builder().kmsKeyArn(kmsKeyId).build())
-						.build())
-				.build();
+        // Configure your KeyStore resource keystore1.
+        //    This SHOULD be the same configuration that you used
+        //    to initially create and populate your physical KeyStore.
+        // Note that ddbTableName keyStoreTableName is the physical Key Store,
+        // and keystore1 is instances of this physical Key Store.
+        final KeyStore keystore1 =
+            KeyStore.builder()
+                .KeyStoreConfig(
+                    KeyStoreConfig.builder()
+                        .ddbClient(DynamoDbClient.create())
+                        .ddbTableName(keyStoreTableName)
+                        .logicalKeyStoreName(logicalKeyStoreName)
+                        .kmsClient(KmsClient.create())
+                        .kmsConfiguration(KMSConfiguration.builder().kmsKeyArn(kmsKeyId).build())
+                        .build())
+                    .build();
 
-		// Call CreateKey to create a new active branch key
-		final String branchKeyId =
-			keystore1.CreateKey(CreateKeyInput.builder().build()).branchKeyIdentifier();
+        // Call CreateKey to create a new active branch key
+        final String branchKeyId =
+            keystore1.CreateKey(CreateKeyInput.builder().build()).branchKeyIdentifier();
 
-		// Create the Hierarchical Keyring HK1 with Key Store instance K1, partitionId,
-		// the shared Cache and the BranchKeyId.
-		// Note that we are now providing an already initialized shared cache instead of just mentioning
-		// the cache type and the Hierarchical Keyring initializing a cache at initialization.
-		final CreateAwsKmsHierarchicalKeyringInput keyringInput1 =
-			CreateAwsKmsHierarchicalKeyringInput.builder()
-			.keyStore(keystore1)
-			.branchKeyId(branchKeyId)
-			.ttlSeconds(600)
-			.cache(sharedCache)
-			.partitionId(partitionId)
-			.build();
-		final IKeyring hierarchicalKeyring1 = matProv.CreateAwsKmsHierarchicalKeyring(keyringInput1);
+        // Create the Hierarchical Keyring HK1 with Key Store instance K1, partitionId,
+        // the shared Cache and the BranchKeyId.
+        // Note that we are now providing an already initialized shared cache instead of just mentioning
+        // the cache type and the Hierarchical Keyring initializing a cache at initialization.
+        final CreateAwsKmsHierarchicalKeyringInput keyringInput1 =
+            CreateAwsKmsHierarchicalKeyringInput.builder()
+            .keyStore(keystore1)
+            .branchKeyId(branchKeyId)
+            .ttlSeconds(600)
+            .cache(sharedCache)
+            .partitionId(partitionId)
+            .build();
+        final IKeyring hierarchicalKeyring1 = matProv.CreateAwsKmsHierarchicalKeyring(keyringInput1);
 
-		// Create example encryption context
-		Map<String, String> encryptionContext = new HashMap<>();
-		encryptionContext.put("encryption", "context");
-		encryptionContext.put("is not", "secret");
-		encryptionContext.put("but adds", "useful metadata");
-		encryptionContext.put("that can help you", "be confident that");
-		encryptionContext.put("the data you are handling", "is what you think it is");
+        // Create example encryption context
+        Map<String, String> encryptionContext = new HashMap<>();
+        encryptionContext.put("encryption", "context");
+        encryptionContext.put("is not", "secret");
+        encryptionContext.put("but adds", "useful metadata");
+        encryptionContext.put("that can help you", "be confident that");
+        encryptionContext.put("the data you are handling", "is what you think it is");
 
-		// Encrypt the data for encryptionContext using hierarchicalKeyring1
-		final CryptoResult<byte[], ?> encryptResult1 =
-			crypto.encryptData(hierarchicalKeyring1, EXAMPLE_DATA, encryptionContext);
+        // Encrypt the data for encryptionContext using hierarchicalKeyring1
+        final CryptoResult<byte[], ?> encryptResult1 =
+            crypto.encryptData(hierarchicalKeyring1, EXAMPLE_DATA, encryptionContext);
 
-		// Decrypt your encrypted data using the same keyring HK1 you used on encrypt.
-		final CryptoResult<byte[], ?> decryptResult1 =
-			crypto.decryptData(hierarchicalKeyring1, encryptResult1.getResult());
-		assert Arrays.equals(decryptResult1.getResult(), EXAMPLE_DATA);
+        // Decrypt your encrypted data using the same keyring HK1 you used on encrypt.
+        final CryptoResult<byte[], ?> decryptResult1 =
+            crypto.decryptData(hierarchicalKeyring1, encryptResult1.getResult());
+        assert Arrays.equals(decryptResult1.getResult(), EXAMPLE_DATA);
 
-		// Through the above encrypt and decrypt roundtrip, the cache will be populated and
-		// the cache entries can be used by another Hierarchical Keyring with the
-		// - Same Partition ID
-		// - Same Logical Key Store Name of the Key Store for the Hierarchical Keyring 
-		// - Same Branch Key ID
+        // Through the above encrypt and decrypt roundtrip, the cache will be populated and
+        // the cache entries can be used by another Hierarchical Keyring with the
+        // - Same Partition ID
+        // - Same Logical Key Store Name of the Key Store for the Hierarchical Keyring 
+        // - Same Branch Key ID
 
-		// Configure your KeyStore resource keystore2.
-			//    This SHOULD be the same configuration that you used
-			//    to initially create and populate your physical KeyStore.
-			// Note that ddbTableName keyStoreTableName is the physical Key Store,
-			// and keystore2 is instances of this physical Key Store.
-		
-		// Note that for this example, keystore2 is identical to keystore1.
-		// You can optionally change configurations like KMS Client or KMS Key ID based
-		// on your use-case.
-		// Make sure you have the required permissions to use different configurations.
+        // Configure your KeyStore resource keystore2.
+            //    This SHOULD be the same configuration that you used
+            //    to initially create and populate your physical KeyStore.
+            // Note that ddbTableName keyStoreTableName is the physical Key Store,
+            // and keystore2 is instances of this physical Key Store.
+        
+        // Note that for this example, keystore2 is identical to keystore1.
+        // You can optionally change configurations like KMS Client or KMS Key ID based
+        // on your use-case.
+        // Make sure you have the required permissions to use different configurations.
 
-		// - If you want to share cache entries across two keyrings HK1 and HK2,
-		//   you should set the Logical Key Store Names for both
-		//   Key Store instances (K1 and K2) to be the same.
-		// - If you set the Logical Key Store Names for K1 and K2 to be different,
-		//   HK1 (which uses Key Store instance K1) and HK2 (which uses Key Store
-		//   instance K2) will NOT be able to share cache entries.
-		final KeyStore keystore2 =
-			KeyStore.builder()
-				.KeyStoreConfig(
-					KeyStoreConfig.builder()
-						.ddbClient(DynamoDbClient.create())
-						.ddbTableName(keyStoreTableName)
-						.logicalKeyStoreName(logicalKeyStoreName)
-						.kmsClient(KmsClient.create())
-						.kmsConfiguration(KMSConfiguration.builder().kmsKeyArn(kmsKeyId).build())
-						.build())
-				.build();
+        // - If you want to share cache entries across two keyrings HK1 and HK2,
+        //   you should set the Logical Key Store Names for both
+        //   Key Store instances (K1 and K2) to be the same.
+        // - If you set the Logical Key Store Names for K1 and K2 to be different,
+        //   HK1 (which uses Key Store instance K1) and HK2 (which uses Key Store
+        //   instance K2) will NOT be able to share cache entries.
+        final KeyStore keystore2 =
+            KeyStore.builder()
+                .KeyStoreConfig(
+                    KeyStoreConfig.builder()
+                        .ddbClient(DynamoDbClient.create())
+                        .ddbTableName(keyStoreTableName)
+                        .logicalKeyStoreName(logicalKeyStoreName)
+                        .kmsClient(KmsClient.create())
+                        .kmsConfiguration(KMSConfiguration.builder().kmsKeyArn(kmsKeyId).build())
+                        .build())
+                .build();
 
-		// Create the Hierarchical Keyring HK2 with Key Store instance K2, the shared Cache
-		// and the same partitionId and BranchKeyId used in HK1 because we want to share cache entries
-		// (and experience cache HITS).
-		final CreateAwsKmsHierarchicalKeyringInput keyringInput2 =
-		CreateAwsKmsHierarchicalKeyringInput.builder()
-			.keyStore(keystore2)
-			.branchKeyId(branchKeyId)
-			.ttlSeconds(600)
-			.cache(sharedCache)
-			.partitionId(partitionId)
-			.build();
-		final IKeyring hierarchicalKeyring2 = matProv.CreateAwsKmsHierarchicalKeyring(keyringInput2);
+        // Create the Hierarchical Keyring HK2 with Key Store instance K2, the shared Cache
+        // and the same partitionId and BranchKeyId used in HK1 because we want to share cache entries
+        // (and experience cache HITS).
+        final CreateAwsKmsHierarchicalKeyringInput keyringInput2 =
+        CreateAwsKmsHierarchicalKeyringInput.builder()
+            .keyStore(keystore2)
+            .branchKeyId(branchKeyId)
+            .ttlSeconds(600)
+            .cache(sharedCache)
+            .partitionId(partitionId)
+            .build();
+        final IKeyring hierarchicalKeyring2 = matProv.CreateAwsKmsHierarchicalKeyring(keyringInput2);
 
-		// This encrypt-decrypt roundtrip with HK2 will experience Cache HITS from previous HK1 roundtrip
-		// Encrypt the data for encryptionContext using hierarchicalKeyring2
-		final CryptoResult<byte[], ?> encryptResult2 =
-			crypto.encryptData(hierarchicalKeyring2, EXAMPLE_DATA, encryptionContext);
+        // This encrypt-decrypt roundtrip with HK2 will experience Cache HITS from previous HK1 roundtrip
+        // Encrypt the data for encryptionContext using hierarchicalKeyring2
+        final CryptoResult<byte[], ?> encryptResult2 =
+            crypto.encryptData(hierarchicalKeyring2, EXAMPLE_DATA, encryptionContext);
 
-		// Decrypt your encrypted data using the same keyring HK2 you used on encrypt.
-		final CryptoResult<byte[], ?> decryptResult2 =
-			crypto.decryptData(hierarchicalKeyring2, encryptResult2.getResult());
-		assert Arrays.equals(decryptResult2.getResult(), EXAMPLE_DATA);
-  }
+        // Decrypt your encrypted data using the same keyring HK2 you used on encrypt.
+        final CryptoResult<byte[], ?> decryptResult2 =
+            crypto.decryptData(hierarchicalKeyring2, encryptResult2.getResult());
+        assert Arrays.equals(decryptResult2.getResult(), EXAMPLE_DATA);
+}
 
-  	public static void main(final String[] args) {
-      if (args.length <= 0) {
-        throw new IllegalArgumentException(
-          "To run this example, include the keyStoreTableName, logicalKeyStoreName, partitionId, and kmsKeyId in args");
-      }
-      final String keyStoreTableName = args[0];
-      final String logicalKeyStoreName = args[1];
-      final String partitionId = args[2];
-      final String kmsKeyId = args[3];
-      encryptAndDecryptWithKeyring(keyStoreTableName, logicalKeyStoreName, partitionId, kmsKeyId);
-  	}
+    public static void main(final String[] args) {
+        if (args.length <= 0) {
+            throw new IllegalArgumentException(
+                "To run this example, include the keyStoreTableName, logicalKeyStoreName, partitionId, and kmsKeyId in args");
+        }
+        final String keyStoreTableName = args[0];
+        final String logicalKeyStoreName = args[1];
+        final String partitionId = args[2];
+        final String kmsKeyId = args[3];
+        encryptAndDecryptWithKeyring(keyStoreTableName, logicalKeyStoreName, partitionId, kmsKeyId);
+    }
 }
