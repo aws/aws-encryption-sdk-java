@@ -4,7 +4,6 @@
 package com.amazonaws.encryptionsdk;
 
 import com.amazonaws.crypto.examples.keyrings.AwsKmsHierarchicalKeyringExampleTest;
-import com.amazonaws.crypto.examples.keyrings.SharedCacheAcrossHierarchicalKeyringsExampleTest;
 import com.amazonaws.crypto.examples.keyrings.AwsKmsRsaKeyringExampleTest;
 import com.amazonaws.crypto.examples.keyrings.BasicEncryptionKeyringExampleTest;
 import com.amazonaws.crypto.examples.keyrings.DiscoveryDecryptionKeyringExampleTest;
@@ -12,6 +11,7 @@ import com.amazonaws.crypto.examples.keyrings.MultiKeyringExampleTest;
 import com.amazonaws.crypto.examples.keyrings.RawAesKeyringExampleTest;
 import com.amazonaws.crypto.examples.keyrings.RawRsaKeyringExampleTest;
 import com.amazonaws.crypto.examples.keyrings.SetEncryptionAlgorithmKeyringExampleTest;
+import com.amazonaws.crypto.examples.keyrings.SharedCacheAcrossHierarchicalKeyringsExampleTest;
 import com.amazonaws.crypto.examples.v2.BasicEncryptionExampleTest;
 import com.amazonaws.crypto.examples.v2.BasicMultiRegionKeyEncryptionExampleTest;
 import com.amazonaws.crypto.examples.v2.CustomCMMExampleTest;
