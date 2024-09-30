@@ -16,7 +16,7 @@ import software.amazon.cryptography.materialproviders.IKeyring;
 import software.amazon.cryptography.materialproviders.MaterialProviders;
 import software.amazon.cryptography.materialproviders.model.CacheType;
 import software.amazon.cryptography.materialproviders.model.CreateAwsKmsHierarchicalKeyringInput;
-import software.amazon.cryptography.materialproviders.mdoel.CreateCryptographicMaterialsCacheInput;
+import software.amazon.cryptography.materialproviders.model.CreateCryptographicMaterialsCacheInput;
 import software.amazon.cryptography.materialproviders.model.DefaultCache;
 import software.amazon.cryptography.materialproviders.model.MaterialProvidersConfig;
 
