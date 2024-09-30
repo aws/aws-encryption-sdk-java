@@ -65,7 +65,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * - Same Branch Key ID
  * then they WILL share the cache entries in the Shared Cache.
  * Please make sure that you set all of Partition ID, Logical Key Store Name and Branch Key ID
- * to be the same for two Hierarchical Keyrings only if you want them to share cache entries.
+ * to be the same for two Hierarchical Keyrings if and only if you want them to share cache entries.
  * 
  * <p>This example first creates a shared cache that you can use across multiple Hierarchical Keyrings.
  * The example then configures a Hierarchical Keyring (HK1 and HK2) with the shared cache,
@@ -80,8 +80,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * table must be configured with the following primary key configuration: - Partition key is named
  * "partition_key" with type (S) - Sort key is named "sort_key" with type (S)
  *
- * <p>This example also requires using a KMS Key. You need the following access on this key: -
- * GenerateDataKeyWithoutPlaintext - Decrypt
+ * <p>This example also requires using a KMS Key. You need the following access on this key:
+ * - GenerateDataKeyWithoutPlaintext
+ * - Decrypt
  */
 public class SharedCacheAcrossHierarchicalKeyringsExample {
   	private static final byte[] EXAMPLE_DATA = "Hello World".getBytes(StandardCharsets.UTF_8);
@@ -204,16 +205,16 @@ public class SharedCacheAcrossHierarchicalKeyringsExample {
 		//   HK1 (which uses Key Store instance K1) and HK2 (which uses Key Store
 		//   instance K2) will NOT be able to share cache entries.
 		final KeyStore keystore2 =
-				KeyStore.builder()
-					.KeyStoreConfig(
-						KeyStoreConfig.builder()
-							.ddbClient(DynamoDbClient.create())
-							.ddbTableName(keyStoreTableName)
-							.logicalKeyStoreName(logicalKeyStoreName)
-							.kmsClient(KmsClient.create())
-							.kmsConfiguration(KMSConfiguration.builder().kmsKeyArn(kmsKeyId).build())
-							.build())
-					.build();
+			KeyStore.builder()
+				.KeyStoreConfig(
+					KeyStoreConfig.builder()
+						.ddbClient(DynamoDbClient.create())
+						.ddbTableName(keyStoreTableName)
+						.logicalKeyStoreName(logicalKeyStoreName)
+						.kmsClient(KmsClient.create())
+						.kmsConfiguration(KMSConfiguration.builder().kmsKeyArn(kmsKeyId).build())
+						.build())
+				.build();
 
 		// Create the Hierarchical Keyring HK2 with Key Store instance K2, the shared Cache
 		// and the same partitionId and BranchKeyId used in HK1 because we want to share cache entries
