@@ -11,12 +11,12 @@ import software.amazon.cryptography.keystore.KeyStore;
 import software.amazon.cryptography.keystore.model.CreateKeyInput;
 import software.amazon.cryptography.keystore.model.KMSConfiguration;
 import software.amazon.cryptography.keystore.model.KeyStoreConfig;
-import software.amazon.cryptography.materialproviders.CryptographicMaterialsCache;
 import software.amazon.cryptography.materialproviders.ICryptographicMaterialsCache;
 import software.amazon.cryptography.materialproviders.IKeyring;
 import software.amazon.cryptography.materialproviders.MaterialProviders;
 import software.amazon.cryptography.materialproviders.model.CacheType;
 import software.amazon.cryptography.materialproviders.model.CreateAwsKmsHierarchicalKeyringInput;
+import software.amazon.cryptography.materialproviders.mdoel.CreateCryptographicMaterialsCacheInput;
 import software.amazon.cryptography.materialproviders.model.DefaultCache;
 import software.amazon.cryptography.materialproviders.model.MaterialProvidersConfig;
 
@@ -114,7 +114,7 @@ public class SharedCacheAcrossHierarchicalKeyringsExample {
         // Create a CacheType object for the sharedCryptographicMaterialsCache
         // Note that the `cache` parameter in the Hierarchical Keyring Input takes a `CacheType` as input
         final CacheType sharedCache =
-              CacheType.builder()
+            CacheType.builder()
                 // This is the `Shared` CacheType that passes an already initialized shared cache
                 .Shared(sharedCryptographicMaterialsCache)
                 .build();
@@ -188,10 +188,10 @@ public class SharedCacheAcrossHierarchicalKeyringsExample {
         // - Same Branch Key ID
 
         // Configure your KeyStore resource keystore2.
-            //    This SHOULD be the same configuration that you used
-            //    to initially create and populate your physical KeyStore.
-            // Note that ddbTableName keyStoreTableName is the physical Key Store,
-            // and keystore2 is instances of this physical Key Store.
+        //    This SHOULD be the same configuration that you used
+        //    to initially create and populate your physical KeyStore.
+        // Note that ddbTableName keyStoreTableName is the physical Key Store,
+        // and keystore2 is instances of this physical Key Store.
         
         // Note that for this example, keystore2 is identical to keystore1.
         // You can optionally change configurations like KMS Client or KMS Key ID based
