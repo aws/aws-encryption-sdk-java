@@ -213,7 +213,7 @@ public class TestVectorGenerator {
     KeyVectors keyVectors =
         KeyVectors.builder()
             .KeyVectorsConfig(
-                KeyVectorsConfig.builder().keyManifiestPath(keyManifest.toString()).build())
+                KeyVectorsConfig.builder().keyManifestPath(keyManifest.toString()).build())
             .build();
 
     final Map<String, KeyEntry> keys = parseKeyManifest(keysManifest);
