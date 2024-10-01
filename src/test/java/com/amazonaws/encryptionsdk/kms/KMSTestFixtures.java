@@ -38,6 +38,5 @@ public final class KMSTestFixtures {
   public static final String TEST_KEYSTORE_KMS_KEY_ID =
       "arn:aws:kms:us-west-2:370957321024:key/9d989aa2-2f9c-438c-a745-cc57d3ad0126";
 
-  // HIERARCHY_KEYRING_PARTITION_ID here is a random UUID
   public static final String HIERARCHY_KEYRING_PARTITION_ID = "91c1b6a2-6fc3-4539-ad5e-938d597ed730";
 }

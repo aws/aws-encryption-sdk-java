@@ -159,7 +159,8 @@ public class SharedCacheAcrossHierarchicalKeyringsExample {
 
         // Please make sure that you read the guidance on how to set Partition ID, Logical Key Store Name and
         // Branch Key ID at the top of this example before creating Hierarchical Keyrings with a Shared Cache
-
+        // partitionId for this example is a random UUID
+        
         final CreateAwsKmsHierarchicalKeyringInput keyringInput1 =
             CreateAwsKmsHierarchicalKeyringInput.builder()
             .keyStore(keystore1)
@@ -230,6 +231,7 @@ public class SharedCacheAcrossHierarchicalKeyringsExample {
 
         // Please make sure that you read the guidance on how to set Partition ID, Logical Key Store Name and
         // Branch Key ID at the top of this example before creating Hierarchical Keyrings with a Shared Cache
+        // partitionId for this example is a random UUID
 
         final CreateAwsKmsHierarchicalKeyringInput keyringInput2 =
         CreateAwsKmsHierarchicalKeyringInput.builder()
