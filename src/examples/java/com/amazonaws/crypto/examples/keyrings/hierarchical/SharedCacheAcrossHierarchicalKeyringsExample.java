@@ -179,6 +179,8 @@ public class SharedCacheAcrossHierarchicalKeyringsExample {
         // Decrypt your encrypted data using the same keyring HK1 you used on encrypt.
         final CryptoResult<byte[], ?> decryptResult1 =
             crypto.decryptData(hierarchicalKeyring1, encryptResult1.getResult());
+
+        // Demonstrate that the decrypted plaintext is identical to the original plaintext.
         assert Arrays.equals(decryptResult1.getResult(), EXAMPLE_DATA);
 
         // Through the above encrypt and decrypt roundtrip, the cache will be populated and
@@ -237,6 +239,8 @@ public class SharedCacheAcrossHierarchicalKeyringsExample {
         // Decrypt your encrypted data using the same keyring HK2 you used on encrypt.
         final CryptoResult<byte[], ?> decryptResult2 =
             crypto.decryptData(hierarchicalKeyring2, encryptResult2.getResult());
+
+        // Demonstrate that the decrypted plaintext is identical to the original plaintext.
         assert Arrays.equals(decryptResult2.getResult(), EXAMPLE_DATA);
 }
 
