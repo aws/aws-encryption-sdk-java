@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * With this functionality, users only need to maintain one common shared cache across multiple
  * Hierarchical Keyrings with different Key Stores instances/KMS Clients/KMS Keys.
  * 
- * <p>There are two important parameters that users need to carefully set while providing the shared cache:
+ * <p>There are three important parameters that users need to carefully set while providing the shared cache:
  * 
  * <p>Partition ID - Partition ID is an optional parameter provided to the Hierarchical Keyring input,
  * which distinguishes Cryptographic Material Providers (i.e: Keyrings) writing to a cache.
@@ -54,6 +54,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  *   for both the Key Store instances (K1 and K2) to be the same.
  * - If you set the Logical Key Store Names for K1 and K2 to be different, HK1 (which uses Key Store instance K1)
  *   and HK2 (which uses Key Store instance K2) will NOT be able to share cache entries.
+ * 
+ * <p>Branch Key ID - Choose an effective Branch Key ID Schema
  * 
  * This is demonstrated in the example below.
  * Notice that both K1 and K2 are instances of the same physical Key Store (K).
@@ -154,6 +156,10 @@ public class SharedCacheAcrossHierarchicalKeyringsExample {
         // the shared Cache and the BranchKeyId.
         // Note that we are now providing an already initialized shared cache instead of just mentioning
         // the cache type and the Hierarchical Keyring initializing a cache at initialization.
+
+        // Please make sure that you read the guidance on how to set Partition ID, Logical Key Store Name and
+        // Branch Key ID at the top of this example before creating Hierarchical Keyrings with a Shared Cache
+
         final CreateAwsKmsHierarchicalKeyringInput keyringInput1 =
             CreateAwsKmsHierarchicalKeyringInput.builder()
             .keyStore(keystore1)
@@ -221,6 +227,10 @@ public class SharedCacheAcrossHierarchicalKeyringsExample {
         // Create the Hierarchical Keyring HK2 with Key Store instance K2, the shared Cache
         // and the same partitionId and BranchKeyId used in HK1 because we want to share cache entries
         // (and experience cache HITS).
+
+        // Please make sure that you read the guidance on how to set Partition ID, Logical Key Store Name and
+        // Branch Key ID at the top of this example before creating Hierarchical Keyrings with a Shared Cache
+
         final CreateAwsKmsHierarchicalKeyringInput keyringInput2 =
         CreateAwsKmsHierarchicalKeyringInput.builder()
             .keyStore(keystore2)
