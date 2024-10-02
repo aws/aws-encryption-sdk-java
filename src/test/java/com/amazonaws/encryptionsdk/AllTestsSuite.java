@@ -11,6 +11,7 @@ import com.amazonaws.crypto.examples.keyrings.MultiKeyringExampleTest;
 import com.amazonaws.crypto.examples.keyrings.RawAesKeyringExampleTest;
 import com.amazonaws.crypto.examples.keyrings.RawRsaKeyringExampleTest;
 import com.amazonaws.crypto.examples.keyrings.SetEncryptionAlgorithmKeyringExampleTest;
+import com.amazonaws.crypto.examples.keyrings.SharedCacheAcrossHierarchicalKeyringsExampleTest;
 import com.amazonaws.crypto.examples.v2.BasicEncryptionExampleTest;
 import com.amazonaws.crypto.examples.v2.BasicMultiRegionKeyEncryptionExampleTest;
 import com.amazonaws.crypto.examples.v2.CustomCMMExampleTest;
@@ -120,6 +121,7 @@ import org.junit.runners.Suite;
   AwsKmsRsaKeyringExampleTest.class,
   DiscoveryDecryptionKeyringExampleTest.class,
   AwsKmsHierarchicalKeyringExampleTest.class,
+  SharedCacheAcrossHierarchicalKeyringsExampleTest.class,
   SetCommitmentPolicyExampleTest.class,
   SetEncryptionAlgorithmKeyringExampleTest.class,
   ParsedCiphertextTest.class,
