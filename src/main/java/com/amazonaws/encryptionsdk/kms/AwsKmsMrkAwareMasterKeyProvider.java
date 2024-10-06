@@ -172,6 +172,10 @@ public final class AwsKmsMrkAwareMasterKeyProvider
      * <p>This method will overwrite any credentials set using {@link
      * #withCredentials(AWSCredentialsProvider)}.
      *
+     * <p>WARNING: {@link AWSKMSClientBuilder}s are NOT thread safe. If {@link KmsMasterKeyProvider}
+     * is going to be used concurrently, a proper supplier MUST be provided, or use a {@link
+     * #withCustomClientFactory(KmsMasterKeyProvider.RegionalClientSupplier)}
+     *
      * @see KmsMasterKeyProvider.Builder#withClientBuilder(AWSKMSClientBuilder)
      */
     public AwsKmsMrkAwareMasterKeyProvider.Builder withClientBuilder(AWSKMSClientBuilder builder) {
