@@ -37,6 +37,14 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+<!--    Uncomment the next block for development with TestVectorsAwsCryptographicMaterialProviders in local mvn -->
+<!--    <repositories>-->
+<!--        <repository>-->
+<!--            <id>localRepository</id>-->
+<!--            <name>localRepository</name>-->
+<!--            <url>file://${user.home}/.m2/repository/</url>-->
+<!--        </repository>-->
+<!--    </repositories>-->
 
     <dependencyManagement>
         <dependencies>
