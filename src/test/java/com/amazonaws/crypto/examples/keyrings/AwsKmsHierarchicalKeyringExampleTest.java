@@ -4,6 +4,7 @@
 package com.amazonaws.crypto.examples.keyrings;
 
 import com.amazonaws.crypto.examples.keyrings.hierarchical.AwsKmsHierarchicalKeyringExample;
+import com.amazonaws.crypto.examples.v2.HKeyringMasterKeyWithCachingCMM;
 import com.amazonaws.encryptionsdk.kms.KMSTestFixtures;
 import org.junit.Test;
 
@@ -22,5 +23,13 @@ public class AwsKmsHierarchicalKeyringExampleTest {
         KMSTestFixtures.TEST_KEYSTORE_NAME,
         KMSTestFixtures.TEST_LOGICAL_KEYSTORE_NAME,
         KMSTestFixtures.TEST_KEYSTORE_KMS_KEY_ID);
+  }
+
+  @Test
+  public void testCrazy() {
+   HKeyringMasterKeyWithCachingCMM.encryptAndDecryptWithKeyringViaCachingCMM(
+           KMSTestFixtures.TEST_KEYSTORE_NAME,
+           KMSTestFixtures.TEST_LOGICAL_KEYSTORE_NAME,
+           KMSTestFixtures.TEST_KEYSTORE_KMS_KEY_ID);
   }
 }
