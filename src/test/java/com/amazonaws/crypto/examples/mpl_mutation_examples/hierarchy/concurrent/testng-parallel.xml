@@ -1,0 +1,21 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="Mixed Parallel and Sequential Suite">
+  <test name="Parallel Tests" parallel="methods" thread-count="2">
+    <classes>
+      <class name="software.amazon.cryptography.example.hierarchy.concurrent.StorageVersionReadConcurrencyTests">
+        <methods>
+          <include name="testConcurrentVersionWithStorage"/>
+          <include name="testConcurrentActiveReadWhileVersionInFlight"/>
+          <include name="testVersionReads" />
+        </methods>
+      </class>
+    </classes>
+  </test>
+
+  <test name="Sequential Tests">
+    <classes>
+      <class name="software.amazon.cryptography.example.hierarchy.concurrent.ConcurrentConditionCheckWriteTest"/>
+      <class name="software.amazon.cryptography.example.hierarchy.concurrent.StorageWriteReadConcurrencyTests"/>
+    </classes>
+  </test>
+</suite>

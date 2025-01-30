@@ -76,13 +76,13 @@
         <dependency>
             <groupId>software.amazon.cryptography</groupId>
             <artifactId>aws-cryptographic-material-providers</artifactId>
-            <version>1.7.0</version>
+            <version>unspecified</version>
         </dependency>
 
         <dependency>
             <groupId>software.amazon.cryptography</groupId>
             <artifactId>TestAwsCryptographicMaterialProviders</artifactId>
-            <version>1.7.0</version>
+            <version>1.9.0-rc</version>
             <optional>true</optional>
             <scope>test</scope>
         </dependency>
@@ -91,6 +91,27 @@
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk18on</artifactId>
             <version>1.78.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <version>7.5</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sts</artifactId>
+            <version>2.26.3</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <version>7.5</version>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
