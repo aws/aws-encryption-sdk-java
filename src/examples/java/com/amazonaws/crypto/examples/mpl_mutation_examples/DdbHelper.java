@@ -116,6 +116,27 @@ public class DdbHelper {
       .getItem(builder -> builder.tableName(physicalName).key(ddbKey));
   }
 
+  public static GetItemResponse getKeyStoreDdbItemAttribute(
+          final String branchKeyId,
+          final String branchKeyType,
+          final String physicalName,
+          final String attributeName,
+          @Nullable DynamoDbClient dynamoDbClient
+  ) {
+    Map<String, AttributeValue> ddbKey = new HashMap<>(3);
+    ddbKey.put(
+            Constants.BRANCH_KEY_ID,
+            AttributeValue.builder().s(branchKeyId).build()
+    );
+    ddbKey.put(
+            Constants.TYPE,
+            AttributeValue.builder().s(branchKeyType).build()
+    );
+    return AdminProvider
+            .dynamoDB(dynamoDbClient)
+            .getItem(builder -> builder.tableName(physicalName).key(ddbKey).attributesToGet(attributeName));
+  }
+
   private static TransactWriteItem bkItemToDeleteReq(
     final Map<String, AttributeValue> key,
     final String _tableName

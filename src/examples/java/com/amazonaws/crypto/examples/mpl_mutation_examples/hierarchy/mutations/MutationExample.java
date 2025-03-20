@@ -2,11 +2,17 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.amazonaws.crypto.examples.mpl_mutation_examples.hierarchy.mutations;
 
+import com.amazonaws.crypto.examples.mpl_mutation_examples.Constants;
+import com.amazonaws.crypto.examples.mpl_mutation_examples.DdbHelper;
+import com.amazonaws.crypto.examples.mpl_mutation_examples.Fixtures;
 import com.amazonaws.crypto.examples.mpl_mutation_examples.hierarchy.AdminProvider;
+import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.services.dynamodb.model.GetItemResponse;
 import software.amazon.cryptography.keystoreadmin.KeyStoreAdmin;
 import software.amazon.cryptography.keystoreadmin.model.*;
 
 import javax.annotation.Nullable;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 
 /**
@@ -104,6 +110,70 @@ public class MutationExample {
     );
 
     System.out.println("Done with Mutation: " + branchKeyId);
+
+    return branchKeyId;
+  }
+
+  public static String End2EndWithLastModifiedTime(
+          String kmsKeyArnTerminal,
+          String branchKeyId,
+          @Nullable SystemKey systemKey,
+          @Nullable KeyStoreAdmin admin
+  ) {
+    final SystemKey _systemKey = systemKey == null
+            ? MutationsProvider.KmsSystemKey()
+            : systemKey;
+    final KeyStoreAdmin _admin = admin == null ? AdminProvider.admin() : admin;
+    final KeyManagementStrategy strategy = AdminProvider.strategy(null);
+
+    System.out.println("BranchKey ID to mutate: " + branchKeyId);
+    HashMap<String, String> terminalEC = new HashMap<>();
+    terminalEC.put("Robbie", "is a dog.");
+
+    Mutations mutations = Mutations
+            .builder()
+            .TerminalEncryptionContext(terminalEC)
+            .TerminalKmsArn(kmsKeyArnTerminal)
+            .build();
+
+    InitializeMutationInput initInput = InitializeMutationInput
+            .builder()
+            .Mutations(mutations)
+            .Identifier(branchKeyId)
+            .Strategy(strategy)
+            .SystemKey(_systemKey)
+            .build();
+
+    InitializeMutationOutput initOutput = _admin.InitializeMutation(initInput);
+
+    MutationToken token = initOutput.MutationToken();
+    System.out.println(
+            "InitLogs: " +
+                    branchKeyId +
+                    " items: \n" +
+                    MutationsProvider.mutatedItemsToString(initOutput.MutatedBranchKeyItems())
+    );
+
+    ApplyMutationResult apply = MutationsProvider.workPage(branchKeyId, _systemKey, token, strategy, _admin, 1);
+    // Apply Mutation for One Item at a time & Get PageIndex & Last Modified Time for Every ApplyMutation
+    while (apply.ContinueMutation() != null) {
+      // Get PageIndex & Last Modified Time for Every ApplyMutation
+      GetItemResponse mIndexRes = DdbHelper.getKeyStoreDdbItem(
+              branchKeyId,
+              Constants.TYPE_MUTATION_INDEX,
+              Fixtures.TEST_KEYSTORE_NAME,
+              Fixtures.ddbClientWest2
+      );
+
+      System.out.println("Page Index: " + mIndexRes.item().get(Constants.PAGE_INDEX).getValueForField("B", SdkBytes.class).get().asString(StandardCharsets.UTF_8));
+      System.out.println("Last Modified Time Index: "+ mIndexRes.item().get(Constants.LAST_MODIFIED_TIME).getValueForField("S", String.class).get());
+
+      apply = MutationsProvider.workPage(branchKeyId, _systemKey, token, strategy, _admin, 1);
+    }
+
+    if (apply.CompleteMutation() != null) {
+      System.out.println("Done with Mutation: " + branchKeyId);
+    }
 
     return branchKeyId;
   }

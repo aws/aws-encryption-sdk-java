@@ -1,19 +1,8 @@
 package com.amazonaws.encryptionsdk;
 
-import static com.amazonaws.encryptionsdk.TestUtils.assertThrows;
-import static com.amazonaws.encryptionsdk.kms.KMSTestFixtures.TEST_KEYSTORE_KMS_KEY_ID;
-import static com.amazonaws.encryptionsdk.kms.KMSTestFixtures.TEST_KEYSTORE_NAME;
-import static com.amazonaws.encryptionsdk.kms.KMSTestFixtures.TEST_LOGICAL_KEYSTORE_NAME;
-
 import com.amazonaws.crypto.examples.keyrings.RawAesKeyringExample;
 import com.amazonaws.crypto.examples.keyrings.RawRsaKeyringExample;
 import com.amazonaws.encryptionsdk.kms.KMSTestFixtures;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.security.KeyPair;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,18 +15,17 @@ import software.amazon.cryptography.keystore.model.KeyStoreConfig;
 import software.amazon.cryptography.materialproviders.ICryptographicMaterialsManager;
 import software.amazon.cryptography.materialproviders.IKeyring;
 import software.amazon.cryptography.materialproviders.MaterialProviders;
-import software.amazon.cryptography.materialproviders.model.AesWrappingAlg;
-import software.amazon.cryptography.materialproviders.model.CacheType;
-import software.amazon.cryptography.materialproviders.model.CreateAwsKmsHierarchicalKeyringInput;
-import software.amazon.cryptography.materialproviders.model.CreateAwsKmsKeyringInput;
-import software.amazon.cryptography.materialproviders.model.CreateDefaultCryptographicMaterialsManagerInput;
-import software.amazon.cryptography.materialproviders.model.CreateMultiKeyringInput;
-import software.amazon.cryptography.materialproviders.model.CreateRawAesKeyringInput;
-import software.amazon.cryptography.materialproviders.model.CreateRawRsaKeyringInput;
-import software.amazon.cryptography.materialproviders.model.CreateRequiredEncryptionContextCMMInput;
-import software.amazon.cryptography.materialproviders.model.DefaultCache;
-import software.amazon.cryptography.materialproviders.model.MaterialProvidersConfig;
-import software.amazon.cryptography.materialproviders.model.PaddingScheme;
+import software.amazon.cryptography.materialproviders.model.*;
+
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyPair;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
+import static com.amazonaws.encryptionsdk.TestUtils.assertThrows;
+import static com.amazonaws.encryptionsdk.kms.KMSTestFixtures.*;
 
 public class EncryptionContextCMMTest {
   private static final byte[] EXAMPLE_DATA = "Hello World".getBytes(StandardCharsets.UTF_8);

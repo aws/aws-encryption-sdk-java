@@ -6,11 +6,13 @@ import software.amazon.awssdk.utils.StringUtils;
 import software.amazon.cryptography.keystoreadmin.KeyStoreAdmin;
 import software.amazon.cryptography.keystoreadmin.model.CreateKeyInput;
 import software.amazon.cryptography.keystoreadmin.model.KmsSymmetricKeyArn;
+import software.amazon.cryptography.keystoreadmin.model.VersionKeyInput;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.Map;
+import java.util.UUID;
 
 /*
   The Hierarchical Keyring Example relies on the existence of a
@@ -75,6 +77,126 @@ public class CreateKeyExample {
           .build()
       )
       .Identifier();
+
+    assert actualBranchKeyId.equals(branchKeyId);
+    return branchKeyId;
+  }
+
+  public static String CreateKey(
+          @Nonnull String kmsKeyArn,
+          @Nullable String branchKeyId,
+          @Nullable Map<String, String> encryptionContext,
+          @Nullable KeyStoreAdmin admin
+  ) {
+    // 1. Configure your Key Store Admin resource.
+    final KeyStoreAdmin _admin = admin == null ? AdminProvider.admin() : admin;
+
+    // 2. If you need to specify the Identifier for a Branch Key, you may.
+    // This is an optional argument.
+    // If an Identifier is not provided, a v4 UUID will be generated and used.
+    // This example provides a combination of a fixed string and a v4 UUID;
+    // this makes it easy for Crypto Tools to clean up these Example Branch Keys.
+    branchKeyId =
+            StringUtils.isBlank(branchKeyId)
+                    ? "mpl-java-example-" + UUID.randomUUID().toString()
+                    : branchKeyId;
+
+    // 3. Create a custom encryption context for the Branch Key.
+    // Most encrypted data should have an associated encryption context
+    // to protect integrity. This sample uses placeholder values.
+    // Note that the custom encryption context for a Branch Key is
+    // prefixed by the library with `aws-crypto-ec:`.
+    // For more information see:
+    // blogs.aws.amazon.com/security/post/Tx2LZ6WBJJANTNW/How-to-Protect-the-Integrity-of-Your-Encrypted-Data-by-Using-AWS-Key-Management
+
+    // 2. Create a new branch key and beacon key in our KeyStore.
+    //    Both the branch key and the beacon key will share an Id.
+    //    This creation is eventually consistent.
+    final String actualBranchKeyId = _admin
+            .CreateKey(
+                    CreateKeyInput
+                            .builder()
+                            // This is the KMS ARN that will be used to protect the Branch Key.
+                            // It is a required argument.
+                            .KmsArn(KmsSymmetricKeyArn.builder().KmsKeyArn(kmsKeyArn).build())
+                            // If you need to specify the Identifier for a Branch Key, you may.
+                            // This is an optional argument.
+                            .Identifier(branchKeyId)
+                            // If a branch key Identifier is provided,
+                            // custom encryption context MUST be provided as well.
+                            .EncryptionContext(encryptionContext)
+                            .build()
+            )
+            .Identifier();
+
+    assert actualBranchKeyId.equals(branchKeyId);
+    return branchKeyId;
+  }
+
+  public static String CreateKeyAndVersions(
+          @Nonnull String kmsKeyArn,
+          @Nullable String branchKeyId,
+          @Nullable KeyStoreAdmin admin,
+          @Nonnull Integer versionCount
+  ) {
+    // 1. Configure your Key Store Admin resource.
+    final KeyStoreAdmin _admin = admin == null ? AdminProvider.admin() : admin;
+
+    // 2. If you need to specify the Identifier for a Branch Key, you may.
+    // This is an optional argument.
+    // If an Identifier is not provided, a v4 UUID will be generated and used.
+    // This example provides a combination of a fixed string and a v4 UUID;
+    // this makes it easy for Crypto Tools to clean up these Example Branch Keys.
+    branchKeyId =
+            StringUtils.isBlank(branchKeyId)
+                    ? "mpl-java-example-index-" + UUID.randomUUID().toString()
+                    : branchKeyId;
+
+    // 3. Create a custom encryption context for the Branch Key.
+    // Most encrypted data should have an associated encryption context
+    // to protect integrity. This sample uses placeholder values.
+    // Note that the custom encryption context for a Branch Key is
+    // prefixed by the library with `aws-crypto-ec:`.
+    // For more information see:
+    // blogs.aws.amazon.com/security/post/Tx2LZ6WBJJANTNW/How-to-Protect-the-Integrity-of-Your-Encrypted-Data-by-Using-AWS-Key-Management
+    final Map<String, String> encryptionContext = Collections.singletonMap(
+            "ExampleContextKey",
+            "ExampleContextValue"
+    );
+
+    KmsSymmetricKeyArn kmsSymmetricKeyArn = KmsSymmetricKeyArn.builder().KmsKeyArn(kmsKeyArn).build();
+
+    // 2. Create a new branch key and beacon key in our KeyStore.
+    //    Both the branch key and the beacon key will share an Id.
+    //    This creation is eventually consistent.
+    String actualBranchKeyId = _admin
+            .CreateKey(
+                    CreateKeyInput
+                            .builder()
+                            // This is the KMS ARN that will be used to protect the Branch Key.
+                            // It is a required argument.
+                            .KmsArn(kmsSymmetricKeyArn)
+                            // If you need to specify the Identifier for a Branch Key, you may.
+                            // This is an optional argument.
+                            .Identifier(branchKeyId)
+                            // If a branch key Identifier is provided,
+                            // custom encryption context MUST be provided as well.
+                            .EncryptionContext(encryptionContext)
+                            .build()
+            )
+            .Identifier();
+
+    // Versioning the Branch Key
+    for (int i = 0 ; i < versionCount ; i++) {
+	    _admin.
+			    VersionKey(
+					    VersionKeyInput
+							    .builder()
+							    .Identifier(actualBranchKeyId)
+							    .KmsArn(kmsSymmetricKeyArn)
+							    .build()
+			    );
+    }
 
     assert actualBranchKeyId.equals(branchKeyId);
     return branchKeyId;

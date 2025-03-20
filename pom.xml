@@ -76,7 +76,7 @@
         <dependency>
             <groupId>software.amazon.cryptography</groupId>
             <artifactId>aws-cryptographic-material-providers</artifactId>
-            <version>unspecified</version>
+            <version>1.9.0-rc-sign-last-modified-time</version>
         </dependency>
 
         <dependency>

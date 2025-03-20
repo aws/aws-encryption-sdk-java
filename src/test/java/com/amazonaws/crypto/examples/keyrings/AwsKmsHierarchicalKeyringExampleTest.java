@@ -7,9 +7,11 @@ import com.amazonaws.crypto.examples.keyrings.hierarchical.AwsKmsHierarchicalKey
 import com.amazonaws.encryptionsdk.kms.KMSTestFixtures;
 import org.junit.Test;
 
+import java.security.NoSuchAlgorithmException;
+
 public class AwsKmsHierarchicalKeyringExampleTest {
   @Test
-  public void testEncryptAndDecrypt() {
+  public void testEncryptAndDecrypt() throws NoSuchAlgorithmException {
     AwsKmsHierarchicalKeyringExample.encryptAndDecryptWithKeyring(
         KMSTestFixtures.TEST_KEYSTORE_NAME,
         KMSTestFixtures.TEST_LOGICAL_KEYSTORE_NAME,

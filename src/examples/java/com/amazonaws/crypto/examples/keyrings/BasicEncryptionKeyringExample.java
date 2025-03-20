@@ -13,7 +13,7 @@ import software.amazon.cryptography.materialproviders.model.MaterialProvidersCon
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -66,13 +66,27 @@ public class BasicEncryptionKeyringExample {
     // to protect integrity. This sample uses placeholder values.
     // For more information see:
     // blogs.aws.amazon.com/security/post/Tx2LZ6WBJJANTNW/How-to-Protect-the-Integrity-of-Your-Encrypted-Data-by-Using-AWS-Key-Management
-    final Map<String, String> encryptionContext =
-        Collections.singletonMap("ExampleContextKey", "ExampleContextValue");
+    final Map<String, String> encryptionContext = new HashMap<>();
+    encryptionContext.put("encryption",              "context");
+    encryptionContext.put("is not",                   "secret");
+    encryptionContext.put("but adds",                  "useful metadata");
+    encryptionContext.put("that can help you",         "be confident that");
+    encryptionContext.put("the data you are handling", "is what you think it is");
+    encryptionContext.put("𐀂","𐀂");
 
     // 4. Encrypt the data
     final CryptoResult<byte[], ?> encryptResult =
         crypto.encryptData(kmsKeyring, EXAMPLE_DATA, encryptionContext);
     final byte[] ciphertext = encryptResult.getResult();
+
+
+    final Map<String, String> encryptionContextOnDecrypt = new HashMap<>();
+    encryptionContextOnDecrypt.put("encryption fails",              "context fails");
+    encryptionContextOnDecrypt.put("is not fails",                   "secret fails");
+    encryptionContextOnDecrypt.put("but adds fails",                  "useful metadata fails");
+    encryptionContextOnDecrypt.put("that can help you fails",         "be confident that fails");
+    encryptionContextOnDecrypt.put("the data you are handling", "is what you think it is");
+    encryptionContextOnDecrypt.put("𐀂","𐀂");
 
     // 5. Decrypt the data
     final CryptoResult<byte[], ?> decryptResult =
@@ -81,7 +95,7 @@ public class BasicEncryptionKeyringExample {
             ciphertext,
             // Verify that the encryption context in the result contains the
             // encryption context supplied to the encryptData method
-            encryptionContext);
+                encryptionContextOnDecrypt);
 
     // 6. Verify that the decrypted plaintext matches the original plaintext
     assert Arrays.equals(decryptResult.getResult(), EXAMPLE_DATA);

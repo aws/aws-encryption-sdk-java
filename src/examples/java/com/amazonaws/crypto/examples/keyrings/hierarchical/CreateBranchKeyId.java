@@ -3,10 +3,6 @@
 
 package com.amazonaws.crypto.examples.keyrings.hierarchical;
 
-import static com.amazonaws.encryptionsdk.kms.KMSTestFixtures.TEST_KEYSTORE_KMS_KEY_ID;
-import static com.amazonaws.encryptionsdk.kms.KMSTestFixtures.TEST_KEYSTORE_NAME;
-import static com.amazonaws.encryptionsdk.kms.KMSTestFixtures.TEST_LOGICAL_KEYSTORE_NAME;
-
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.kms.KmsClient;
 import software.amazon.cryptography.keystore.KeyStore;
@@ -14,6 +10,10 @@ import software.amazon.cryptography.keystore.model.CreateKeyInput;
 import software.amazon.cryptography.keystore.model.CreateKeyOutput;
 import software.amazon.cryptography.keystore.model.KMSConfiguration;
 import software.amazon.cryptography.keystore.model.KeyStoreConfig;
+
+import static com.amazonaws.encryptionsdk.kms.KMSTestFixtures.TEST_KEYSTORE_KMS_KEY_ID;
+import static com.amazonaws.encryptionsdk.kms.KMSTestFixtures.TEST_KEYSTORE_NAME;
+import static com.amazonaws.encryptionsdk.kms.KMSTestFixtures.TEST_LOGICAL_KEYSTORE_NAME;
 
 public class CreateBranchKeyId {
   public static String createBranchKeyId() {

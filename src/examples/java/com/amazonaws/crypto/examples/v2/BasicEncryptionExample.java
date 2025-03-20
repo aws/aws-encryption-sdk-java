@@ -3,16 +3,16 @@
 
 package com.amazonaws.crypto.examples.v2;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Map;
-
 import com.amazonaws.encryptionsdk.AwsCrypto;
+import com.amazonaws.encryptionsdk.CommitmentPolicy;
 import com.amazonaws.encryptionsdk.CryptoResult;
 import com.amazonaws.encryptionsdk.kmssdkv2.KmsMasterKey;
 import com.amazonaws.encryptionsdk.kmssdkv2.KmsMasterKeyProvider;
-import com.amazonaws.encryptionsdk.CommitmentPolicy;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * <p>
@@ -58,7 +58,13 @@ public class BasicEncryptionExample {
         // to protect integrity. This sample uses placeholder values.
         // For more information see:
         // blogs.aws.amazon.com/security/post/Tx2LZ6WBJJANTNW/How-to-Protect-the-Integrity-of-Your-Encrypted-Data-by-Using-AWS-Key-Management
-        final Map<String, String> encryptionContext = Collections.singletonMap("ExampleContextKey", "ExampleContextValue");
+        final Map<String, String> encryptionContext = new HashMap<>();
+        encryptionContext.put("encryption", "context");
+        encryptionContext.put("is not", "secret");
+        encryptionContext.put("but adds", "useful metadata");
+        encryptionContext.put("that can help you", "be confident that");
+        encryptionContext.put("the data you are handling", "is what you think it is");
+        encryptionContext.put("𐀂", "𐀂");
 
         // 4. Encrypt the data
         final CryptoResult<byte[], KmsMasterKey> encryptResult = crypto.encryptData(keyProvider, EXAMPLE_DATA, encryptionContext);
@@ -67,16 +73,25 @@ public class BasicEncryptionExample {
         // 5. Decrypt the data
         final CryptoResult<byte[], KmsMasterKey> decryptResult = crypto.decryptData(keyProvider, ciphertext);
 
+
+        final Map<String, String> encryptionContextOnDecrypt = new HashMap<>();
+        encryptionContextOnDecrypt.put("encryption fails", "context fails");
+//        encryptionContextOnDecrypt.put("is not fails",                   "secret fails");
+        encryptionContextOnDecrypt.put("but adds fails", "useful metadata fails");
+        encryptionContextOnDecrypt.put("that can help you fails", "be confident that fails");
+        encryptionContextOnDecrypt.put("the data you are handling", "is what you think it is");
+        encryptionContextOnDecrypt.put("𐀂", "𐀂");
+
         // 6. Verify that the encryption context in the result contains the
         // encryption context supplied to the encryptData method. Because the
         // SDK can add values to the encryption context, don't require that
         // the entire context matches.
-        if (!encryptionContext.entrySet().stream()
+        if (!encryptionContextOnDecrypt.entrySet().stream()
                 .allMatch(e -> e.getValue().equals(decryptResult.getEncryptionContext().get(e.getKey())))) {
-            throw new IllegalStateException("Wrong Encryption Context!");
+            throw new IllegalStateException(String.format("Encryption Context mismatch - Expected: %s, Actual: %s",
+                    encryptionContextOnDecrypt, decryptResult.getEncryptionContext()));
         }
-
-        // 7. Verify that the decrypted plaintext matches the original plaintext
+            // 7. Verify that the decrypted plaintext matches the original plaintext
         assert Arrays.equals(decryptResult.getResult(), EXAMPLE_DATA);
+        }
     }
-}

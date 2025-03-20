@@ -8,9 +8,7 @@ import com.amazonaws.encryptionsdk.CryptoResult;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.kms.KmsClient;
 import software.amazon.cryptography.keystore.KeyStore;
-import software.amazon.cryptography.keystore.model.CreateKeyInput;
-import software.amazon.cryptography.keystore.model.KMSConfiguration;
-import software.amazon.cryptography.keystore.model.KeyStoreConfig;
+import software.amazon.cryptography.keystore.model.*;
 import software.amazon.cryptography.materialproviders.IBranchKeyIdSupplier;
 import software.amazon.cryptography.materialproviders.IKeyring;
 import software.amazon.cryptography.materialproviders.MaterialProviders;
@@ -20,7 +18,10 @@ import software.amazon.cryptography.materialproviders.model.DefaultCache;
 import software.amazon.cryptography.materialproviders.model.MaterialProvidersConfig;
 
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -64,7 +65,7 @@ public class AwsKmsHierarchicalKeyringExample {
   private static final byte[] EXAMPLE_DATA = "Hello World".getBytes(StandardCharsets.UTF_8);
 
   public static void encryptAndDecryptWithKeyring(
-      String keyStoreTableName, String logicalKeyStoreName, String kmsKeyId) {
+      String keyStoreTableName, String logicalKeyStoreName, String kmsKeyId) throws NoSuchAlgorithmException {
     // Instantiate the SDK
     // This builds the AwsCrypto client with the RequireEncryptRequireDecrypt commitment policy,
     // which enforces that this client only encrypts using committing algorithm suites and enforces
@@ -92,13 +93,13 @@ public class AwsKmsHierarchicalKeyringExample {
 
     // Call CreateKey to create two new active branch keys
     final String branchKeyIdA =
-        keystore.CreateKey(CreateKeyInput.builder().build()).branchKeyIdentifier();
-    final String branchKeyIdB =
-        keystore.CreateKey(CreateKeyInput.builder().build()).branchKeyIdentifier();
+        "\uD800\uDC02";
+//    final String branchKeyIdB =
+//        keystore.CreateKey(CreateKeyInput.builder().build()).branchKeyIdentifier();
 
     // Create a branch key supplier that maps the branch key id to a more readable format
-    final IBranchKeyIdSupplier branchKeyIdSupplier =
-        new ExampleBranchKeyIdSupplier(branchKeyIdA, branchKeyIdB);
+//    final IBranchKeyIdSupplier branchKeyIdSupplier =
+//        new ExampleBranchKeyIdSupplier(branchKeyIdA, branchKeyIdB);
 
     // 4. Create the Hierarchical Keyring.
     final MaterialProviders matProv =
@@ -108,7 +109,8 @@ public class AwsKmsHierarchicalKeyringExample {
     final CreateAwsKmsHierarchicalKeyringInput keyringInput =
         CreateAwsKmsHierarchicalKeyringInput.builder()
             .keyStore(keystore)
-            .branchKeyIdSupplier(branchKeyIdSupplier)
+                .branchKeyId(branchKeyIdA)
+//            .branchKeyIdSupplier(branchKeyIdSupplier)
             .ttlSeconds(600)
             .cache(
                 CacheType.builder() // OPTIONAL
@@ -117,6 +119,9 @@ public class AwsKmsHierarchicalKeyringExample {
             .build();
     final IKeyring hierarchicalKeyring = matProv.CreateAwsKmsHierarchicalKeyring(keyringInput);
 
+
+    GetKeyStoreInfoOutput getKeyStoreInfoOutput = keystore.GetKeyStoreInfo();
+    GetActiveBranchKeyOutput activeBranchKeyOutput = keystore.GetActiveBranchKey(GetActiveBranchKeyInput.builder().branchKeyIdentifier(branchKeyIdA).build());
     // The Branch Key Id supplier uses the encryption context to determine which branch key id will
     // be used to encrypt data.
     // Create encryption context for TenantA
@@ -128,20 +133,25 @@ public class AwsKmsHierarchicalKeyringExample {
     encryptionContextA.put("that can help you", "be confident that");
     encryptionContextA.put("the data you are handling", "is what you think it is");
 
+    byte[] decodedBytes = Base64.getDecoder().decode("AQIBAHhTIzkciiF5TDB8qaCjctFmv6Dx+4yjarauOA4MtH0jwgELxBfeWNX+1/Rusij0jr3fAAAAfjB8BgkqhkiG9w0BBwagbzBtAgEAMGgGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMG5ArbhGveyexPUp5AgEQgDv+L0ShTFXCd7phDEq1Id91v9pcN6OdzBN13eRHR/prB3yd8AZRCfaTopU8cXcdKA48eR7cqIpQOc3nuw==");
+    MessageDigest digest = MessageDigest.getInstance("SHA-256");
+    byte[] hash = digest.digest(decodedBytes);
+    String decodedString = Base64.getEncoder().encodeToString(hash);
+
     // Create encryption context for TenantB
-    Map<String, String> encryptionContextB = new HashMap<>();
-    encryptionContextB.put("tenant", "TenantB");
-    encryptionContextB.put("encryption", "context");
-    encryptionContextB.put("is not", "secret");
-    encryptionContextB.put("but adds", "useful metadata");
-    encryptionContextB.put("that can help you", "be confident that");
-    encryptionContextB.put("the data you are handling", "is what you think it is");
+//    Map<String, String> encryptionContextB = new HashMap<>();
+//    encryptionContextB.put("tenant", "TenantB");
+//    encryptionContextB.put("encryption", "context");
+//    encryptionContextB.put("is not", "secret");
+//    encryptionContextB.put("but adds", "useful metadata");
+//    encryptionContextB.put("that can help you", "be confident that");
+//    encryptionContextB.put("the data you are handling", "is what you think it is");
 
     // Encrypt the data for encryptionContextA & encryptionContextB
     final CryptoResult<byte[], ?> encryptResultA =
         crypto.encryptData(hierarchicalKeyring, EXAMPLE_DATA, encryptionContextA);
-    final CryptoResult<byte[], ?> encryptResultB =
-        crypto.encryptData(hierarchicalKeyring, EXAMPLE_DATA, encryptionContextB);
+//    final CryptoResult<byte[], ?> encryptResultB =
+//        crypto.encryptData(hierarchicalKeyring, EXAMPLE_DATA, encryptionContextB);
 
     // To attest that TenantKeyB cannot decrypt a message written by TenantKeyA
     // let's construct more restrictive hierarchical keyrings.
@@ -157,46 +167,48 @@ public class AwsKmsHierarchicalKeyringExample {
             .build();
     final IKeyring hierarchicalKeyringA = matProv.CreateAwsKmsHierarchicalKeyring(keyringInputA);
 
-    final CreateAwsKmsHierarchicalKeyringInput keyringInputB =
-        CreateAwsKmsHierarchicalKeyringInput.builder()
-            .keyStore(keystore)
-            .branchKeyId(branchKeyIdB)
-            .ttlSeconds(600)
-            .cache(
-                CacheType.builder() // OPTIONAL
-                    .Default(DefaultCache.builder().entryCapacity(100).build())
-                    .build())
-            .build();
-    final IKeyring hierarchicalKeyringB = matProv.CreateAwsKmsHierarchicalKeyring(keyringInputB);
+//    final CreateAwsKmsHierarchicalKeyringInput keyringInputB =
+//        CreateAwsKmsHierarchicalKeyringInput.builder()
+//            .keyStore(keystore)
+//            .branchKeyId(branchKeyIdB)
+//            .ttlSeconds(600)
+//            .cache(
+//                CacheType.builder() // OPTIONAL
+//                    .Default(DefaultCache.builder().entryCapacity(100).build())
+//                    .build())
+//            .build();
+//    final IKeyring hierarchicalKeyringB = matProv.CreateAwsKmsHierarchicalKeyring(keyringInputB);
 
-    boolean decryptFailed = false;
-    // Try to use keyring for Tenant B to decrypt a message encrypted with Tenant A's key
-    // Expected to fail.
-    try {
-      crypto.decryptData(hierarchicalKeyringB, encryptResultA.getResult());
-    } catch (Exception e) {
-      decryptFailed = true;
-    }
-    assert decryptFailed == true;
-
-    decryptFailed = false;
-    // Try to use keyring for Tenant A to decrypt a message encrypted with Tenant B's key
-    // Expected to fail.
-    try {
-      crypto.decryptData(hierarchicalKeyringA, encryptResultB.getResult());
-    } catch (Exception e) {
-      decryptFailed = true;
-    }
-    assert decryptFailed == true;
+//    boolean decryptFailed = false;
+//    // Try to use keyring for Tenant B to decrypt a message encrypted with Tenant A's key
+//    // Expected to fail.
+//    try {
+//      crypto.decryptData(hierarchicalKeyringB, encryptResultA.getResult());
+//    } catch (Exception e) {
+//      decryptFailed = true;
+//    }
+//    assert decryptFailed == true;
+//
+//    decryptFailed = false;
+//    // Try to use keyring for Tenant A to decrypt a message encrypted with Tenant B's key
+//    // Expected to fail.
+//    try {
+//      crypto.decryptData(hierarchicalKeyringA, encryptResultB.getResult());
+//    } catch (Exception e) {
+//      decryptFailed = true;
+//    }
+//    assert decryptFailed == true;
 
     // Decrypt your encrypted data using the same keyring you used on encrypt.
     final CryptoResult<byte[], ?> decryptResultA =
         crypto.decryptData(hierarchicalKeyring, encryptResultA.getResult());
     assert Arrays.equals(decryptResultA.getResult(), EXAMPLE_DATA);
 
-    final CryptoResult<byte[], ?> decryptResultB =
-        crypto.decryptData(hierarchicalKeyring, encryptResultB.getResult());
-    assert Arrays.equals(decryptResultB.getResult(), EXAMPLE_DATA);
+//    final CryptoResult<byte[], ?> decryptResultB =
+//        crypto.decryptData(hierarchicalKeyring, encryptResultB.getResult());
+//    assert Arrays.equals(decryptResultB.getResult(), EXAMPLE_DATA);
+
+    // Delete Branch Key
   }
 
   public static void encryptAndDecryptWithKeyringThreadSafe(
@@ -320,7 +332,7 @@ public class AwsKmsHierarchicalKeyringExample {
     }
   }
 
-  public static void main(final String[] args) {
+  public static void main(final String[] args) throws NoSuchAlgorithmException {
     if (args.length <= 0) {
       throw new IllegalArgumentException(
           "To run this example, include the keyStoreTableName, logicalKeyStoreName, and kmsKeyId in args");

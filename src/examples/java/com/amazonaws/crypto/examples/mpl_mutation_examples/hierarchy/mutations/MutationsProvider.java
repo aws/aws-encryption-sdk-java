@@ -1,12 +1,12 @@
 package com.amazonaws.crypto.examples.mpl_mutation_examples.hierarchy.mutations;
 
+import com.amazonaws.crypto.examples.mpl_mutation_examples.Constants;
 import com.amazonaws.crypto.examples.mpl_mutation_examples.DdbHelper;
 import com.amazonaws.crypto.examples.mpl_mutation_examples.Fixtures;
 import com.amazonaws.crypto.examples.mpl_mutation_examples.hierarchy.AdminProvider;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.GetItemResponse;
 import software.amazon.awssdk.services.kms.KmsClient;
-import software.amazon.cryptography.keystore.IKeyStorageInterface;
-import software.amazon.cryptography.keystore.KeyStorageInterface;
 import software.amazon.cryptography.keystore.model.AwsKms;
 import software.amazon.cryptography.keystoreadmin.KeyStoreAdmin;
 import software.amazon.cryptography.keystoreadmin.model.*;
@@ -104,6 +104,15 @@ public class MutationsProvider {
         admin,
         99
       );
+
+      GetItemResponse mIndexRes = DdbHelper.getKeyStoreDdbItem(
+              branchKeyId,
+              Constants.TYPE_MUTATION_INDEX,
+              Fixtures.TEST_KEYSTORE_NAME,
+              Fixtures.ddbClientWest2
+      );
+
+      System.out.println(mIndexRes.item());
 
       if (result.ContinueMutation() != null) {
         token = result.ContinueMutation();

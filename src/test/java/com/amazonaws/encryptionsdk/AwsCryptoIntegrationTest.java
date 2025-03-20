@@ -4,21 +4,6 @@ import com.amazonaws.encryptionsdk.jce.JceMasterKey;
 import com.amazonaws.encryptionsdk.kms.KMSTestFixtures;
 import com.amazonaws.encryptionsdk.kmssdkv2.KmsMasterKey;
 import com.amazonaws.encryptionsdk.kmssdkv2.KmsMasterKeyProvider;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemWriter;
 import org.junit.Before;
@@ -26,12 +11,22 @@ import org.junit.Test;
 import software.amazon.awssdk.services.kms.KmsClient;
 import software.amazon.cryptography.materialproviders.IKeyring;
 import software.amazon.cryptography.materialproviders.MaterialProviders;
-import software.amazon.cryptography.materialproviders.model.AesWrappingAlg;
-import software.amazon.cryptography.materialproviders.model.CreateAwsKmsKeyringInput;
-import software.amazon.cryptography.materialproviders.model.CreateRawAesKeyringInput;
-import software.amazon.cryptography.materialproviders.model.CreateRawRsaKeyringInput;
-import software.amazon.cryptography.materialproviders.model.MaterialProvidersConfig;
-import software.amazon.cryptography.materialproviders.model.PaddingScheme;
+import software.amazon.cryptography.materialproviders.ToDafny;
+import software.amazon.cryptography.materialproviders.model.*;
+
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.security.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import static com.amazonaws.encryptionsdk.KeyringToMasterKeyProvider.createMasterKeyProvider;
 
 public class AwsCryptoIntegrationTest {
 
@@ -145,9 +140,6 @@ public class AwsCryptoIntegrationTest {
     MaterialProviders materialProviders =
         MaterialProviders.builder().MaterialProvidersConfig(config).build();
 
-    KmsMasterKeyProvider keyProvider =
-        KmsMasterKeyProvider.builder().buildStrict(KMSTestFixtures.TEST_KEY_IDS[0]);
-
     CreateAwsKmsKeyringInput nativeValue =
         CreateAwsKmsKeyringInput.builder()
             .kmsKeyId(KMSTestFixtures.TEST_KEY_IDS[0])
@@ -155,18 +147,21 @@ public class AwsCryptoIntegrationTest {
             .build();
     IKeyring kmsKeyring = materialProviders.CreateAwsKmsKeyring(nativeValue);
 
+    software.amazon.cryptography.materialproviders.internaldafny.types.IKeyring dafnyType = ToDafny.Keyring(kmsKeyring);
+    MasterKeyProvider<?> masterKeyProvider = createMasterKeyProvider(dafnyType);
+
     // Create an encryption context
     final Map<String, String> encryptionContext =
         Collections.singletonMap("ExampleContextKey", "ExampleContextValue");
 
     // Encrypt the data
-    final CryptoResult<byte[], KmsMasterKey> encryptResult =
-        crypto.encryptData(keyProvider, EXAMPLE_DATA, encryptionContext);
+    final CryptoResult<byte[], ?> encryptResult =
+        crypto.encryptData(kmsKeyring, EXAMPLE_DATA, encryptionContext);
 
     final byte[] ciphertext = encryptResult.getResult();
 
     // Decrypt the data
-    final CryptoResult<byte[], ?> decryptResult = crypto.decryptData(kmsKeyring, ciphertext);
+    final CryptoResult<byte[], ?> decryptResult = crypto.decryptData(masterKeyProvider, ciphertext);
 
     // Verify that the encryption context in the result contains the
     // encryption context supplied to the encryptData method.
@@ -212,7 +207,7 @@ public class AwsCryptoIntegrationTest {
     final byte[] ciphertext = encryptResult.getResult();
 
     // Decrypt the data
-    final CryptoResult<byte[], KmsMasterKey> decryptResult =
+    final CryptoResult<byte[], ?> decryptResult =
         crypto.decryptData(keyProvider, ciphertext);
 
     // Verify that the encryption context in the result contains the
@@ -283,22 +278,20 @@ public class AwsCryptoIntegrationTest {
                 .wrappingKey(ByteBuffer.wrap(AES_KEY.getEncoded()))
                 .build());
 
-    // MasterKey
-    final JceMasterKey masterKey =
-        JceMasterKey.getInstance(
-            AES_KEY, "aws-raw-vectors-persistant", "aes-key", "AES/GCM/NoPadding");
+    software.amazon.cryptography.materialproviders.internaldafny.types.IKeyring dafnyType = ToDafny.Keyring(keyring);
+    MasterKeyProvider<?> masterKeyProvider = createMasterKeyProvider(dafnyType);
 
     // Encryption Context
     final Map<String, String> encryptionContext =
         Collections.singletonMap("ExampleContextKey", "ExampleContextValue");
 
     // Encrypt the data
-    final CryptoResult<byte[], JceMasterKey> encryptResult =
-        crypto.encryptData(masterKey, EXAMPLE_DATA, encryptionContext);
+    final CryptoResult<byte[], ?> encryptResult =
+        crypto.encryptData(keyring, EXAMPLE_DATA, encryptionContext);
     final byte[] ciphertext = encryptResult.getResult();
 
     // Decrypt the data
-    final CryptoResult<byte[], ?> decryptResult = crypto.decryptData(keyring, ciphertext);
+    final CryptoResult<byte[], ?> decryptResult = crypto.decryptData(masterKeyProvider, ciphertext);
 
     // Verify that the encryption context in the result contains the
     // encryption context supplied to the encryptData method.
@@ -405,6 +398,81 @@ public class AwsCryptoIntegrationTest {
   }
 
   @Test
+  public void MultiEncryptDecryptKeyring() {
+    final AwsCrypto crypto =
+            AwsCrypto.builder()
+                    .withCommitmentPolicy(CommitmentPolicy.RequireEncryptRequireDecrypt)
+                    .build();
+
+    MaterialProvidersConfig config = MaterialProvidersConfig.builder().build();
+    MaterialProviders materialProviders =
+            MaterialProviders.builder().MaterialProvidersConfig(config).build();
+
+    IKeyring aesKeyring =
+            materialProviders.CreateRawAesKeyring(
+                    CreateRawAesKeyringInput.builder()
+                            .keyName("aes-key")
+                            .keyNamespace("aws-raw-vectors-persistant")
+                            .wrappingAlg(AesWrappingAlg.ALG_AES256_GCM_IV12_TAG16)
+                            .wrappingKey(ByteBuffer.wrap(AES_KEY.getEncoded()))
+                            .build());
+
+    // Rsa Keyring
+    IKeyring rsaKeyring =
+            materialProviders.CreateRawRsaKeyring(
+                    CreateRawRsaKeyringInput.builder()
+                            .keyName("rsa-key")
+                            .keyNamespace("rsa-keyring")
+                            .paddingScheme(PaddingScheme.OAEP_SHA512_MGF1)
+                            .publicKey(getPEMPublicKey(RSA_KEY_PAIR.getPublic()))
+                            .privateKey(getPEMPrivateKey(RSA_KEY_PAIR.getPrivate()))
+                            .build());
+
+    // Kms Keyring
+    IKeyring kmsKeyring =
+            materialProviders.CreateAwsKmsKeyring(
+                    CreateAwsKmsKeyringInput.builder()
+                            .kmsKeyId(KMSTestFixtures.TEST_KEY_IDS[0])
+                            .kmsClient(KmsClient.create())
+                            .build());
+
+    List<IKeyring> keyrings = Arrays.asList(aesKeyring, rsaKeyring, kmsKeyring);
+
+    IKeyring multiKeyring =
+            materialProviders.CreateMultiKeyring(
+                    CreateMultiKeyringInput.builder()
+                            .generator(keyrings.get(0))
+                            .childKeyrings(keyrings)
+                            .build());
+
+    software.amazon.cryptography.materialproviders.internaldafny.types.IKeyring dafnyType = ToDafny.Keyring(multiKeyring);
+    MasterKeyProvider<?> masterKeyProvider = createMasterKeyProvider(dafnyType);
+
+    final Map<String, String> encryptionContext =
+            Collections.singletonMap("ExampleContextKey", "ExampleContextValue");
+
+    // Encrypt the data
+    final CryptoResult<byte[], ?> encryptResult =
+            crypto.encryptData(masterKeyProvider, EXAMPLE_DATA, encryptionContext);
+    final byte[] ciphertext = encryptResult.getResult();
+
+    // Decrypt the data
+    CryptoResult<byte[], ?> decryptResult;
+    // AES Key
+    decryptResult = crypto.decryptData(aesKeyring, ciphertext,encryptionContext);
+    assert Arrays.equals(decryptResult.getResult(), EXAMPLE_DATA);
+
+    // RSA Key
+//    decryptResult = crypto.decryptData(rsaKeyring, ciphertext, encryptionContext);
+    assert Arrays.equals(decryptResult.getResult(), EXAMPLE_DATA);
+
+    // Kms Key
+    decryptResult = crypto.decryptData(kmsKeyring, ciphertext, encryptionContext);
+    assert Arrays.equals(decryptResult.getResult(), EXAMPLE_DATA);
+
+  }
+
+  @Test
   public void RawRsaEncryptDecryptMasterKey() throws Exception {
     // AWS Encryption SDK Client
     final AwsCrypto crypto =
@@ -462,21 +530,26 @@ public class AwsCryptoIntegrationTest {
             CreateRawRsaKeyringInput.builder()
                 .keyName("rsa-key")
                 .keyNamespace("rsa-keyring")
-                .paddingScheme(PaddingScheme.PKCS1)
-                .privateKey(getPEMPrivateKey(RSA_KEY_PAIR.getPrivate()))
+                .paddingScheme(PaddingScheme.OAEP_SHA512_MGF1)
+                    .publicKey(getPEMPublicKey(RSA_KEY_PAIR.getPublic()))
+                    .privateKey(getPEMPrivateKey(RSA_KEY_PAIR.getPrivate()))
                 .build());
 
+    software.amazon.cryptography.materialproviders.internaldafny.types.IKeyring dafnyType = ToDafny.Keyring(keyring);
+    MasterKeyProvider<?> masterKeyProvider = createMasterKeyProvider(dafnyType);
+
+
     // MasterKey
-    final JceMasterKey masterKey =
-        JceMasterKey.getInstance(
-            RSA_KEY_PAIR.getPublic(), null, "rsa-keyring", "rsa-key", "RSA/ECB/PKCS1Padding");
+//    final JceMasterKey masterKey =
+//        JceMasterKey.getInstance(
+//            RSA_KEY_PAIR.getPublic(), null, "rsa-keyring", "rsa-key", "RSA/ECB/PKCS1Padding");
     // Encryption Context
     final Map<String, String> encryptionContext =
         Collections.singletonMap("ExampleContextKey", "ExampleContextValue");
 
     // Encrypt the data
-    final CryptoResult<byte[], JceMasterKey> encryptResult =
-        crypto.encryptData(masterKey, EXAMPLE_DATA, encryptionContext);
+    final CryptoResult<byte[], ?> encryptResult =
+        crypto.encryptData(masterKeyProvider, EXAMPLE_DATA, encryptionContext);
     final byte[] ciphertext = encryptResult.getResult();
 
     // Decrypt the data

@@ -12,15 +12,15 @@ import software.amazon.cryptography.materialproviders.model.AesWrappingAlg;
 import software.amazon.cryptography.materialproviders.model.CreateRawAesKeyringInput;
 import software.amazon.cryptography.materialproviders.model.MaterialProvidersConfig;
 
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
 
 /**
  * Encrypts and then decrypts data using an Raw Aes Keyring.
@@ -74,14 +74,27 @@ public class RawAesKeyringExample {
     // to protect integrity. This sample uses placeholder values.
     // For more information see:
     // blogs.aws.amazon.com/security/post/Tx2LZ6WBJJANTNW/How-to-Protect-the-Integrity-of-Your-Encrypted-Data-by-Using-AWS-Key-Management
-    final Map<String, String> encryptionContext =
-        Collections.singletonMap("ExampleContextKey", "ExampleContextValue");
+    final Map<String, String> encryptionContext = new HashMap<>();
+    encryptionContext.put("encryption",              "context");
+    encryptionContext.put("is not",                   "secret");
+    encryptionContext.put("but adds",                  "useful metadata");
+
+    encryptionContext.put("that can help you",         "be confident that");
+      encryptionContext.put("the data you are handling", "is what you think it is");
+    encryptionContext.put("𐀂","𐀂");
 
     // 4. Encrypt the data
     final CryptoResult<byte[], ?> encryptResult =
         crypto.encryptData(rawAesKeyring, EXAMPLE_DATA, encryptionContext);
     final byte[] ciphertext = encryptResult.getResult();
 
+    final Map<String, String> encryptionContextOutput = new HashMap<>();
+    encryptionContextOutput.put("encryption",              "context");
+    encryptionContextOutput.put("is not",                   "secret");
+    encryptionContextOutput.put("but adds",                  "useful metadata");
+    encryptionContextOutput.put("that can help you",         "be confident that");
+    encryptionContextOutput.put("the data you are handling", "is what you think it is");
+    encryptionContextOutput.put("𐀂","𐀂");
     // 5. Decrypt the data
     final CryptoResult<byte[], ?> decryptResult =
         crypto.decryptData(
@@ -89,7 +102,7 @@ public class RawAesKeyringExample {
             ciphertext,
             // Verify that the encryption context in the result contains the
             // encryption context supplied to the encryptData method
-            encryptionContext);
+            encryptionContextOutput);
 
     // 6. Verify that the decrypted plaintext matches the original plaintext
     assert Arrays.equals(decryptResult.getResult(), EXAMPLE_DATA);
