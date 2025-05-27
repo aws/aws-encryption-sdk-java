@@ -81,8 +81,8 @@ class FrameEncryptionHandler implements CryptoHandler {
    * </ol>
    *
    * @param in the input byte array.
-   * @param inOff the offset into the in array where the data to be encrypted starts.
-   * @param inLen the number of bytes to be encrypted.
+   * @param off the offset into the in array where the data to be encrypted starts.
+   * @param len the number of bytes to be encrypted.
    * @param out the output buffer the encrypted bytes go into.
    * @param outOff the offset into the output byte array the encrypted data starts at.
    * @return the number of bytes written to out and processed
@@ -116,7 +116,9 @@ class FrameEncryptionHandler implements CryptoHandler {
       // update offset by the size of bytes being encrypted.
       offset += size;
       // update size to the remaining bytes starting at offset.
-      size = len - offset;
+      // the original offset MUST NOT be part of the length calculation,
+      // or else the encryption will be truncated.
+      size = len - (offset - off);
     }
 
     return new ProcessingSummary(actualOutLen, len);
