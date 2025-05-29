@@ -165,7 +165,7 @@ public class FrameEncryptionHandlerTest {
     int startOffset = 100; // The data will start from this offset
     byte[] inputDataWithOffset = new byte[10_000];
     // the length of the actual data
-    int dataLength = dataLength;
+    int dataLength = inputDataWithOffset.length - startOffset;
     // copy some data, starting at the startOffset
     // so the first |startOffset| bytes are 0s
     System.arraycopy(
