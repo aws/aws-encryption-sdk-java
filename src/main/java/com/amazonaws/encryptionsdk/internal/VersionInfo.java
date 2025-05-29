@@ -14,6 +14,7 @@
 package com.amazonaws.encryptionsdk.internal;
 
 import java.io.IOException;
+import java.util.Objects;
 import java.util.Properties;
 
 /** This class specifies the versioning system for the AWS KMS encryption client. */
@@ -44,7 +45,11 @@ public class VersionInfo {
       final Properties properties = new Properties();
       final ClassLoader loader = VersionInfo.class.getClassLoader();
       properties.load(loader.getResourceAsStream("project.properties"));
-      return properties.getProperty("version");
+      String maybeVersion = properties.getProperty("esdkVersion");
+      // In some cases, another dependency MAY also define a project.properties file,
+      // which MAY be loaded before the ESDK's. In this case, the version property
+      // MAY NOT exist, which causes an NPE later on.
+      return Objects.requireNonNullElse(maybeVersion, UNKNOWN_VERSION);
     } catch (final IOException ex) {
       return UNKNOWN_VERSION;
     }
