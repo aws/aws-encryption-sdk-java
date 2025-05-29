@@ -49,7 +49,11 @@ public class VersionInfo {
       // In some cases, another dependency MAY also define a project.properties file,
       // which MAY be loaded before the ESDK's. In this case, the version property
       // MAY NOT exist, which causes an NPE later on.
-      return Objects.requireNonNullElse(maybeVersion, UNKNOWN_VERSION);
+      if (maybeVersion == null) {
+        return UNKNOWN_VERSION;
+      } else {
+        return maybeVersion;
+      }
     } catch (final IOException ex) {
       return UNKNOWN_VERSION;
     }
