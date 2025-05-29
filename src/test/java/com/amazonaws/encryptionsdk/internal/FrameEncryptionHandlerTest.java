@@ -141,65 +141,67 @@ public class FrameEncryptionHandlerTest {
    */
   @Test
   public void testStreamTruncation() throws Exception {
-    String testDataString = StringUtils.repeat("Hello, World! ", 10_000);
+    // Initialize AES key and keyring
+    SecureRandom rnd = new SecureRandom();
+    byte[] rawKey = new byte[16];
+    rnd.nextBytes(rawKey);
+    SecretKeySpec cryptoKey = new SecretKeySpec(rawKey, "AES");
+    MaterialProviders materialProviders =
+      MaterialProviders.builder()
+        .MaterialProvidersConfig(MaterialProvidersConfig.builder().build())
+        .build();
+    CreateRawAesKeyringInput keyringInput =
+      CreateRawAesKeyringInput.builder()
+        .wrappingKey(ByteBuffer.wrap(cryptoKey.getEncoded()))
+        .keyNamespace("Example")
+        .keyName("RandomKey")
+        .wrappingAlg(AesWrappingAlg.ALG_AES128_GCM_IV12_TAG16)
+        .build();
+    IKeyring keyring = materialProviders.CreateRawAesKeyring(keyringInput);
+    AwsCrypto crypto = AwsCrypto.standard();
+
+    String testDataString = StringUtils.repeat("Hello, World! ", 5_000);
 
     int startOffset = 100; // The data will start from this offset
-    byte[] inputData = new byte[10_000];
+    byte[] inputDataWithOffset = new byte[10_000];
+    // the length of the actual data
+    int dataLength = dataLength;
+    // copy some data, starting at the startOffset
+    // so the first |startOffset| bytes are 0s
     System.arraycopy(
         testDataString.getBytes(StandardCharsets.UTF_8),
         0,
-        inputData,
+        inputDataWithOffset,
         startOffset,
-        inputData.length - startOffset);
-    // decryptData doesn't know about the offset
+        dataLength);
+    // decryptData (non-streaming) doesn't know about the offset
+    // it will strip out the original 0s
     byte[] expectedOutput = new byte[10_000 - startOffset];
     System.arraycopy(
         testDataString.getBytes(StandardCharsets.UTF_8),
         0,
         expectedOutput,
         0,
-        inputData.length - startOffset);
-    int originalLength = inputData.length - startOffset;
-
-    // Generate a random AES key
-    SecureRandom rnd = new SecureRandom();
-    byte[] rawKey = new byte[16];
-    rnd.nextBytes(rawKey);
-    SecretKeySpec cryptoKey = new SecretKeySpec(rawKey, "AES");
-
-    // Create a keyring using the generated AES key
-    MaterialProviders materialProviders =
-        MaterialProviders.builder()
-            .MaterialProvidersConfig(MaterialProvidersConfig.builder().build())
-            .build();
-    CreateRawAesKeyringInput keyringInput =
-        CreateRawAesKeyringInput.builder()
-            .wrappingKey(ByteBuffer.wrap(cryptoKey.getEncoded()))
-            .keyNamespace("Example")
-            .keyName("RandomKey")
-            .wrappingAlg(AesWrappingAlg.ALG_AES128_GCM_IV12_TAG16)
-            .build();
-    IKeyring keyring = materialProviders.CreateRawAesKeyring(keyringInput);
-    AwsCrypto crypto = AwsCrypto.standard();
+        dataLength);
 
     // Encrypt the data
     byte[] encryptedData;
     try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
       try (CryptoOutputStream cryptoOutput =
           crypto.createEncryptingStream(keyring, os, Collections.emptyMap())) {
-        cryptoOutput.write(inputData, startOffset, inputData.length - startOffset);
+        cryptoOutput.write(inputDataWithOffset, startOffset, dataLength);
       }
       encryptedData = os.toByteArray();
     }
 
     // Check non-streaming decrypt
     CryptoResult<byte[], ?> nonStreamDecrypt = crypto.decryptData(keyring, encryptedData);
-    assertEquals(originalLength, nonStreamDecrypt.getResult().length);
+    assertEquals(dataLength, nonStreamDecrypt.getResult().length);
     assertArrayEquals(expectedOutput, nonStreamDecrypt.getResult());
 
     // Check streaming decrypt
     int decryptedLength = 0;
-    byte[] decryptedData = new byte[inputData.length];
+    byte[] decryptedData = new byte[inputDataWithOffset.length];
     try (ByteArrayInputStream is = new ByteArrayInputStream(encryptedData);
         CryptoInputStream cryptoInput = crypto.createDecryptingStream(keyring, is)) {
       int offset = startOffset;
@@ -212,7 +214,8 @@ public class FrameEncryptionHandlerTest {
         decryptedLength += bytesRead;
       } while (true);
     }
-    assertEquals(originalLength, decryptedLength);
-    assertArrayEquals(inputData, decryptedData);
+    assertEquals(dataLength, decryptedLength);
+    // These arrays will be offset, i.e. the first |startOffset| bytes are 0s
+    assertArrayEquals(inputDataWithOffset, decryptedData);
   }
 }

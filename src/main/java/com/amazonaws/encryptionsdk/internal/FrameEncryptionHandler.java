@@ -95,13 +95,13 @@ class FrameEncryptionHandler implements CryptoHandler {
     int actualOutLen = 0;
 
     int size = len;
-    int offset = off;
+    int processedBytes = 0;
     while (size > 0) {
       final int currentFrameCapacity = frameSize_ - bytesToFrameLen_;
       // bind size to the capacity of the current frame
       size = Math.min(currentFrameCapacity, size);
 
-      System.arraycopy(in, offset, bytesToFrame_, bytesToFrameLen_, size);
+      System.arraycopy(in, off + processedBytes, bytesToFrame_, bytesToFrameLen_, size);
       bytesToFrameLen_ += size;
 
       // check if there is enough bytes to create a frame
@@ -113,12 +113,10 @@ class FrameEncryptionHandler implements CryptoHandler {
         bytesToFrameLen_ = 0;
       }
 
-      // update offset by the size of bytes being encrypted.
-      offset += size;
-      // update size to the remaining bytes starting at offset.
-      // the original offset MUST NOT be part of the length calculation,
-      // or else the encryption will be truncated.
-      size = len - (offset - off);
+      // add the size of this frame to processedBytes
+      processedBytes += size;
+      // remaining size is original len minus processedBytes
+      size = len - processedBytes;
     }
 
     return new ProcessingSummary(actualOutLen, len);
