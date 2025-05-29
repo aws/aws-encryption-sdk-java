@@ -147,16 +147,16 @@ public class FrameEncryptionHandlerTest {
     rnd.nextBytes(rawKey);
     SecretKeySpec cryptoKey = new SecretKeySpec(rawKey, "AES");
     MaterialProviders materialProviders =
-      MaterialProviders.builder()
-        .MaterialProvidersConfig(MaterialProvidersConfig.builder().build())
-        .build();
+        MaterialProviders.builder()
+            .MaterialProvidersConfig(MaterialProvidersConfig.builder().build())
+            .build();
     CreateRawAesKeyringInput keyringInput =
-      CreateRawAesKeyringInput.builder()
-        .wrappingKey(ByteBuffer.wrap(cryptoKey.getEncoded()))
-        .keyNamespace("Example")
-        .keyName("RandomKey")
-        .wrappingAlg(AesWrappingAlg.ALG_AES128_GCM_IV12_TAG16)
-        .build();
+        CreateRawAesKeyringInput.builder()
+            .wrappingKey(ByteBuffer.wrap(cryptoKey.getEncoded()))
+            .keyNamespace("Example")
+            .keyName("RandomKey")
+            .wrappingAlg(AesWrappingAlg.ALG_AES128_GCM_IV12_TAG16)
+            .build();
     IKeyring keyring = materialProviders.CreateRawAesKeyring(keyringInput);
     AwsCrypto crypto = AwsCrypto.standard();
 
@@ -178,11 +178,7 @@ public class FrameEncryptionHandlerTest {
     // it will strip out the original 0s
     byte[] expectedOutput = new byte[10_000 - startOffset];
     System.arraycopy(
-        testDataString.getBytes(StandardCharsets.UTF_8),
-        0,
-        expectedOutput,
-        0,
-        dataLength);
+        testDataString.getBytes(StandardCharsets.UTF_8), 0, expectedOutput, 0, dataLength);
 
     // Encrypt the data
     byte[] encryptedData;
