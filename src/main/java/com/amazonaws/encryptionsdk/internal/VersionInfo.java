@@ -14,6 +14,8 @@
 package com.amazonaws.encryptionsdk.internal;
 
 import java.io.IOException;
+import java.net.URL;
+import java.util.Enumeration;
 import java.util.Properties;
 
 /** This class specifies the versioning system for the AWS KMS encryption client. */
@@ -43,8 +45,27 @@ public class VersionInfo {
     try {
       final Properties properties = new Properties();
       final ClassLoader loader = VersionInfo.class.getClassLoader();
-      properties.load(loader.getResourceAsStream("project.properties"));
-      return properties.getProperty("version");
+      // Other JARs on the classpath may also define project.properties
+      // Enumerate through and find the one for the ESDK
+      Enumeration<URL> urls = loader.getResources("project.properties");
+      if (urls == null) {
+        return UNKNOWN_VERSION;
+      }
+      while (urls.hasMoreElements()) {
+        URL thisURL = urls.nextElement();
+        if (thisURL.getPath().contains("aws-encryption-sdk-java")) {
+          properties.load(thisURL.openStream());
+          break;
+        }
+      }
+      String maybeVersion = properties.getProperty("esdkVersion");
+      if (maybeVersion == null) {
+        // This should never happen in practice,
+        // but is included for robustness.
+        return UNKNOWN_VERSION;
+      } else {
+        return maybeVersion;
+      }
     } catch (final IOException ex) {
       return UNKNOWN_VERSION;
     }
