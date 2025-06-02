@@ -247,6 +247,7 @@
                 <groupId>com.coveo</groupId>
                 <artifactId>fmt-maven-plugin</artifactId>
                 <version>2.13</version>
+
                 <!-- Configure no goals. -->
                 <!--Until our CI builds no longer depend on Java 8, skip this during build.-->
                 <!--We instead manually check this in Java 11 environments to block builds, -->
@@ -338,13 +339,12 @@
                     </plugin>
 
                     <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.6.13</version>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>0.7.0</version>
                         <extensions>true</extensions>
                         <configuration>
-                            <serverId>sonatype-nexus-staging</serverId>
-                            <nexusUrl>https://aws.oss.sonatype.org</nexusUrl>
+                            <publishingServerId>central</publishingServerId>
                         </configuration>
                     </plugin>
                 </plugins>

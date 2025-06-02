@@ -376,6 +376,7 @@ Resources:
                 "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Maven-GPG-Keys-Release-haLIjZ",
                 "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Maven-GPG-Keys-Release-Credentials-WgJanS",
                 "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Sonatype-User-Token-zK61bM",
+                "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Sonatype-Central-Portal-XrYUs2",
                 "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Github/aws-crypto-tools-ci-bot-AGUB3U"
               ],
               "Action": "secretsmanager:GetSecretValue"
