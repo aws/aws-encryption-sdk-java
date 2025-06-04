@@ -1,5 +1,24 @@
 # Changelog
 
+## [3.0.2](https://github.com/aws/aws-encryption-sdk-java/compare/v3.0.1...v3.0.2) (2025-06-04)
+
+### Fixes
+
+* **AwsCrypto:** remove pre-mature Deprecation notices ([#2118](https://github.com/aws/aws-encryption-sdk-java/issues/2118)) ([4a19b04](https://github.com/aws/aws-encryption-sdk-java/commit/4a19b041a592e299f02d26a3625c5b5bc810897e))
+* do not truncate encrypted streams when offset is greater than zero ([#2113](https://github.com/aws/aws-encryption-sdk-java/issues/2113)) ([adb0a42](https://github.com/aws/aws-encryption-sdk-java/commit/adb0a42dd23946b47d5486377fc2b560ebb18b0f))
+* guard against null version and change property name to avoid conflicts ([#2116](https://github.com/aws/aws-encryption-sdk-java/issues/2116)) ([313caa7](https://github.com/aws/aws-encryption-sdk-java/commit/313caa7d24f86c875448dafd633cc74dc6d619c7))
+
+### Maintenance
+
+* add a test for offset against BlockEncryptionHandler ([#2115](https://github.com/aws/aws-encryption-sdk-java/issues/2115)) ([08cf1a3](https://github.com/aws/aws-encryption-sdk-java/commit/08cf1a333727f938f0a9d01b6605e38a89f6d099))
+* bump to latest mpl ([#2046](https://github.com/aws/aws-encryption-sdk-java/issues/2046)) ([6dd2d12](https://github.com/aws/aws-encryption-sdk-java/commit/6dd2d128c96b4936c169966d911a19e63c976153))
+* **cfn:** Sonatype Migration to User Tokens; updated policies for CI project ([#2043](https://github.com/aws/aws-encryption-sdk-java/issues/2043)) ([7cfe049](https://github.com/aws/aws-encryption-sdk-java/commit/7cfe049eeadc6c2c6d5eafa36f2ecd6e9f855302))
+* **deps-dev:** bump commons-io:commons-io from 2.11.0 to 2.14.0 ([#2047](https://github.com/aws/aws-encryption-sdk-java/issues/2047)) ([1695a39](https://github.com/aws/aws-encryption-sdk-java/commit/1695a395692c0a42fd9149d4b1b7bc66df24d6d8))
+* **examples:** Shared cache across Hierarchical Keyrings ([#2045](https://github.com/aws/aws-encryption-sdk-java/issues/2045)) ([fd00cd0](https://github.com/aws/aws-encryption-sdk-java/commit/fd00cd0e08f39a3ace414472a99f57b92e51be14))
+* fix semantic release installation ([#2119](https://github.com/aws/aws-encryption-sdk-java/issues/2119)) ([0586279](https://github.com/aws/aws-encryption-sdk-java/commit/0586279c7842b9680aaa7080ddca55f1ff3e6707))
+* **JavaDocs:** detail thread saftey of SDK Client Builders ([#2048](https://github.com/aws/aws-encryption-sdk-java/issues/2048)) ([86d5b62](https://github.com/aws/aws-encryption-sdk-java/commit/86d5b6275782eef2690823dbc7000f9aa2153a94))
+* move release to Nexus Central ([#2117](https://github.com/aws/aws-encryption-sdk-java/issues/2117)) ([9e91dad](https://github.com/aws/aws-encryption-sdk-java/commit/9e91dade73f3b7fd165312e123cdfbe7dbd44483))
+
 ## [3.0.1](https://github.com/aws/aws-encryption-sdk-java/compare/v3.0.0...v3.0.1) (2024-06-12)
 
 ### Fixes
