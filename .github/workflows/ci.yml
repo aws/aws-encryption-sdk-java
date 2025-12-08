@@ -175,9 +175,12 @@ jobs:
           buildspec-override: codebuild/ci/release-ci.yml
           compute-type-override: BUILD_GENERAL1_LARGE
           image-override: aws/codebuild/standard:7.0
-          env-vars-for-codebuild: GITHUB_EVENT_NAME
+          env-vars-for-codebuild: |
+            GITHUB_EVENT_NAME,
+            JAVA_ENV_VERSION
         env:
           GITHUB_EVENT_NAME: $GITHUB_EVENT_NAME
+          JAVA_ENV_VERSION: corretto11
   validateCI:
     name: Validate CI
     runs-on: ubuntu-latest
