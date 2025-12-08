@@ -16,7 +16,7 @@ env:
 phases:
   install:
     runtime-versions:
-      java: openjdk11
+      java: $JAVA_ENV_VERSION
     commands:
       - git submodule update --init submodules/MaterialProviders
       # Get Dafny
