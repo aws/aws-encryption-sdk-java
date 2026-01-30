@@ -16,7 +16,7 @@ env:
 phases:
   install:
     runtime-versions:
-      java: openjdk11
+      java: corretto11
     commands:
       - git submodule update --init submodules/MaterialProviders
       # Get Dafny
