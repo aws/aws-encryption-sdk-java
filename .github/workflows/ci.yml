@@ -39,7 +39,7 @@ jobs:
           #   image: "aws/codebuild/amazonlinux-x86_64-standard:5.0"
           - distribution: corretto
             image: "aws/codebuild/amazonlinux-x86_64-standard:5.0" # Corretto only runs on AL2
-        version: [ 8, 11 ]
+        version: [ 8, 11, 17, 21 ]
     steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -69,7 +69,7 @@ jobs:
           #   image: "aws/codebuild/standard:3.0"
           - distribution: corretto
             image: "aws/codebuild/amazonlinux-x86_64-standard:5.0" # Corretto only runs on AL2
-        version: [ 8, 11 ]
+        version: [ 8, 11, 17, 21 ]
     steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -99,7 +99,7 @@ jobs:
           #   image: "aws/codebuild/standard:3.0"
           - distribution: corretto
             image: "aws/codebuild/amazonlinux-x86_64-standard:5.0" # Corretto only runs on AL2
-        version: [ 8, 11 ]
+        version: [ 8, 11, 17, 21 ]
     steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -130,7 +130,7 @@ jobs:
           #   image: "aws/codebuild/standard:3.0"
           - distribution: corretto
             image: "aws/codebuild/amazonlinux-x86_64-standard:5.0" # Corretto only runs on AL2
-        version: [ 8, 11 ]
+        version: [ 8, 11, 17, 21 ]
     steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -182,7 +182,7 @@ jobs:
           #   image: "aws/codebuild/standard:3.0"
           - distribution: corretto
             image: "aws/codebuild/amazonlinux-x86_64-standard:5.0" # Corretto only runs on AL2
-        version: [ 8, 11 ]
+        version: [ 8, 11, 17, 21 ]
     steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
