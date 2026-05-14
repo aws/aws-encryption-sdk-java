@@ -28,6 +28,7 @@ phases:
         mvn verify \
           -Pcodeartifact \
           -Dcheckstyle.skip \
+          -Djacoco.skip=true \
           -Desdk.version=$VERSION_HASH \
           -Dmaven.compiler.target=$JAVA_NUMERIC_VERSION \
           -Dmaven.compiler.source=$JAVA_NUMERIC_VERSION \
