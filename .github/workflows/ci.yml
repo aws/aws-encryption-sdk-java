@@ -39,7 +39,7 @@ jobs:
           #   image: "aws/codebuild/amazonlinux-x86_64-standard:5.0"
           - distribution: corretto
             image: "aws/codebuild/amazonlinux-x86_64-standard:5.0" # Corretto only runs on AL2
-        version: [ 8, 11 ]
+        version: [ 8, 11, 17, 21 ]
     steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -69,7 +69,7 @@ jobs:
           #   image: "aws/codebuild/standard:3.0"
           - distribution: corretto
             image: "aws/codebuild/amazonlinux-x86_64-standard:5.0" # Corretto only runs on AL2
-        version: [ 8, 11 ]
+        version: [ 8, 11, 17, 21 ]
     steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -99,7 +99,7 @@ jobs:
           #   image: "aws/codebuild/standard:3.0"
           - distribution: corretto
             image: "aws/codebuild/amazonlinux-x86_64-standard:5.0" # Corretto only runs on AL2
-        version: [ 8, 11 ]
+        version: [ 8, 11, 17, 21 ]
     steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -130,7 +130,7 @@ jobs:
           #   image: "aws/codebuild/standard:3.0"
           - distribution: corretto
             image: "aws/codebuild/amazonlinux-x86_64-standard:5.0" # Corretto only runs on AL2
-        version: [ 8, 11 ]
+        version: [ 8, 11, 17, 21 ]
     steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -149,6 +149,27 @@ jobs:
           env-vars-for-codebuild: JAVA_ENV_VERSION
         env:
           JAVA_ENV_VERSION: ${{ matrix.platform.distribution }}${{ matrix.version }}
+  validateConsumerCompiles:
+    name: Validate Consumer Smoke Test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        java-version: [ 8, 11, 17, 21 ]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: corretto
+          java-version: ${{ matrix.java-version }}
+      - name: Compile and run smoke test against Maven Central
+        working-directory: codebuild/ci/validate-consumer
+        run: |
+          mvn compile exec:java \
+            -Dexec.mainClass="validate.EsdkSmokeTest" \
+            -Desdk.version=3.0.1 \
+            -Djava.version=${{ matrix.java-version }} \
+            --no-transfer-progress
   releaseCI:
     name: Release CI
     runs-on: ubuntu-latest
@@ -170,6 +191,7 @@ jobs:
           env-vars-for-codebuild: GITHUB_EVENT_NAME
         env:
           GITHUB_EVENT_NAME: $GITHUB_EVENT_NAME
+
   validateCI:
     name: Validate CI
     runs-on: ubuntu-latest
@@ -178,11 +200,9 @@ jobs:
       fail-fast: true
       matrix:
         platform:
-          # - distribution: openjdk
-          #   image: "aws/codebuild/standard:3.0"
           - distribution: corretto
-            image: "aws/codebuild/amazonlinux-x86_64-standard:5.0" # Corretto only runs on AL2
-        version: [ 8, 11 ]
+            image: "aws/codebuild/amazonlinux-x86_64-standard:5.0"
+        version: [ 8, 11, 17, 21 ]
     steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
