@@ -149,6 +149,27 @@ jobs:
           env-vars-for-codebuild: JAVA_ENV_VERSION
         env:
           JAVA_ENV_VERSION: ${{ matrix.platform.distribution }}${{ matrix.version }}
+  validateConsumerCompiles:
+    name: Validate Consumer Smoke Test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        java-version: [ 8, 11, 17, 21 ]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: corretto
+          java-version: ${{ matrix.java-version }}
+      - name: Compile and run smoke test against Maven Central
+        working-directory: codebuild/ci/validate-consumer
+        run: |
+          mvn compile exec:java \
+            -Dexec.mainClass="validate.EsdkSmokeTest" \
+            -Desdk.version=3.0.1 \
+            -Djava.version=${{ matrix.java-version }} \
+            --no-transfer-progress
   releaseCI:
     name: Release CI
     runs-on: ubuntu-latest
