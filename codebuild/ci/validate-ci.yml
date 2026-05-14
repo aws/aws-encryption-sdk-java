@@ -1,0 +1,35 @@
+version: 0.2
+
+env:
+  variables:
+    REGION: us-east-1
+    DOMAIN: crypto-tools-internal
+    REPOSITORY: java-esdk-ci
+  parameter-store:
+    ACCOUNT: /CodeBuild/AccountId
+
+phases:
+  install:
+    commands:
+      - pip install awscli
+    runtime-versions:
+      java: $JAVA_ENV_VERSION
+  pre_build:
+    commands:
+      - VERSION_HASH="$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)-$CODEBUILD_RESOLVED_SOURCE_VERSION-$GITHUB_EVENT_NAME"
+      - export SETTINGS_FILE=$(pwd)/codebuild/ci/settings.xml
+      - cd codebuild/ci/validate-consumer
+      - export CODEARTIFACT_TOKEN=$(aws codeartifact get-authorization-token --domain $DOMAIN --domain-owner $ACCOUNT --query authorizationToken --output text --region ${REGION})
+      - export CODEARTIFACT_REPO_URL=https://${DOMAIN}-${ACCOUNT}.d.codeartifact.${REGION}.amazonaws.com/maven/${REPOSITORY}
+  build:
+    commands:
+      - |
+        mvn compile exec:java \
+          -Dexec.mainClass="validate.EsdkSmokeTest" \
+          -Pcodeartifact \
+          -Desdk.version=$VERSION_HASH \
+          -Djava.version=$JAVA_NUMERIC_VERSION \
+          -Dcodeartifact.token=$CODEARTIFACT_TOKEN \
+          -Dcodeartifact.url=$CODEARTIFACT_REPO_URL \
+          --no-transfer-progress \
+          -s $SETTINGS_FILE
