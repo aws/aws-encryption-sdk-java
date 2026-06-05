@@ -71,7 +71,7 @@ public class RawRsaKeyringExample {
         CreateRawRsaKeyringInput.builder()
             .keyName("rsa-key")
             .keyNamespace("rsa-keyring")
-            .paddingScheme(PaddingScheme.PKCS1)
+            .paddingScheme(PaddingScheme.OAEP_SHA384_MGF1)
             .publicKey(publicKeyBytes)
             .build();
     final IKeyring encryptingKeyring = matProv.CreateRawRsaKeyring(encryptingKeyringInput);
@@ -94,7 +94,7 @@ public class RawRsaKeyringExample {
         CreateRawRsaKeyringInput.builder()
             .keyName("rsa-key")
             .keyNamespace("rsa-keyring")
-            .paddingScheme(PaddingScheme.PKCS1)
+            .paddingScheme(PaddingScheme.OAEP_SHA384_MGF1)
             .privateKey(privateKeyBytes)
             .build();
     final IKeyring decryptingKeyring = matProv.CreateRawRsaKeyring(decryptingKeyringInput);
