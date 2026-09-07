@@ -21,7 +21,7 @@ public class HmacKeyDerivationFunctionTest {
   private static final testCase[] testCases =
       new testCase[] {
         new testCase(
-            "HmacSHA256",
+            MacAlgorithm.HmacSHA256,
             fromCHex(
                 "\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b"
                     + "\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b"),
@@ -30,7 +30,7 @@ public class HmacKeyDerivationFunctionTest {
             fromHex(
                 "3CB25F25FAACD57A90434F64D0362F2A2D2D0A90CF1A5A4C5DB02D56ECC4C5BF34007208D5B887185865")),
         new testCase(
-            "HmacSHA256",
+                MacAlgorithm.HmacSHA256,
             fromCHex(
                 "\\x00\\x01\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x09\\x0a\\x0b\\x0c\\x0d"
                     + "\\x0e\\x0f\\x10\\x11\\x12\\x13\\x14\\x15\\x16\\x17\\x18\\x19\\x1a\\x1b"
@@ -60,7 +60,7 @@ public class HmacKeyDerivationFunctionTest {
                     + "CC30C58179EC3E87C14C01D5C1F3434F"
                     + "1D87")),
         new testCase(
-            "HmacSHA256",
+            MacAlgorithm.HmacSHA256,
             fromCHex(
                 "\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b"
                     + "\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b"),
@@ -71,7 +71,7 @@ public class HmacKeyDerivationFunctionTest {
                     + "B8A11F5C5EE1879EC3454E5F3C738D2D"
                     + "9D201395FAA4B61A96C8")),
         new testCase(
-            "HmacSHA1",
+            MacAlgorithm.HmacSHA1,
             fromCHex("\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b"),
             fromCHex("\\x00\\x01\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x09\\x0a\\x0b\\x0c"),
             fromCHex("\\xf0\\xf1\\xf2\\xf3\\xf4\\xf5\\xf6\\xf7\\xf8\\xf9"),
@@ -80,7 +80,7 @@ public class HmacKeyDerivationFunctionTest {
                     + "A4F14B822F5B091568A9CDD4F155FDA2"
                     + "C22E422478D305F3F896")),
         new testCase(
-            "HmacSHA1",
+            MacAlgorithm.HmacSHA1,
             fromCHex(
                 "\\x00\\x01\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x09\\x0a\\x0b\\x0c\\x0d"
                     + "\\x0e\\x0f\\x10\\x11\\x12\\x13\\x14\\x15\\x16\\x17\\x18\\x19\\x1a\\x1b"
@@ -109,7 +109,7 @@ public class HmacKeyDerivationFunctionTest {
                     + "486EA37CE3D397ED034C7F9DFEB15C5E"
                     + "927336D0441F4C4300E2CFF0D0900B52D3B4")),
         new testCase(
-            "HmacSHA1",
+            MacAlgorithm.HmacSHA1,
             fromCHex(
                 "\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b"
                     + "\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b\\x0b"),
@@ -117,7 +117,7 @@ public class HmacKeyDerivationFunctionTest {
             new byte[0],
             fromHex("0AC1AF7002B3D761D1E55298DA9D0506" + "B9AE52057220A306E07B6B87E8DF21D0")),
         new testCase(
-            "HmacSHA1",
+            MacAlgorithm.HmacSHA1,
             fromCHex(
                 "\\x0c\\x0c\\x0c\\x0c\\x0c\\x0c\\x0c\\x0c\\x0c\\x0c\\x0c\\x0c\\x0c\\x0c"
                     + "\\x0c\\x0c\\x0c\\x0c\\x0c\\x0c\\x0c\\x0c"),
@@ -200,13 +200,13 @@ public class HmacKeyDerivationFunctionTest {
   }
 
   private static class testCase {
-    public final String algo;
+    public final MacAlgorithm algo;
     public final byte[] ikm;
     public final byte[] salt;
     public final byte[] info;
     public final byte[] expected;
 
-    testCase(String algo, byte[] ikm, byte[] salt, byte[] info, byte[] expected) {
+    testCase(MacAlgorithm algo, byte[] ikm, byte[] salt, byte[] info, byte[] expected) {
       super();
       this.algo = algo;
       this.ikm = ikm;

@@ -108,7 +108,7 @@ public class CommittedKeyTest {
     final byte[] n1 = insecureRandomBytes(32);
 
     // Hash for HKDF is SHA-512
-    final HmacKeyDerivationFunction hkdf = HmacKeyDerivationFunction.getInstance("HmacSHA512");
+    final HmacKeyDerivationFunction hkdf = HmacKeyDerivationFunction.getInstance(MacAlgorithm.HmacSHA512);
 
     // K_R (Raw keying material, a.k.a. data key) is 256 bits (32 bytes)
     // Normally this needs to be cryptographically secure, but we can relax this for improved
