@@ -18,7 +18,7 @@
 #
 #   make test-server [COMMONS_BRANCH=<override>]
 #
-#     1. Parse commons-configuration.json (the Commons_Configuration_Entry).
+#     1. Parse server-config.json (the Commons_Configuration_Entry).
 #        Missing/unparseable -> halt BEFORE any clone, naming the file
 #        (Requirement 4.9).
 #     2. git clone --depth 1 --branch <branch> <url> .commons-clone
@@ -47,7 +47,7 @@
 # ----------------------------------------------------------------------------
 # The Commons_Repository coordinates (name, URL, branch) are the
 # Commons_Configuration_Entry and live in ONE place: the `commonsRepository`
-# object of `commons-configuration.json` next to this Makefile (Requirement
+# object of `server-config.json` next to this Makefile (Requirement
 # 4.4). That file also carries the required `product` field, the Java
 # Feature_Declaration (supportedFeatures / unsupportedFeatures), and optional
 # configurationOverrides — all consumed by the orchestrator core, not by this
@@ -58,7 +58,7 @@
 #
 # Until the ESDK TestServer merges to commons `main`, the configured branch
 # pins the feature branch `kessplas/esdk-test-server`; flip it back to `main`
-# in commons-configuration.json after the merge.
+# in server-config.json after the merge.
 #
 # CI note: the workflow authenticates the private commons clone by mapping the
 # SSH URL to an HTTPS+PAT URL via `git config url.<...>.insteadOf` before
@@ -79,20 +79,20 @@ MAKEFILE_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 # languageRepoRoot handed to the orchestrator core: the core resolves the Java
 # library (esdk/) and the Java server (esdk/test-server/server/) from paths
 # relative to it (Requirement 4.2), and reads configurationOverrides from
-# <languageRepoRoot>/esdk/test-server/commons-configuration.json.
+# <languageRepoRoot>/esdk/test-server/server-config.json.
 REPO_ROOT := $(abspath $(MAKEFILE_DIR)/../..)
 
 # The Commons_Configuration_Entry carrier (single source of truth, Req 4.4).
-COMMONS_CONFIGURATION := $(MAKEFILE_DIR)/commons-configuration.json
+COMMONS_CONFIGURATION := $(MAKEFILE_DIR)/server-config.json
 
 # Invocation-time commons branch override (Requirement 4.8). Empty means "use
-# the branch configured in commons-configuration.json". Supplying it flips the
+# the branch configured in server-config.json". Supplying it flips the
 # delegation's commonsOrigin.reason to invocation-override.
 COMMONS_BRANCH ?=
 
 # Testing convenience ONLY (used by the failure-path integration tests to
 # point at a local file:// fixture without network): overrides the clone URL.
-# The authoritative URL is the one in commons-configuration.json.
+# The authoritative URL is the one in server-config.json.
 COMMONS_REPO ?=
 
 # Where the fresh clone lands. Kept under a scratch dir ignored by .gitignore
@@ -146,7 +146,7 @@ help: ## Show this help
 	@echo "in the clone (this working tree is the live Java library + server)."
 	@echo "The KMS scenarios are REQUIRED, so valid AWS credentials must be present."
 	@echo ""
-	@echo "Commons coordinates (single source of truth: commons-configuration.json):"
+	@echo "Commons coordinates (single source of truth: server-config.json):"
 	@echo "  COMMONS_CONFIGURATION=$(COMMONS_CONFIGURATION)"
 	@if coords=$$(python3 -c 'import json,sys; c=json.load(open(sys.argv[1]))["commonsRepository"]; print(c["name"]); print(c["url"]); print(c["branch"])' "$(COMMONS_CONFIGURATION)" 2>/dev/null); then \
 		echo "$$coords" | { read -r n; read -r u; read -r b; \
@@ -299,7 +299,7 @@ smoke-check: ## Run the structural smoke check for this Language_Repository
 
 # ----------------------------------------------------------------------------
 # 11.3 + 15.2: the repository's hermetic checks — the bootstrap failure-path
-# integration tests (missing/corrupt commons-configuration.json, bogus
+# integration tests (missing/corrupt server-config.json, bogus
 # URL/branch — no Tests run in any case) followed by the structural smoke
 # check. Both run under `set -e` so a failing suite fails the target.
 it: ## Run the bootstrap failure-path integration tests and the structural smoke check
