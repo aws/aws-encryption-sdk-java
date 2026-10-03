@@ -55,7 +55,7 @@ To use the AWS Encryption SDK for Java you must have:
       <dependency>
         <groupId>software.amazon.cryptography</groupId>
         <artifactId>aws-cryptographic-material-providers</artifactId>
-        <version>3.0.2</version>
+        <version>1.7.0</version>
       </dependency>
       <dependency>
         <groupId>software.amazon.awssdk</groupId>
@@ -69,7 +69,7 @@ To use the AWS Encryption SDK for Java you must have:
       <dependency>
           <groupId>com.amazonaws</groupId>
           <artifactId>aws-java-sdk</artifactId>
-          <version>3.0.2</version>
+          <version>1.12.394</version>
           <optional>true</optional>
       </dependency>
     </dependencies>
