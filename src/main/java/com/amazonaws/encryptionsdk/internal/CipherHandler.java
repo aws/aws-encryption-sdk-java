@@ -18,6 +18,7 @@ import com.amazonaws.encryptionsdk.exception.AwsCryptoException;
 import com.amazonaws.encryptionsdk.exception.BadCiphertextException;
 import java.security.GeneralSecurityException;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.concurrent.ArrayBlockingQueue;
 import javax.annotation.concurrent.NotThreadSafe;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -33,10 +34,12 @@ import javax.crypto.spec.GCMParameterSpec;
  */
 @NotThreadSafe
 class CipherHandler {
+  //TODO how to sze this, or allow it to be configured externally
+  private static final CipherPool CIPHER_POOL = new CipherPool(32);
+
   private final int cipherMode_;
   private final SecretKey key_;
   private final CryptoAlgorithm cryptoAlgorithm_;
-  private final Cipher cipher_;
 
   /**
    * Process data through the cipher.
@@ -62,16 +65,19 @@ class CipherHandler {
     final AlgorithmParameterSpec spec =
         new GCMParameterSpec(cryptoAlgorithm_.getTagLen() * 8, nonce, 0, nonce.length);
 
+    final Cipher cipher = CIPHER_POOL.borrowCipher();
     try {
-      cipher_.init(cipherMode_, key_, spec);
+      cipher.init(cipherMode_, key_, spec);
       if (contentAad != null) {
-        cipher_.updateAAD(contentAad);
+        cipher.updateAAD(contentAad);
       }
     } catch (final GeneralSecurityException gsx) {
       throw new AwsCryptoException(gsx);
     }
     try {
-      return cipher_.doFinal(content, off, len);
+      byte[] bytes = cipher.doFinal(content, off, len);
+      CIPHER_POOL.returnCipher(cipher);
+      return bytes;
     } catch (final GeneralSecurityException gsx) {
       throw new BadCiphertextException(gsx);
     }
@@ -90,15 +96,30 @@ class CipherHandler {
     this.cipherMode_ = cipherMode;
     this.key_ = key;
     this.cryptoAlgorithm_ = cryptoAlgorithm;
-    this.cipher_ = buildCipherObject(cryptoAlgorithm);
   }
 
-  private static Cipher buildCipherObject(final CryptoAlgorithm alg) {
-    try {
-      // Right now, just GCM is supported
-      return Cipher.getInstance("AES/GCM/NoPadding");
-    } catch (final GeneralSecurityException ex) {
-      throw new IllegalStateException("Java does not support the requested algorithm", ex);
+  private static class CipherPool {
+    private final ArrayBlockingQueue<Cipher> pool;
+
+    CipherPool(int size) {
+      this.pool = new ArrayBlockingQueue<>(size);
+    }
+
+    Cipher borrowCipher() {
+      Cipher cipher = pool.poll();
+      if (cipher == null) {
+        try {
+          // Right now, just GCM is supported
+          cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        } catch (final GeneralSecurityException ex) {
+          throw new IllegalStateException("Java does not support the requested algorithm", ex);
+        }
+      }
+      return cipher;
+    }
+
+    void returnCipher(Cipher cipher) {
+      pool.offer(cipher);
     }
   }
 }
