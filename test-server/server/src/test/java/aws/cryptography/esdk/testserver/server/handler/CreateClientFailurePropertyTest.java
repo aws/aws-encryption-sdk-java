@@ -18,6 +18,7 @@ import aws.cryptography.esdk.testserver.server.model.GenericServerError;
 import aws.cryptography.esdk.testserver.server.model.Keyring;
 import aws.cryptography.esdk.testserver.server.model.MultiKeyringConfig;
 import aws.cryptography.esdk.testserver.server.model.RawAesKeyringConfig;
+import aws.cryptography.esdk.testserver.server.model.RequiredEncryptionContextCmmConfig;
 import aws.cryptography.esdk.testserver.server.registry.ClientRegistry;
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -31,8 +32,9 @@ import net.jqwik.api.constraints.IntRange;
  * unchanged, using jqwik. Runs a minimum of 100 generated iterations. Uses the
  * real {@link ConfigValidator} and {@link EsdkClientFactory}; the generated
  * configs are valid per the exactly-one-variant rule but cause the real ESDK
- * client construction to fail deterministically and offline (an unwired
- * Caching CMM, an AWS KMS RSA keyring missing its encryption algorithm, or a
+ * client construction to fail deterministically and offline (a Caching CMM
+ * wrapping a non-Default CMM, which the ESDK's caching CMM cannot wrap, an AWS
+ * KMS RSA keyring missing its encryption algorithm, or a
  * Raw AES keyring whose wrapping key length does not match its wrapping
  * algorithm), nested to varying depth.
  */
@@ -76,7 +78,12 @@ class CreateClientFailurePropertyTest {
         CryptographicMaterialsManager cmm = useCachingCmm
             ? CryptographicMaterialsManager.builder()
                 .caching(CachingCmmConfig.builder()
-                    .underlyingCMM(validDefaultCmm())
+                    .underlyingCMM(CryptographicMaterialsManager.builder()
+                        .requiredEncryptionContext(RequiredEncryptionContextCmmConfig.builder()
+                            .underlyingCMM(validDefaultCmm())
+                            .requiredEncryptionContextKeys(List.of("purpose"))
+                            .build())
+                        .build())
                     .cacheLimitTtlSeconds(60)
                     .build())
                 .build()
