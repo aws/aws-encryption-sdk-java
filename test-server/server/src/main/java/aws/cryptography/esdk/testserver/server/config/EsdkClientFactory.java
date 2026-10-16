@@ -26,11 +26,25 @@ import aws.cryptography.esdk.testserver.server.model.RequiredEncryptionContextCm
 import aws.cryptography.esdk.testserver.server.registry.EsdkClient;
 import aws.cryptography.esdk.testserver.server.registry.RealEsdkClient;
 import com.amazonaws.encryptionsdk.CommitmentPolicy;
+import com.amazonaws.encryptionsdk.MasterKeyProvider;
+import com.amazonaws.encryptionsdk.caching.CachingCryptoMaterialsManager;
+import com.amazonaws.encryptionsdk.caching.LocalCryptoMaterialsCache;
+import com.amazonaws.encryptionsdk.jce.JceMasterKey;
+import com.amazonaws.encryptionsdk.kmssdkv2.AwsKmsMrkAwareMasterKeyProvider;
+import com.amazonaws.encryptionsdk.kmssdkv2.KmsMasterKeyProvider;
+import com.amazonaws.encryptionsdk.multi.MultipleProviderFactory;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyFactory;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import javax.crypto.spec.SecretKeySpec;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.kms.KmsClient;
@@ -103,8 +117,15 @@ import software.amazon.cryptography.primitives.model.ECDHCurveSpec;
  * that case the factory fetches it once via {@code kms:GetPublicKey} at
  * construction (a network call the design explicitly permits at
  * {@code CreateClient} time); supplying {@code publicKey} in the config keeps
- * construction fully offline. The Caching CMM remains unwired and causes a
- * construction failure (GenericServerError) if requested (Requirement 3.6).
+ * construction fully offline.
+ *
+ * <p>The Caching CMM is the ESDK's {@code CachingCryptoMaterialsManager}: the
+ * Material Providers Library has no caching CMM, and the ESDK's caching CMM wraps
+ * master key providers rather than MPL keyrings. So a top-level Caching config is
+ * built over master key providers equivalent to its wrapped Default CMM's keyring
+ * (Raw AES and Raw RSA as {@code JceMasterKey}, the AWS KMS keyrings as the KMS
+ * master key providers, and Multi as a multi-provider); any other keyring, or a
+ * Caching CMM nested under another CMM, is a construction failure.
  */
 public final class EsdkClientFactory {
 
@@ -127,6 +148,10 @@ public final class EsdkClientFactory {
         Integer maxEdk = config.getMaxEncryptedDataKeys() == null
             ? null
             : Math.toIntExact(config.getMaxEncryptedDataKeys());
+        CachingCmmConfig caching = config.getCmm().getCaching();
+        if (caching != null) {
+            return new RealEsdkClient(commitmentPolicy, maxEdk, buildCachingCmm(caching));
+        }
         ICryptographicMaterialsManager cmm = buildCmm(config.getCmm());
         return new RealEsdkClient(commitmentPolicy, maxEdk, cmm);
     }
@@ -154,10 +179,152 @@ public final class EsdkClientFactory {
         }
         if (caching != null) {
             throw new UnsupportedOperationException(
-                "Caching CMM is not wired in this pass of the ESDK TestServer");
+                "a Caching CMM is supported only as the client's top-level CMM");
         }
         throw new IllegalArgumentException(
             "CryptographicMaterialsManager had no variant member set");
+    }
+
+    /** Entries the Caching CMM's local cache holds. */
+    private static final int CACHE_CAPACITY = 100;
+
+    private static CachingCryptoMaterialsManager buildCachingCmm(CachingCmmConfig config) {
+        DefaultCmmConfig underlying = config.getUnderlyingCMM().getDefault();
+        if (underlying == null) {
+            throw new UnsupportedOperationException(
+                "the Caching CMM must wrap a Default CMM: the ESDK's caching CMM wraps master key providers");
+        }
+        CachingCryptoMaterialsManager.Builder builder = CachingCryptoMaterialsManager.newBuilder()
+            .withMasterKeyProvider(toMasterKeyProvider(underlying.getKeyring()))
+            .withCache(new LocalCryptoMaterialsCache(CACHE_CAPACITY))
+            .withMaxAge(config.getCacheLimitTtlSeconds(), TimeUnit.SECONDS);
+        if (config.getPartitionId() != null) {
+            builder.withPartitionId(config.getPartitionId());
+        }
+        if (config.getLimitMessages() != null) {
+            builder.withMessageUseLimit(config.getLimitMessages());
+        }
+        if (config.getLimitBytes() != null) {
+            builder.withByteUseLimit(config.getLimitBytes());
+        }
+        return builder.build();
+    }
+
+    /**
+     * The master key provider equivalent to {@code keyring}: it writes and reads
+     * the same encrypted data keys as the MPL keyring of the same configuration.
+     */
+    private static MasterKeyProvider<?> toMasterKeyProvider(Keyring keyring) {
+        if (keyring.getRawAes() != null) {
+            RawAesKeyringConfig rawAes = keyring.getRawAes();
+            return JceMasterKey.getInstance(
+                new SecretKeySpec(bytes(rawAes.getWrappingKey()), "AES"),
+                rawAes.getKeyNamespace(), rawAes.getKeyName(), "AES/GCM/NoPadding");
+        }
+        if (keyring.getRawRsa() != null) {
+            RawRsaKeyringConfig rawRsa = keyring.getRawRsa();
+            return JceMasterKey.getInstance(
+                rawRsa.getPublicKey() == null ? null : rsaPublicKey(rawRsa.getPublicKey()),
+                rawRsa.getPrivateKey() == null ? null : rsaPrivateKey(rawRsa.getPrivateKey()),
+                rawRsa.getKeyNamespace(), rawRsa.getKeyName(),
+                rsaTransformation(rawRsa.getPaddingScheme().getValue()));
+        }
+        if (keyring.getAwsKms() != null) {
+            requireNoGrantTokens(keyring.getAwsKms().hasGrantTokens()
+                && !keyring.getAwsKms().getGrantTokens().isEmpty());
+            return KmsMasterKeyProvider.builder().buildStrict(keyring.getAwsKms().getKmsKeyId());
+        }
+        if (keyring.getAwsKmsMrk() != null) {
+            requireNoGrantTokens(keyring.getAwsKmsMrk().hasGrantTokens()
+                && !keyring.getAwsKmsMrk().getGrantTokens().isEmpty());
+            return AwsKmsMrkAwareMasterKeyProvider.builder()
+                .buildStrict(keyring.getAwsKmsMrk().getKmsKeyId());
+        }
+        if (keyring.getAwsKmsMultiKeyring() != null) {
+            AwsKmsMultiKeyringConfig multi = keyring.getAwsKmsMultiKeyring();
+            requireNoGrantTokens(multi.hasGrantTokens() && !multi.getGrantTokens().isEmpty());
+            return KmsMasterKeyProvider.builder().buildStrict(kmsKeyIds(multi.getGenerator(),
+                multi.hasKmsKeyIds() ? multi.getKmsKeyIds() : List.of()));
+        }
+        if (keyring.getAwsKmsMrkMultiKeyring() != null) {
+            AwsKmsMrkMultiKeyringConfig multi = keyring.getAwsKmsMrkMultiKeyring();
+            requireNoGrantTokens(multi.hasGrantTokens() && !multi.getGrantTokens().isEmpty());
+            return AwsKmsMrkAwareMasterKeyProvider.builder().buildStrict(kmsKeyIds(multi.getGenerator(),
+                multi.hasKmsKeyIds() ? multi.getKmsKeyIds() : List.of()));
+        }
+        if (keyring.getMulti() != null) {
+            MultiKeyringConfig multi = keyring.getMulti();
+            List<MasterKeyProvider<?>> providers = new ArrayList<>();
+            if (multi.getGenerator() != null) {
+                providers.add(toMasterKeyProvider(multi.getGenerator()));
+            }
+            for (Keyring child : multi.getChildKeyrings()) {
+                providers.add(toMasterKeyProvider(child));
+            }
+            return MultipleProviderFactory.buildMultiProvider(providers);
+        }
+        throw new UnsupportedOperationException(
+            "this keyring is not supported under the Caching CMM: the ESDK's caching CMM wraps"
+                + " master key providers, and only the Raw AES, Raw RSA, AWS KMS, AWS KMS MRK, AWS KMS"
+                + " (MRK) multi, and Multi keyrings have master key provider equivalents");
+    }
+
+    private static List<String> kmsKeyIds(String generator, List<String> keyIds) {
+        List<String> ids = new ArrayList<>();
+        if (generator != null) {
+            ids.add(generator);
+        }
+        ids.addAll(keyIds);
+        return ids;
+    }
+
+    private static void requireNoGrantTokens(boolean present) {
+        if (present) {
+            throw new UnsupportedOperationException(
+                "grant tokens are not supported under the Caching CMM");
+        }
+    }
+
+    /** The {@code JceMasterKey} RSA transformation for a modeled padding scheme. */
+    private static String rsaTransformation(String paddingScheme) {
+        return switch (paddingScheme) {
+            case "PKCS1" -> "RSA/ECB/PKCS1Padding";
+            case "OAEP_SHA1_MGF1" -> "RSA/ECB/OAEPWithSHA-1AndMGF1Padding";
+            case "OAEP_SHA256_MGF1" -> "RSA/ECB/OAEPWithSHA-256AndMGF1Padding";
+            case "OAEP_SHA384_MGF1" -> "RSA/ECB/OAEPWithSHA-384AndMGF1Padding";
+            case "OAEP_SHA512_MGF1" -> "RSA/ECB/OAEPWithSHA-512AndMGF1Padding";
+            default -> throw new IllegalArgumentException("Unknown RSA padding scheme: " + paddingScheme);
+        };
+    }
+
+    private static PublicKey rsaPublicKey(ByteBuffer pem) {
+        try {
+            return KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(pemBody(pem)));
+        } catch (Exception e) {
+            throw new IllegalArgumentException("invalid PEM RSA public key", e);
+        }
+    }
+
+    private static PrivateKey rsaPrivateKey(ByteBuffer pem) {
+        try {
+            return KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(pemBody(pem)));
+        } catch (Exception e) {
+            throw new IllegalArgumentException("invalid PEM RSA private key", e);
+        }
+    }
+
+    /** The DER bytes inside a PEM block. */
+    private static byte[] pemBody(ByteBuffer pem) {
+        String text = new String(bytes(pem), StandardCharsets.US_ASCII)
+            .replaceAll("-----[A-Z ]+-----", "")
+            .replaceAll("\\s", "");
+        return Base64.getDecoder().decode(text);
+    }
+
+    private static byte[] bytes(ByteBuffer buffer) {
+        byte[] copy = new byte[buffer.remaining()];
+        buffer.duplicate().get(copy);
+        return copy;
     }
 
     private IKeyring buildKeyring(Keyring keyring) {
