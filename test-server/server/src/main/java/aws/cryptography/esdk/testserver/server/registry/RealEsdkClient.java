@@ -76,8 +76,9 @@ public final class RealEsdkClient implements EsdkClient {
             AwsCrypto crypto = buildCrypto(null, null);
             Map<String, String> ec = nonNull(encryptionContext);
             if (legacyCmm != null) {
-                requireNoReproducedContext(ec);
-                return crypto.decryptData(legacyCmm, ciphertext).getResult();
+                CryptoResult<byte[], ?> result = crypto.decryptData(legacyCmm, ciphertext);
+                requireReproducedContext(ec, result.getEncryptionContext());
+                return result.getResult();
             }
             CryptoResult<byte[], ?> result = ec.isEmpty()
                 ? crypto.decryptData(cmm, ciphertext)
@@ -121,14 +122,15 @@ public final class RealEsdkClient implements EsdkClient {
             // Required-Encryption-Context CMM (which drops the required keys from the
             // message header) can reconstruct them — mirroring the blob decrypt path.
             // Both drive the real ESDK streaming decrypt API (Requirement 4.6).
-            if (legacyCmm != null) {
-                requireNoReproducedContext(ec);
-            }
             try (CryptoInputStream<?> decrypting = legacyCmm != null
                      ? crypto.createDecryptingStream(legacyCmm, ciphertext)
                      : ec.isEmpty()
                          ? crypto.createDecryptingStream(cmm, ciphertext)
                          : crypto.createDecryptingStream(cmm, ciphertext, ec)) {
+                if (legacyCmm != null) {
+                    // Reads only the header, so no plaintext is released on a mismatch.
+                    requireReproducedContext(ec, decrypting.getCryptoResult().getEncryptionContext());
+                }
                 decrypting.transferTo(plaintext);
             }
         } catch (Exception esdkFailure) {
@@ -162,11 +164,18 @@ public final class RealEsdkClient implements EsdkClient {
         return builder.build();
     }
 
-    /** The ESDK's own CMMs take no reproduced encryption context on decrypt. */
-    private static void requireNoReproducedContext(Map<String, String> encryptionContext) {
-        if (!encryptionContext.isEmpty()) {
-            throw new UnsupportedOperationException(
-                "a reproduced encryption context is not supported with the Caching CMM");
+    /**
+     * The ESDK's own CMMs take no reproduced encryption context on decrypt, so the
+     * caller checks it against the message's, as the ESDK for Java examples do:
+     * every reproduced pair must be present with the same value.
+     */
+    private static void requireReproducedContext(Map<String, String> reproduced,
+                                                 Map<String, String> message) {
+        for (Map.Entry<String, String> entry : reproduced.entrySet()) {
+            if (!entry.getValue().equals(message.get(entry.getKey()))) {
+                throw new IllegalArgumentException(
+                    "the reproduced encryption context does not match the message's encryption context");
+            }
         }
     }
 
