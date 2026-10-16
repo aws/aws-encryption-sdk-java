@@ -6,7 +6,9 @@ import aws.cryptography.esdk.testserver.server.model.DefaultCmmConfig;
 import aws.cryptography.esdk.testserver.server.model.ESDKClientConfig;
 import aws.cryptography.esdk.testserver.server.model.ESDKClientError;
 import aws.cryptography.esdk.testserver.server.model.Keyring;
+import aws.cryptography.esdk.testserver.server.model.KmsEcdhKeyAgreementScheme;
 import aws.cryptography.esdk.testserver.server.model.MultiKeyringConfig;
+import aws.cryptography.esdk.testserver.server.model.RawEcdhKeyAgreementScheme;
 import aws.cryptography.esdk.testserver.server.model.RequiredEncryptionContextCmmConfig;
 
 /**
@@ -19,8 +21,9 @@ import aws.cryptography.esdk.testserver.server.model.RequiredEncryptionContextCm
  * validated, recursing through the recursive variants to any nesting depth
  * (Requirement 2.5): {@link CryptographicMaterialsManager} (Default /
  * RequiredEncryptionContext / Caching, where Caching and
- * RequiredEncryptionContext wrap another CMM) and {@link Keyring} (whose Multi
- * variant contains child keyrings and an optional generator keyring).
+ * RequiredEncryptionContext wrap another CMM), {@link Keyring} (whose Multi
+ * variant contains child keyrings and an optional generator keyring), and the
+ * Raw ECDH and AWS KMS ECDH key agreement schemes.
  *
  * <p>When a polymorphic shape has zero, or two or more, variant members set, the
  * request is rejected with an {@link ESDKClientError} <em>before</em> the
@@ -121,8 +124,20 @@ public final class ConfigValidator {
         if (keyring.getMulti() != null) {
             set++;
         }
+        if (keyring.getRawEcdh() != null) {
+            set++;
+        }
+        if (keyring.getAwsKmsEcdh() != null) {
+            set++;
+        }
         if (set != 1) {
             throw error("Keyring", set, keyringVariants());
+        }
+        if (keyring.getRawEcdh() != null) {
+            validateRawEcdhScheme(keyring.getRawEcdh().getKeyAgreementScheme());
+        }
+        if (keyring.getAwsKmsEcdh() != null) {
+            validateKmsEcdhScheme(keyring.getAwsKmsEcdh().getKeyAgreementScheme());
         }
 
         MultiKeyringConfig multi = keyring.getMulti();
@@ -136,9 +151,48 @@ public final class ConfigValidator {
         }
     }
 
+    private static void validateRawEcdhScheme(RawEcdhKeyAgreementScheme scheme) {
+        String variants = "RawPrivateKeyToStaticPublicKey, EphemeralPrivateKeyToStaticPublicKey, "
+            + "PublicKeyDiscovery";
+        if (scheme == null) {
+            throw error("RawEcdhKeyAgreementScheme", 0, variants);
+        }
+        int set = 0;
+        if (scheme.getRawPrivateKeyToStaticPublicKey() != null) {
+            set++;
+        }
+        if (scheme.getEphemeralPrivateKeyToStaticPublicKey() != null) {
+            set++;
+        }
+        if (scheme.getPublicKeyDiscovery() != null) {
+            set++;
+        }
+        if (set != 1) {
+            throw error("RawEcdhKeyAgreementScheme", set, variants);
+        }
+    }
+
+    private static void validateKmsEcdhScheme(KmsEcdhKeyAgreementScheme scheme) {
+        String variants = "KmsPrivateKeyToStaticPublicKey, KmsPublicKeyDiscovery";
+        if (scheme == null) {
+            throw error("KmsEcdhKeyAgreementScheme", 0, variants);
+        }
+        int set = 0;
+        if (scheme.getKmsPrivateKeyToStaticPublicKey() != null) {
+            set++;
+        }
+        if (scheme.getKmsPublicKeyDiscovery() != null) {
+            set++;
+        }
+        if (set != 1) {
+            throw error("KmsEcdhKeyAgreementScheme", set, variants);
+        }
+    }
+
     private static String keyringVariants() {
         return "AwsKms, AwsKmsMrk, AwsKmsMultiKeyring, AwsKmsMrkMultiKeyring, "
-            + "AwsKmsDiscovery, AwsKmsMrkDiscovery, AwsKmsRsa, AwsKmsHierarchical, RawAes, RawRsa, Multi";
+            + "AwsKmsDiscovery, AwsKmsMrkDiscovery, AwsKmsRsa, AwsKmsEcdh, AwsKmsHierarchical, "
+            + "RawAes, RawRsa, RawEcdh, Multi";
     }
 
     private static ESDKClientError error(String shape, int set, String variants) {

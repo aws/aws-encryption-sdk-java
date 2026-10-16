@@ -1,6 +1,7 @@
 package aws.cryptography.esdk.testserver.server.config;
 
 import aws.cryptography.esdk.testserver.server.model.AwsKmsDiscoveryKeyringConfig;
+import aws.cryptography.esdk.testserver.server.model.AwsKmsEcdhKeyringConfig;
 import aws.cryptography.esdk.testserver.server.model.AwsKmsHierarchicalKeyringConfig;
 import aws.cryptography.esdk.testserver.server.model.AwsKmsKeyringConfig;
 import aws.cryptography.esdk.testserver.server.model.AwsKmsMrkKeyringConfig;
@@ -11,11 +12,15 @@ import aws.cryptography.esdk.testserver.server.model.AwsKmsRsaKeyringConfig;
 import aws.cryptography.esdk.testserver.server.model.CachingCmmConfig;
 import aws.cryptography.esdk.testserver.server.model.CryptographicMaterialsManager;
 import aws.cryptography.esdk.testserver.server.model.DefaultCmmConfig;
+import aws.cryptography.esdk.testserver.server.model.EcdhCurveSpec;
 import aws.cryptography.esdk.testserver.server.model.ESDKClientConfig;
 import aws.cryptography.esdk.testserver.server.model.Keyring;
+import aws.cryptography.esdk.testserver.server.model.KmsEcdhKeyAgreementScheme;
 import aws.cryptography.esdk.testserver.server.model.KmsRsaEncryptionAlgorithm;
 import aws.cryptography.esdk.testserver.server.model.MultiKeyringConfig;
 import aws.cryptography.esdk.testserver.server.model.RawAesKeyringConfig;
+import aws.cryptography.esdk.testserver.server.model.RawEcdhKeyAgreementScheme;
+import aws.cryptography.esdk.testserver.server.model.RawEcdhKeyringConfig;
 import aws.cryptography.esdk.testserver.server.model.RawRsaKeyringConfig;
 import aws.cryptography.esdk.testserver.server.model.RequiredEncryptionContextCmmConfig;
 import aws.cryptography.esdk.testserver.server.registry.EsdkClient;
@@ -39,6 +44,7 @@ import software.amazon.cryptography.materialproviders.IKeyring;
 import software.amazon.cryptography.materialproviders.MaterialProviders;
 import software.amazon.cryptography.materialproviders.model.AesWrappingAlg;
 import software.amazon.cryptography.materialproviders.model.CreateAwsKmsDiscoveryKeyringInput;
+import software.amazon.cryptography.materialproviders.model.CreateAwsKmsEcdhKeyringInput;
 import software.amazon.cryptography.materialproviders.model.CreateAwsKmsHierarchicalKeyringInput;
 import software.amazon.cryptography.materialproviders.model.CreateAwsKmsKeyringInput;
 import software.amazon.cryptography.materialproviders.model.CreateAwsKmsMrkKeyringInput;
@@ -49,10 +55,19 @@ import software.amazon.cryptography.materialproviders.model.CreateAwsKmsRsaKeyri
 import software.amazon.cryptography.materialproviders.model.CreateDefaultCryptographicMaterialsManagerInput;
 import software.amazon.cryptography.materialproviders.model.CreateMultiKeyringInput;
 import software.amazon.cryptography.materialproviders.model.CreateRawAesKeyringInput;
+import software.amazon.cryptography.materialproviders.model.CreateRawEcdhKeyringInput;
 import software.amazon.cryptography.materialproviders.model.CreateRawRsaKeyringInput;
 import software.amazon.cryptography.materialproviders.model.CreateRequiredEncryptionContextCMMInput;
+import software.amazon.cryptography.materialproviders.model.EphemeralPrivateKeyToStaticPublicKeyInput;
+import software.amazon.cryptography.materialproviders.model.KmsEcdhStaticConfigurations;
+import software.amazon.cryptography.materialproviders.model.KmsPrivateKeyToStaticPublicKeyInput;
+import software.amazon.cryptography.materialproviders.model.KmsPublicKeyDiscoveryInput;
 import software.amazon.cryptography.materialproviders.model.MaterialProvidersConfig;
 import software.amazon.cryptography.materialproviders.model.PaddingScheme;
+import software.amazon.cryptography.materialproviders.model.PublicKeyDiscoveryInput;
+import software.amazon.cryptography.materialproviders.model.RawEcdhStaticConfigurations;
+import software.amazon.cryptography.materialproviders.model.RawPrivateKeyToStaticPublicKeyInput;
+import software.amazon.cryptography.primitives.model.ECDHCurveSpec;
 
 /**
  * Translates a validated {@link ESDKClientConfig} into a {@link RealEsdkClient}
@@ -80,7 +95,10 @@ import software.amazon.cryptography.materialproviders.model.PaddingScheme;
  * network call —
  * the KMS client is built eagerly but is not invoked — so {@code CreateClient}
  * stays offline; the real AWS KMS calls happen only on {@code Encrypt}/{@code
- * Decrypt} (Requirements 14.1, 14.3, 14.4, 14.14). The single exception is the
+ * Decrypt} (Requirements 14.1, 14.3, 14.4, 14.14). The Raw ECDH and AWS KMS ECDH
+ * keyrings are wired as well. The exceptions are the AWS KMS ECDH keyring when its
+ * static configuration omits the sender's public key (fetched via
+ * {@code kms:GetPublicKey}), and the
  * {@code AwsKmsRsa} keyring when the modeled config omits the RSA public key: in
  * that case the factory fetches it once via {@code kms:GetPublicKey} at
  * construction (a network call the design explicitly permits at
@@ -154,6 +172,8 @@ public final class EsdkClientFactory {
         AwsKmsDiscoveryKeyringConfig awsKmsDiscovery = keyring.getAwsKmsDiscovery();
         AwsKmsMrkDiscoveryKeyringConfig awsKmsMrkDiscovery = keyring.getAwsKmsMrkDiscovery();
         AwsKmsHierarchicalKeyringConfig awsKmsHierarchical = keyring.getAwsKmsHierarchical();
+        RawEcdhKeyringConfig rawEcdh = keyring.getRawEcdh();
+        AwsKmsEcdhKeyringConfig awsKmsEcdh = keyring.getAwsKmsEcdh();
 
         if (rawAes != null) {
             return materialProviders.CreateRawAesKeyring(
@@ -253,7 +273,83 @@ public final class EsdkClientFactory {
         if (awsKmsHierarchical != null) {
             return buildAwsKmsHierarchicalKeyring(awsKmsHierarchical);
         }
+        if (rawEcdh != null) {
+            return buildRawEcdhKeyring(rawEcdh);
+        }
+        if (awsKmsEcdh != null) {
+            return buildAwsKmsEcdhKeyring(awsKmsEcdh);
+        }
         throw new IllegalArgumentException("Keyring had no variant member set");
+    }
+
+    /** Build the Raw ECDH keyring from its key agreement scheme and curve. */
+    private IKeyring buildRawEcdhKeyring(RawEcdhKeyringConfig config) {
+        RawEcdhKeyAgreementScheme scheme = config.getKeyAgreementScheme();
+        RawEcdhStaticConfigurations.Builder agreement = RawEcdhStaticConfigurations.builder();
+        if (scheme.getRawPrivateKeyToStaticPublicKey() != null) {
+            agreement.RawPrivateKeyToStaticPublicKey(RawPrivateKeyToStaticPublicKeyInput.builder()
+                .senderStaticPrivateKey(scheme.getRawPrivateKeyToStaticPublicKey().getSenderStaticPrivateKey())
+                .recipientPublicKey(scheme.getRawPrivateKeyToStaticPublicKey().getRecipientPublicKey())
+                .build());
+        } else if (scheme.getEphemeralPrivateKeyToStaticPublicKey() != null) {
+            agreement.EphemeralPrivateKeyToStaticPublicKey(EphemeralPrivateKeyToStaticPublicKeyInput.builder()
+                .recipientPublicKey(scheme.getEphemeralPrivateKeyToStaticPublicKey().getRecipientPublicKey())
+                .build());
+        } else {
+            agreement.PublicKeyDiscovery(PublicKeyDiscoveryInput.builder()
+                .recipientStaticPrivateKey(scheme.getPublicKeyDiscovery().getRecipientStaticPrivateKey())
+                .build());
+        }
+        return materialProviders.CreateRawEcdhKeyring(CreateRawEcdhKeyringInput.builder()
+            .KeyAgreementScheme(agreement.build())
+            .curveSpec(toCurveSpec(config.getCurveSpec()))
+            .build());
+    }
+
+    /**
+     * Build the AWS KMS ECDH keyring. The KMS client is in the region of the
+     * sender's (static) or recipient's (discovery) KMS key; construction makes no
+     * network call unless the static configuration omits the sender's public key,
+     * which the MPL then fetches with {@code kms:GetPublicKey}.
+     */
+    private IKeyring buildAwsKmsEcdhKeyring(AwsKmsEcdhKeyringConfig config) {
+        KmsEcdhKeyAgreementScheme scheme = config.getKeyAgreementScheme();
+        KmsEcdhStaticConfigurations.Builder agreement = KmsEcdhStaticConfigurations.builder();
+        String kmsKeyId;
+        if (scheme.getKmsPrivateKeyToStaticPublicKey() != null) {
+            var staticConfig = scheme.getKmsPrivateKeyToStaticPublicKey();
+            kmsKeyId = staticConfig.getSenderKmsIdentifier();
+            KmsPrivateKeyToStaticPublicKeyInput.Builder input = KmsPrivateKeyToStaticPublicKeyInput.builder()
+                .senderKmsIdentifier(kmsKeyId)
+                .recipientPublicKey(staticConfig.getRecipientPublicKey());
+            if (staticConfig.getSenderPublicKey() != null) {
+                input.senderPublicKey(staticConfig.getSenderPublicKey());
+            }
+            agreement.KmsPrivateKeyToStaticPublicKey(input.build());
+        } else {
+            kmsKeyId = scheme.getKmsPublicKeyDiscovery().getRecipientKmsIdentifier();
+            agreement.KmsPublicKeyDiscovery(KmsPublicKeyDiscoveryInput.builder()
+                .recipientKmsIdentifier(kmsKeyId)
+                .build());
+        }
+        CreateAwsKmsEcdhKeyringInput.Builder builder = CreateAwsKmsEcdhKeyringInput.builder()
+            .KeyAgreementScheme(agreement.build())
+            .curveSpec(toCurveSpec(config.getCurveSpec()))
+            .kmsClient(kmsClientForKey(kmsKeyId));
+        if (config.hasGrantTokens() && !config.getGrantTokens().isEmpty()) {
+            builder.grantTokens(new ArrayList<>(config.getGrantTokens()));
+        }
+        return materialProviders.CreateAwsKmsEcdhKeyring(builder.build());
+    }
+
+    private static ECDHCurveSpec toCurveSpec(EcdhCurveSpec curve) {
+        return switch (curve.getValue()) {
+            case "ECC_NIST_P256" -> ECDHCurveSpec.ECC_NIST_P256;
+            case "ECC_NIST_P384" -> ECDHCurveSpec.ECC_NIST_P384;
+            case "ECC_NIST_P521" -> ECDHCurveSpec.ECC_NIST_P521;
+            case "SM2" -> ECDHCurveSpec.SM2;
+            default -> throw new IllegalArgumentException("Unknown ECDH curve: " + curve.getValue());
+        };
     }
 
     /**
