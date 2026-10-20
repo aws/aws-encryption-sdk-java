@@ -1,0 +1,5 @@
+# ESDK TestServer: rpcv2Cbor server protocol that emits the __type discriminator on
+# modeled errors so GenericServerError and ESDKClientError transmit distinctly to the
+# stock generated Java Test_Client (works around the smithy-java rpcv2-CBOR
+# modeled-error transmission caveat). Ranked ahead of the stock rpcv2Cbor provider.
+aws.cryptography.esdk.testserver.server.protocol.ErrorTypeRpcV2CborServerProtocolProvider
