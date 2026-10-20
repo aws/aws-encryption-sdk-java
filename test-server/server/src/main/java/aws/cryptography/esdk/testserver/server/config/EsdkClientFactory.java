@@ -28,6 +28,7 @@ import aws.cryptography.esdk.testserver.server.registry.RealEsdkClient;
 import com.amazonaws.encryptionsdk.CommitmentPolicy;
 import com.amazonaws.encryptionsdk.MasterKeyProvider;
 import com.amazonaws.encryptionsdk.caching.CachingCryptoMaterialsManager;
+import com.amazonaws.encryptionsdk.caching.CryptoMaterialsCache;
 import com.amazonaws.encryptionsdk.caching.LocalCryptoMaterialsCache;
 import com.amazonaws.encryptionsdk.jce.JceMasterKey;
 import com.amazonaws.encryptionsdk.kmssdkv2.AwsKmsMrkAwareMasterKeyProvider;
@@ -43,6 +44,8 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import javax.crypto.spec.SecretKeySpec;
 import software.amazon.awssdk.regions.Region;
@@ -125,11 +128,16 @@ import software.amazon.cryptography.primitives.model.ECDHCurveSpec;
  * built over master key providers equivalent to its wrapped Default CMM's keyring
  * (Raw AES and Raw RSA as {@code JceMasterKey}, the AWS KMS keyrings as the KMS
  * master key providers, and Multi as a multi-provider); any other keyring, or a
- * Caching CMM nested under another CMM, is a construction failure.
+ * Caching CMM nested under another CMM, is a construction failure. Clients whose
+ * Caching configs name the same {@code sharedCacheName} share one cache for the
+ * life of the server.
  */
 public final class EsdkClientFactory {
 
     private final MaterialProviders materialProviders;
+
+    /** The named caches shared across this server's clients. */
+    private final ConcurrentMap<String, CryptoMaterialsCache> sharedCaches = new ConcurrentHashMap<>();
 
     public EsdkClientFactory() {
         this.materialProviders = MaterialProviders.builder()
@@ -188,7 +196,7 @@ public final class EsdkClientFactory {
     /** Entries the Caching CMM's local cache holds. */
     private static final int CACHE_CAPACITY = 100;
 
-    private static CachingCryptoMaterialsManager buildCachingCmm(CachingCmmConfig config) {
+    private CachingCryptoMaterialsManager buildCachingCmm(CachingCmmConfig config) {
         DefaultCmmConfig underlying = config.getUnderlyingCMM().getDefault();
         if (underlying == null) {
             throw new UnsupportedOperationException(
@@ -196,7 +204,10 @@ public final class EsdkClientFactory {
         }
         CachingCryptoMaterialsManager.Builder builder = CachingCryptoMaterialsManager.newBuilder()
             .withMasterKeyProvider(toMasterKeyProvider(underlying.getKeyring()))
-            .withCache(new LocalCryptoMaterialsCache(CACHE_CAPACITY))
+            .withCache(config.getSharedCacheName() == null
+                ? new LocalCryptoMaterialsCache(CACHE_CAPACITY)
+                : sharedCaches.computeIfAbsent(config.getSharedCacheName(),
+                    name -> new LocalCryptoMaterialsCache(CACHE_CAPACITY)))
             .withMaxAge(config.getCacheLimitTtlSeconds(), TimeUnit.SECONDS);
         if (config.getPartitionId() != null) {
             builder.withPartitionId(config.getPartitionId());
