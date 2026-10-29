@@ -1,0 +1,39 @@
+name: ESDK TestServer (Java)
+
+on:
+  pull_request:
+    paths:
+      - "test-server/**"
+      - "src/**"
+      - "pom.xml"
+      - ".github/workflows/test-server.yml"
+  push:
+    branches:
+      - master
+    paths:
+      - "test-server/**"
+      - "src/**"
+      - "pom.xml"
+      - ".github/workflows/test-server.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # The cross-language TestServer run, from the shared commons workflow. This
+  # checkout supplies the java server and library; every other server comes from
+  # its configured branch. Only the pairs involving java run; the full matrix
+  # runs in commons. repo-pat reads the private aws-crypto-tools-rust clones.
+  test-server:
+    name: TestServer
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    uses: aws/aws-crypto-tools-commons/.github/workflows/esdk-test-server-reusable.yml@main
+    with:
+      focus: java
+      checkout-languages: java
+    secrets:
+      repo-pat: ${{ secrets.COMMONS_REPO_PAT }}

@@ -1,0 +1,22 @@
+{
+  "supportedFeatures": [
+    "streaming",
+    "MPL",
+    "hierarchical",
+    "raw-aes",
+    "raw-rsa",
+    "raw-ecdh",
+    "multi",
+    "aws-kms",
+    "aws-kms-multi",
+    "aws-kms-discovery",
+    "aws-kms-mrk",
+    "aws-kms-mrk-multi",
+    "aws-kms-mrk-discovery",
+    "aws-kms-rsa",
+    "aws-kms-ecdh",
+    "required-encryption-context",
+    "caching"
+  ],
+  "unsupportedFeatures": []
+}
