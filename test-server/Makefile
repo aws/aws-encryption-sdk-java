@@ -100,7 +100,10 @@ COMMONS_REPO ?=
 CLONE_DIR ?= $(MAKEFILE_DIR)/.commons-clone
 
 # Path to the orchestrator core inside the clone.
-CLONE_ORCH_DIR := $(CLONE_DIR)/esdk/test-server/orchestrator
+CLONE_ORCH_DIR := $(CLONE_DIR)/test-server-common/orchestrator
+
+# The ESDK TestServer tree inside the clone, passed to the orchestrator as testserver.root.
+CLONE_ROOT_DIR := $(CLONE_DIR)/esdk/test-server
 
 # The relocated Java Language_Server module (task 12.1): handlers, registry,
 # config marshalling, protocol, ServerBootstrap, and its jqwik/unit tests.
@@ -217,7 +220,7 @@ test-server: check-harness-java ## Bootstrap + delegate the complete Language_Re
 		exit 1; \
 	fi; \
 	if [ ! -d "$(CLONE_ORCH_DIR)" ]; then \
-		echo "ERROR: the cloned Commons_Repository has no orchestrator core at esdk/test-server/orchestrator." >&2; \
+		echo "ERROR: the cloned Commons_Repository has no orchestrator core at test-server-common/orchestrator." >&2; \
 		echo "       url:    $$url" >&2; \
 		echo "       branch: $$branch" >&2; \
 		echo "       The branch may not contain the ESDK TestServer." >&2; \
@@ -231,7 +234,7 @@ test-server: check-harness-java ## Bootstrap + delegate the complete Language_Re
 	echo "    commonsOrigin.url=$$url commonsOrigin.branch=$$branch commonsOrigin.reason=$$reason"; \
 	export JAVA_HOME="$(HARNESS_JAVA_HOME)"; \
 	cd "$(CLONE_ORCH_DIR)"; \
-	./gradlew --console=plain run \
+	./gradlew --console=plain run -Dtestserver.root="$(CLONE_ROOT_DIR)" \
 		--args="context=language:java languageRepoRoot=$(REPO_ROOT) commonsOrigin.url=$$url commonsOrigin.branch=$$branch commonsOrigin.reason=$$reason"
 
 # ----------------------------------------------------------------------------
