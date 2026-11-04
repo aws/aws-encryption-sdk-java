@@ -33,6 +33,7 @@ jobs:
       id-token: write
     uses: aws/aws-crypto-tools-commons/.github/workflows/esdk-test-server-reusable.yml@main
     with:
+      runner: ubuntu-latest
       focus: java
       checkout-languages: java
     secrets:
