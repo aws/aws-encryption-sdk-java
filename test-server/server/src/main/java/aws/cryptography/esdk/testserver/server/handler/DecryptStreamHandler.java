@@ -3,6 +3,8 @@ package aws.cryptography.esdk.testserver.server.handler;
 import aws.cryptography.esdk.testserver.server.error.OperationWrapper;
 import aws.cryptography.esdk.testserver.server.model.DecryptStreamInput;
 import aws.cryptography.esdk.testserver.server.model.DecryptStreamOutput;
+import aws.cryptography.esdk.testserver.server.model.ESDKAlgorithmSuiteId;
+import aws.cryptography.esdk.testserver.server.registry.DecryptMetadata;
 import aws.cryptography.esdk.testserver.server.registry.EsdkClient;
 import aws.cryptography.esdk.testserver.server.service.DecryptStreamOperation;
 import java.io.ByteArrayInputStream;
@@ -41,12 +43,15 @@ public final class DecryptStreamHandler implements DecryptStreamOperation {
             // Drive the ESDK STREAMING API even though the payload rides as a blob:
             // wrap the received bytes in a stream, stream-decrypt, collect the bytes.
             ByteArrayOutputStream plaintext = new ByteArrayOutputStream();
+            DecryptMetadata metadata;
             try (InputStream ciphertext =
                      new ByteArrayInputStream(Blobs.toArray(input.getCiphertext()))) {
-                client.decryptStream(ciphertext, plaintext, input.getEncryptionContext());
+                metadata = client.decryptStream(ciphertext, plaintext, input.getEncryptionContext());
             }
             return DecryptStreamOutput.builder()
                 .plaintext(ByteBuffer.wrap(plaintext.toByteArray()))
+                .encryptionContext(metadata.encryptionContext())
+                .algorithmSuiteId(ESDKAlgorithmSuiteId.from(metadata.algorithmSuiteId()))
                 .build();
         });
     }
