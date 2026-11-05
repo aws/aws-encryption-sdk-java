@@ -41,10 +41,10 @@ public interface EsdkClient {
      * @param ciphertext the ciphertext bytes.
      * @param encryptionContext optional encryption context to require on decrypt;
      *     may be empty but not {@code null}.
-     * @return the plaintext bytes.
+     * @return the plaintext bytes and the message's encryption context and suite.
      * @throws EsdkClientException if the ESDK client fails (Requirement 4.10).
      */
-    byte[] decrypt(byte[] ciphertext, Map<String, String> encryptionContext)
+    DecryptResult decrypt(byte[] ciphertext, Map<String, String> encryptionContext)
         throws EsdkClientException;
 
     /**
@@ -61,10 +61,11 @@ public interface EsdkClient {
      * Decrypt a ciphertext stream into a plaintext stream (Stream_Variant,
      * Requirement 4.6). Only meaningful when {@link #isStreamingCapable()}.
      *
+     * @return the message's encryption context and suite.
      * @throws EsdkClientException if the ESDK client fails (Requirement 4.10).
      */
-    void decryptStream(InputStream ciphertext, OutputStream plaintext,
-                       Map<String, String> encryptionContext) throws EsdkClientException;
+    DecryptMetadata decryptStream(InputStream ciphertext, OutputStream plaintext,
+                                  Map<String, String> encryptionContext) throws EsdkClientException;
 
     /**
      * @return whether the backing ESDK implementation supports the Stream_Variant.
