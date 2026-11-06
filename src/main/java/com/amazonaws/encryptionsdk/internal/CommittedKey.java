@@ -80,10 +80,10 @@ public final class CommittedKey {
               + rawDataKey.length);
     }
 
-    final String macAlgorithm;
+    final MacAlgorithm macAlgorithm;
     switch (alg.getKeyCommitmentAlgo_()) {
       case HKDF_SHA_512:
-        macAlgorithm = HMAC_SHA_512;
+        macAlgorithm = MacAlgorithm.HkdfSHA512;
         break;
       default:
         throw new UnsupportedOperationException(

@@ -48,11 +48,9 @@ public final class HmacKeyDerivationFunction {
    * @throws NoSuchAlgorithmException if no Provider supports a MacSpi implementation for the
    *     specified algorithm.
    */
-  public static HmacKeyDerivationFunction getInstance(final String algorithm)
+  public static HmacKeyDerivationFunction getInstance(final MacAlgorithm algorithm)
       throws NoSuchAlgorithmException {
-    // Constructed specifically to sanity-test arguments.
-    Mac mac = Mac.getInstance(algorithm);
-    return new HmacKeyDerivationFunction(algorithm, mac.getProvider());
+    return new HmacKeyDerivationFunction(algorithm);
   }
 
   /**
@@ -94,12 +92,9 @@ public final class HmacKeyDerivationFunction {
     }
   }
 
-  private HmacKeyDerivationFunction(final String algorithm, final Provider provider) {
-    isTrue(
-        algorithm.startsWith("Hmac"),
-        "Invalid algorithm " + algorithm + ". Hkdf may only be used with Hmac algorithms.");
-    this.algorithm = algorithm;
-    this.provider = provider;
+  private HmacKeyDerivationFunction(final MacAlgorithm algorithm) throws NoSuchAlgorithmException {
+    this.algorithm = algorithm.getAlgorithm();
+    this.provider = algorithm.getProvider();
   }
 
   /**

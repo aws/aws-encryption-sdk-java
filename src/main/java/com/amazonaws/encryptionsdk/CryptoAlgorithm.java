@@ -7,6 +7,7 @@ import com.amazonaws.encryptionsdk.exception.BadCiphertextException;
 import com.amazonaws.encryptionsdk.internal.CommittedKey;
 import com.amazonaws.encryptionsdk.internal.Constants;
 import com.amazonaws.encryptionsdk.internal.HmacKeyDerivationFunction;
+import com.amazonaws.encryptionsdk.internal.MacAlgorithm;
 import com.amazonaws.encryptionsdk.model.CiphertextHeaders;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -342,7 +343,7 @@ public enum CryptoAlgorithm {
 
   private SecretKey getNonCommittedEncryptionKey(
       final SecretKey dataKey, final CiphertextHeaders headers) throws InvalidKeyException {
-    final String macAlgorithm;
+    final MacAlgorithm macAlgorithm;
 
     switch (this) {
       case ALG_AES_128_GCM_IV12_TAG16_NO_KDF:
@@ -353,11 +354,11 @@ public enum CryptoAlgorithm {
       case ALG_AES_192_GCM_IV12_TAG16_HKDF_SHA256:
       case ALG_AES_256_GCM_IV12_TAG16_HKDF_SHA256:
       case ALG_AES_128_GCM_IV12_TAG16_HKDF_SHA256_ECDSA_P256:
-        macAlgorithm = "HmacSHA256";
+        macAlgorithm = MacAlgorithm.HmacSHA256;
         break;
       case ALG_AES_192_GCM_IV12_TAG16_HKDF_SHA384_ECDSA_P384:
       case ALG_AES_256_GCM_IV12_TAG16_HKDF_SHA384_ECDSA_P384:
-        macAlgorithm = "HmacSHA384";
+        macAlgorithm = MacAlgorithm.HmacSHA384;
         break;
       default:
         throw new UnsupportedOperationException("Support for " + this + " not yet built.");
@@ -393,3 +394,4 @@ public enum CryptoAlgorithm {
     return new SecretKeySpec(hkdf.deriveKey(info.array(), getKeyLength()), getKeyAlgo());
   }
 }
+
