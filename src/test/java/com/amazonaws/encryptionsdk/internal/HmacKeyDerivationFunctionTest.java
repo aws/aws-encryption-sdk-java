@@ -183,6 +183,28 @@ public class HmacKeyDerivationFunctionTest {
     assertArrayEquals(key1, key4);
   }
 
+  @Test
+  public void reusedInstanceMatchesFreshInstances() throws Exception {
+    // One instance re-keys its Mac for each step, so repeated derives and re-inits
+    // must give the same keys as a fresh instance per step.
+    testCase first = testCases[1];
+    testCase second = testCases[0];
+    byte[] otherInfo = "other".getBytes(StringUtils.UTF8);
+
+    HmacKeyDerivationFunction reused = HmacKeyDerivationFunction.getInstance(first.algo);
+    reused.init(first.ikm, first.salt);
+    byte[] firstKey = reused.deriveKey(first.info, first.expected.length);
+    byte[] firstOtherKey = reused.deriveKey(otherInfo, 32);
+    reused.init(second.ikm, second.salt);
+    byte[] secondKey = reused.deriveKey(second.info, second.expected.length);
+
+    HmacKeyDerivationFunction fresh = HmacKeyDerivationFunction.getInstance(first.algo);
+    fresh.init(first.ikm, first.salt);
+    assertArrayEquals(first.expected, firstKey);
+    assertArrayEquals(fresh.deriveKey(otherInfo, 32), firstOtherKey);
+    assertArrayEquals(second.expected, secondKey);
+  }
+
   private static byte[] fromHex(String data) {
     byte[] result = new byte[data.length() / 2];
     for (int x = 0; x < result.length; x++) {

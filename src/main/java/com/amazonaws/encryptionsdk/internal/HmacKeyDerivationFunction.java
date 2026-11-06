@@ -19,7 +19,6 @@ import static org.apache.commons.lang3.Validate.isTrue;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.Provider;
 import java.util.Arrays;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
@@ -33,7 +32,8 @@ import javax.crypto.spec.SecretKeySpec;
 public final class HmacKeyDerivationFunction {
   private static final byte[] EMPTY_ARRAY = new byte[0];
   private final String algorithm;
-  private final Provider provider;
+  // One Mac for extract and every expand; init() re-keys it each time.
+  private final Mac mac;
   private SecretKey prk = null;
 
   /**
@@ -50,9 +50,7 @@ public final class HmacKeyDerivationFunction {
    */
   public static HmacKeyDerivationFunction getInstance(final String algorithm)
       throws NoSuchAlgorithmException {
-    // Constructed specifically to sanity-test arguments.
-    Mac mac = Mac.getInstance(algorithm);
-    return new HmacKeyDerivationFunction(algorithm, mac.getProvider());
+    return new HmacKeyDerivationFunction(algorithm, Mac.getInstance(algorithm));
   }
 
   /**
@@ -73,17 +71,16 @@ public final class HmacKeyDerivationFunction {
    * @param salt the salt used for key extraction (optional)
    * @param ikm the Input Keying Material
    */
-  public void init(final byte[] ikm, final byte[] salt) {
+  public synchronized void init(final byte[] ikm, final byte[] salt) {
     byte[] realSalt = (salt == null) ? EMPTY_ARRAY : salt.clone();
     byte[] rawKeyMaterial = EMPTY_ARRAY;
     try {
-      Mac extractionMac = Mac.getInstance(algorithm, provider);
       if (realSalt.length == 0) {
-        realSalt = new byte[extractionMac.getMacLength()];
+        realSalt = new byte[mac.getMacLength()];
         Arrays.fill(realSalt, (byte) 0);
       }
-      extractionMac.init(new SecretKeySpec(realSalt, algorithm));
-      rawKeyMaterial = extractionMac.doFinal(ikm);
+      mac.init(new SecretKeySpec(realSalt, algorithm));
+      rawKeyMaterial = mac.doFinal(ikm);
       this.prk = new SecretKeySpec(rawKeyMaterial, algorithm);
     } catch (GeneralSecurityException e) {
       // We've already checked all of the parameters so no exceptions
@@ -94,12 +91,12 @@ public final class HmacKeyDerivationFunction {
     }
   }
 
-  private HmacKeyDerivationFunction(final String algorithm, final Provider provider) {
+  private HmacKeyDerivationFunction(final String algorithm, final Mac mac) {
     isTrue(
         algorithm.startsWith("Hmac"),
         "Invalid algorithm " + algorithm + ". Hkdf may only be used with Hmac algorithms.");
     this.algorithm = algorithm;
-    this.provider = provider;
+    this.mac = mac;
   }
 
   /**
@@ -110,11 +107,12 @@ public final class HmacKeyDerivationFunction {
    * @return a pseudorandom key of <code>length</code> bytes.
    * @throws IllegalStateException if this object has not been initialized
    */
-  public byte[] deriveKey(final byte[] info, final int length) throws IllegalStateException {
+  public synchronized byte[] deriveKey(final byte[] info, final int length)
+      throws IllegalStateException {
     isTrue(length >= 0, "Length must be a non-negative value.");
     assertInitialized();
     final byte[] result = new byte[length];
-    Mac mac = createMac();
+    initMacWithPrk();
 
     isTrue(
         length <= 255 * mac.getMacLength(),
@@ -142,12 +140,10 @@ public final class HmacKeyDerivationFunction {
     return result;
   }
 
-  private Mac createMac() {
+  private void initMacWithPrk() {
     try {
-      Mac mac = Mac.getInstance(algorithm, provider);
       mac.init(prk);
-      return mac;
-    } catch (NoSuchAlgorithmException | InvalidKeyException ex) {
+    } catch (InvalidKeyException ex) {
       // We've already validated that this algorithm/key is correct.
       throw new RuntimeException(ex);
     }
