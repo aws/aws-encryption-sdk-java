@@ -48,6 +48,7 @@ jobs:
           aws-region: us-west-2
           role-duration-seconds: 3600
       - name: Vector Tests ${{ matrix.platform.distribution }}${{ matrix.version }}
+        id: codebuild
         uses: aws-actions/aws-codebuild-run-build@v1
         timeout-minutes: 60
         with:
@@ -58,6 +59,34 @@ jobs:
           env-vars-for-codebuild: JAVA_ENV_VERSION
         env:
           JAVA_ENV_VERSION: ${{ matrix.platform.distribution }}${{ matrix.version }}
+      - name: Write the line coverage report
+        # The CodeBuild build prints its lcov report, gzipped and base64
+        # encoded, between two marker lines in its log.
+        if: matrix.version == 17
+        env:
+          BUILD_ID: ${{ steps.codebuild.outputs.aws-build-id }}
+        run: |
+          read -r group stream < <(aws codebuild batch-get-builds --ids "$BUILD_ID" \
+            --query 'builds[0].logs.[groupName,streamName]' --output text)
+          token=""
+          : > build.log
+          while :; do
+            page=$(aws logs get-log-events --log-group-name "$group" --log-stream-name "$stream" \
+              --start-from-head ${token:+--next-token "$token"} --output json)
+            jq -r '.events[].message' <<< "$page" >> build.log
+            next=$(jq -r '.nextForwardToken' <<< "$page")
+            [ "$next" = "$token" ] && break
+            token=$next
+          done
+          mkdir -p coverage
+          sed -n '/^LCOV-GZ-BASE64-BEGIN$/,/^LCOV-GZ-BASE64-END$/{//!p}' build.log | base64 -d | gunzip > coverage/esdk.lcov
+          grep -c '^SF:' coverage/esdk.lcov
+      - name: Upload the line coverage report
+        if: matrix.version == 17
+        uses: actions/upload-artifact@v4
+        with:
+          name: local-coverage-esdk
+          path: coverage/*.lcov
   vectorTestsMasterKeyProvider:
     name: Vector Tests MasterKeyProvider
     runs-on: ubuntu-latest
