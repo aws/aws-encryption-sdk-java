@@ -23,7 +23,7 @@ final class StubEsdkClient implements EsdkClient {
     }
 
     @Override
-    public byte[] decrypt(byte[] ciphertext, Map<String, String> encryptionContext) {
+    public DecryptResult decrypt(byte[] ciphertext, Map<String, String> encryptionContext) {
         throw new UnsupportedOperationException("StubEsdkClient does not decrypt");
     }
 
@@ -35,8 +35,8 @@ final class StubEsdkClient implements EsdkClient {
     }
 
     @Override
-    public void decryptStream(InputStream ciphertext, OutputStream plaintext,
-                              Map<String, String> encryptionContext) throws EsdkClientException {
+    public DecryptMetadata decryptStream(InputStream ciphertext, OutputStream plaintext,
+                                         Map<String, String> encryptionContext) throws EsdkClientException {
         throw new UnsupportedOperationException("StubEsdkClient does not stream");
     }
 
