@@ -1,6 +1,8 @@
 package aws.cryptography.esdk.testserver.server.handler;
 
 import aws.cryptography.esdk.testserver.server.error.EsdkClientException;
+import aws.cryptography.esdk.testserver.server.registry.DecryptMetadata;
+import aws.cryptography.esdk.testserver.server.registry.DecryptResult;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Map;
@@ -17,6 +19,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 final class ControllableEsdkClient implements aws.cryptography.esdk.testserver.server.registry.EsdkClient {
 
     enum Mode { SUCCEED, FAIL_ESDK, FAIL_FRAMEWORK }
+
+    private static final DecryptMetadata METADATA =
+        new DecryptMetadata(Map.of(), "ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY");
 
     private final Mode mode;
     private final String failureMessage;
@@ -63,9 +68,9 @@ final class ControllableEsdkClient implements aws.cryptography.esdk.testserver.s
     }
 
     @Override
-    public byte[] decrypt(byte[] ciphertext, Map<String, String> encryptionContext)
+    public DecryptResult decrypt(byte[] ciphertext, Map<String, String> encryptionContext)
         throws EsdkClientException {
-        return act(ciphertext);
+        return new DecryptResult(act(ciphertext), METADATA);
     }
 
     @Override
@@ -76,9 +81,10 @@ final class ControllableEsdkClient implements aws.cryptography.esdk.testserver.s
     }
 
     @Override
-    public void decryptStream(InputStream ciphertext, OutputStream plaintext,
-                              Map<String, String> encryptionContext) throws EsdkClientException {
+    public DecryptMetadata decryptStream(InputStream ciphertext, OutputStream plaintext,
+                                         Map<String, String> encryptionContext) throws EsdkClientException {
         act(new byte[0]);
+        return METADATA;
     }
 
     @Override

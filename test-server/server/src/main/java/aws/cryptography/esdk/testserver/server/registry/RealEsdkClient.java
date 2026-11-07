@@ -70,7 +70,7 @@ public final class RealEsdkClient implements EsdkClient {
     }
 
     @Override
-    public byte[] decrypt(byte[] ciphertext, Map<String, String> encryptionContext)
+    public DecryptResult decrypt(byte[] ciphertext, Map<String, String> encryptionContext)
         throws EsdkClientException {
         try {
             AwsCrypto crypto = buildCrypto(null, null);
@@ -78,12 +78,12 @@ public final class RealEsdkClient implements EsdkClient {
             if (legacyCmm != null) {
                 CryptoResult<byte[], ?> result = crypto.decryptData(legacyCmm, ciphertext);
                 requireReproducedContext(ec, result.getEncryptionContext());
-                return result.getResult();
+                return new DecryptResult(result.getResult(), metadata(result));
             }
             CryptoResult<byte[], ?> result = ec.isEmpty()
                 ? crypto.decryptData(cmm, ciphertext)
                 : crypto.decryptData(cmm, ciphertext, ec);
-            return result.getResult();
+            return new DecryptResult(result.getResult(), metadata(result));
         } catch (Exception esdkFailure) {
             throw new EsdkClientException(esdkFailure);
         }
@@ -113,8 +113,8 @@ public final class RealEsdkClient implements EsdkClient {
     }
 
     @Override
-    public void decryptStream(InputStream ciphertext, OutputStream plaintext,
-                              Map<String, String> encryptionContext) throws EsdkClientException {
+    public DecryptMetadata decryptStream(InputStream ciphertext, OutputStream plaintext,
+                                         Map<String, String> encryptionContext) throws EsdkClientException {
         try {
             AwsCrypto crypto = buildCrypto(null, null);
             Map<String, String> ec = nonNull(encryptionContext);
@@ -132,6 +132,7 @@ public final class RealEsdkClient implements EsdkClient {
                     requireReproducedContext(ec, decrypting.getCryptoResult().getEncryptionContext());
                 }
                 decrypting.transferTo(plaintext);
+                return metadata(decrypting.getCryptoResult());
             }
         } catch (Exception esdkFailure) {
             throw new EsdkClientException(esdkFailure);
@@ -177,6 +178,10 @@ public final class RealEsdkClient implements EsdkClient {
                     "the reproduced encryption context does not match the message's encryption context");
             }
         }
+    }
+
+    private static DecryptMetadata metadata(CryptoResult<?, ?> result) {
+        return new DecryptMetadata(result.getEncryptionContext(), result.getCryptoAlgorithm().name());
     }
 
     private static Map<String, String> nonNull(Map<String, String> encryptionContext) {
