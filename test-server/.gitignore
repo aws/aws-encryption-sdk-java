@@ -1,0 +1,12 @@
+# The Commons_Repository is cloned fresh at head on every run (Req 8.2/8.4);
+# never commit the clone back into this Language_Repository.
+.commons-clone/
+
+# Maven versions plugin backup poms produced by build-live-esdk (safety net;
+# the recipe reverts the version, but leave these ignored just in case).
+*.versionsBackup
+
+# Integration test scratch output.
+.it-tmp/
+# jqwik's local failure-sample database (developer-local, not shared).
+**/.jqwik-database
