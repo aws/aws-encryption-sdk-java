@@ -47,7 +47,6 @@ public final class CommittedKey {
 
   private static final String RAW_DATA_FORMAT = "RAW";
   private static final String HKDF_SHA_512 = "HkdfSHA512";
-  private static final String HMAC_SHA_512 = "HmacSHA512";
 
   /** Generates an encryption key along with associated commitment value. */
   public static CommittedKey generate(CryptoAlgorithm alg, SecretKey dataKey, byte[] nonce)
@@ -83,7 +82,7 @@ public final class CommittedKey {
     final MacAlgorithm macAlgorithm;
     switch (alg.getKeyCommitmentAlgo_()) {
       case HKDF_SHA_512:
-        macAlgorithm = MacAlgorithm.HkdfSHA512;
+        macAlgorithm = MacAlgorithm.HmacSHA512;
         break;
       default:
         throw new UnsupportedOperationException(

@@ -394,4 +394,3 @@ public enum CryptoAlgorithm {
     return new SecretKeySpec(hkdf.deriveKey(info.array(), getKeyLength()), getKeyAlgo());
   }
 }
-

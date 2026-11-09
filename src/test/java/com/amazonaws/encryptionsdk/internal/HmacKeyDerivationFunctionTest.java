@@ -30,7 +30,7 @@ public class HmacKeyDerivationFunctionTest {
             fromHex(
                 "3CB25F25FAACD57A90434F64D0362F2A2D2D0A90CF1A5A4C5DB02D56ECC4C5BF34007208D5B887185865")),
         new testCase(
-                MacAlgorithm.HmacSHA256,
+            MacAlgorithm.HmacSHA256,
             fromCHex(
                 "\\x00\\x01\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x09\\x0a\\x0b\\x0c\\x0d"
                     + "\\x0e\\x0f\\x10\\x11\\x12\\x13\\x14\\x15\\x16\\x17\\x18\\x19\\x1a\\x1b"
@@ -181,6 +181,42 @@ public class HmacKeyDerivationFunctionTest {
     assertArrayEquals(key1, key2);
     assertArrayEquals(key1, key3);
     assertArrayEquals(key1, key4);
+  }
+
+  @Test
+  public void stringAlgorithmMatchesEnum() throws Exception {
+    for (testCase trial : testCases) {
+      HmacKeyDerivationFunction kdf = HmacKeyDerivationFunction.getInstance(trial.algo.name());
+      kdf.init(trial.ikm, trial.salt);
+      assertArrayEquals(trial.expected, kdf.deriveKey(trial.info, trial.expected.length));
+    }
+  }
+
+  @Test
+  public void reusedInstanceMatchesFreshInstances() throws Exception {
+    // One instance re-keys its Mac for each step, so repeated derives and re-inits
+    // must give the same keys as a fresh instance per step.
+    testCase first = testCases[1];
+    testCase second = testCases[0];
+    byte[] otherInfo = "other".getBytes(StringUtils.UTF8);
+
+    HmacKeyDerivationFunction reused = HmacKeyDerivationFunction.getInstance(first.algo);
+    reused.init(first.ikm, first.salt);
+    byte[] firstKey = reused.deriveKey(first.info, first.expected.length);
+    byte[] firstOtherKey = reused.deriveKey(otherInfo, 32);
+    reused.init(second.ikm, second.salt);
+    byte[] secondKey = reused.deriveKey(second.info, second.expected.length);
+
+    HmacKeyDerivationFunction fresh = HmacKeyDerivationFunction.getInstance(first.algo);
+    fresh.init(first.ikm, first.salt);
+    assertArrayEquals(first.expected, firstKey);
+    assertArrayEquals(fresh.deriveKey(otherInfo, 32), firstOtherKey);
+    assertArrayEquals(second.expected, secondKey);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void rejectsNonHmacAlgorithm() throws Exception {
+    HmacKeyDerivationFunction.getInstance("PBEWithHmacSHA256");
   }
 
   private static byte[] fromHex(String data) {
