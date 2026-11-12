@@ -3,6 +3,9 @@ package aws.cryptography.esdk.testserver.server.handler;
 import aws.cryptography.esdk.testserver.server.error.OperationWrapper;
 import aws.cryptography.esdk.testserver.server.model.DecryptInput;
 import aws.cryptography.esdk.testserver.server.model.DecryptOutput;
+import aws.cryptography.esdk.testserver.server.model.ESDKAlgorithmSuiteId;
+import aws.cryptography.esdk.testserver.server.registry.DecryptMetadata;
+import aws.cryptography.esdk.testserver.server.registry.DecryptResult;
 import aws.cryptography.esdk.testserver.server.registry.EsdkClient;
 import aws.cryptography.esdk.testserver.server.service.DecryptOperation;
 import java.nio.ByteBuffer;
@@ -30,10 +33,15 @@ public final class DecryptHandler implements DecryptOperation {
     public DecryptOutput decrypt(DecryptInput input, RequestContext context) {
         return wrapper.invoke("Decrypt", () -> {
             EsdkClient client = guard.resolve(input.getClientId());
-            byte[] plaintext = client.decrypt(
+            DecryptResult result = client.decrypt(
                 Blobs.toArray(input.getCiphertext()),
                 input.getEncryptionContext());
-            return DecryptOutput.builder().plaintext(ByteBuffer.wrap(plaintext)).build();
+            DecryptMetadata metadata = result.metadata();
+            return DecryptOutput.builder()
+                .plaintext(ByteBuffer.wrap(result.plaintext()))
+                .encryptionContext(metadata.encryptionContext())
+                .algorithmSuiteId(ESDKAlgorithmSuiteId.from(metadata.algorithmSuiteId()))
+                .build();
         });
     }
 }
