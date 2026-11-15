@@ -1,0 +1,39 @@
+name: ESDK TestServer mutation testing (Java)
+
+on:
+  pull_request:
+    paths:
+      - "src/main/**"
+      - "pom.xml"
+      - "test-server/**"
+      - ".github/workflows/test-server-mutation.yml"
+  push:
+    branches:
+      - master
+    paths:
+      - "src/main/**"
+      - "pom.xml"
+      - "test-server/**"
+      - ".github/workflows/test-server-mutation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # A pull request fails when a mutant on a library line it changes survives
+  # every shared Test that runs that line. A push to master mutates the whole library.
+  mutation:
+    name: Mutation
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: read
+    uses: aws/aws-crypto-tools-commons/.github/workflows/mutation-java-reusable.yml@lucmcdon/test-server-mutation-java
+    with:
+      product: esdk
+      library: esdk
+      commons-ref: lucmcdon/test-server-mutation-java
+      aws-role-arn: arn:aws:iam::370957321024:role/esdk-test-server-ci-kms-role
+    secrets:
+      repo-pat: ${{ secrets.COMMONS_REPO_PAT }}
