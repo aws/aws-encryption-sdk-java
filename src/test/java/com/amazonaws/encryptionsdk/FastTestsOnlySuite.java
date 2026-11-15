@@ -33,7 +33,8 @@ public class FastTestsOnlySuite {
   // when the fast tests
   // are selected
   public static boolean isFastTestSuiteActive() {
-    return IS_FAST_TEST_SUITE_ACTIVE.get();
+    // Mutation testing runs test classes one by one, outside this suite, so it sets this property.
+    return IS_FAST_TEST_SUITE_ACTIVE.get() || Boolean.getBoolean("fastTestsOnly");
   }
 
   // Require that this fast suite completes relatively quickly. If you're seeing this timeout get

@@ -411,11 +411,25 @@
                             </dependency>
                         </dependencies>
                         <configuration>
-                            <!-- The suite picks the tests and shrinks the large parameter sets. Test classes
-                                 outside it, such as FrameEncryptionHandlerVeryLongTest, run for hours. -->
-                            <targetTests>
-                                <param>com.amazonaws.encryptionsdk.FastTestsOnlySuite</param>
-                            </targetTests>
+                            <!-- PIT runs each test class on its own, so this leaves out what FastTestsOnlySuite
+                                 leaves out. Running the suite instead rebuilds every parameter set for each mutant. -->
+                            <jvmArgs>
+                                <param>-DfastTestsOnly=true</param>
+                            </jvmArgs>
+                            <excludedGroups>
+                                <param>com.amazonaws.encryptionsdk.SlowTestCategory</param>
+                            </excludedGroups>
+                            <excludedTestClasses>
+                                <param>*Suite</param>
+                                <!-- Runs for hours. -->
+                                <param>com.amazonaws.encryptionsdk.internal.FrameEncryptionHandlerVeryLongTest</param>
+                                <!-- IntegrationTestSuite runs these. -->
+                                <param>com.amazonaws.encryptionsdk.XCompatKmsDecryptTest</param>
+                                <param>com.amazonaws.encryptionsdk.KMSProviderBuilderIntegrationTests</param>
+                                <param>com.amazonaws.encryptionsdk.MaxEncryptedDataKeysIntegrationTest</param>
+                                <param>com.amazonaws.encryptionsdk.kms.*IntegrationTest*</param>
+                                <param>com.amazonaws.encryptionsdk.kms.XCompatKmsDecryptTest</param>
+                            </excludedTestClasses>
                             <outputFormats>
                                 <param>XML</param>
                             </outputFormats>
