@@ -7,7 +7,7 @@
 #
 # A pull request mutates the library classes it changes and keeps the mutants on its changed lines.
 # The job fails if one of those mutants survives or sits on a line that no test runs.
-# A push to master mutates the whole library and only reports.
+# A push to master, or a pull request that changes this workflow, mutates the whole library and only reports.
 # The job uploads mutation-results-esdk-java (results.json) for the
 # Mutation testing page of the aws-crypto-tools-commons dashboard.
 
@@ -72,20 +72,30 @@ jobs:
           sparse-checkout: test-server-common/tools/mutation
           path: commons
 
+      # A pull request that changes this workflow mutates the whole library, so the new setup gets a real run.
+      - name: Check whether this pull request changes this workflow
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git fetch --no-tags origin "$BASE"
+          if git diff --name-only "$BASE"...HEAD | grep -qx .github/workflows/mutation.yml; then
+            echo "WORKFLOW_CHANGED=true" >> "$GITHUB_ENV"
+          fi
+
       - name: Mutate the whole library
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' || env.WORKFLOW_CHANGED == 'true'
         run: |
           echo "SCOPE=full" >> "$GITHUB_ENV"
           echo "MUTATE=true" >> "$GITHUB_ENV"
           echo "TARGET_CLASSES=com.amazonaws.encryptionsdk.*" >> "$GITHUB_ENV"
 
       - name: Mutate only the library classes this pull request changes
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && env.WORKFLOW_CHANGED != 'true'
         env:
           BASE: ${{ github.event.pull_request.base.sha }}
         run: |
           mkdir -p "$RUNNER_TEMP/mutation"
-          git fetch --no-tags origin "$BASE"
           python3 "$TOOLS/results.py" changed-lines --repo . --base "$BASE" --out "$RUNNER_TEMP/mutation/lines.json" \
             --glob 'src/main/java/*.java'
           classes=$(python3 "$TOOLS/pit.py" target-classes "$RUNNER_TEMP/mutation/lines.json" --source-root src/main/java)
@@ -194,11 +204,11 @@ jobs:
             --language java --library esdk --scope "$SCOPE" --seconds "${MUTATION_SECONDS:-0}" $LINES
 
       - name: Report the survivors
-        if: github.event_name != 'pull_request'
+        if: env.SCOPE == 'full'
         run: python3 "$TOOLS/results.py" check "$RESULTS/results.json"
 
       - name: Fail on a survivor or a changed line that no test runs
-        if: github.event_name == 'pull_request'
+        if: env.SCOPE == 'changed'
         run: python3 "$TOOLS/results.py" check "$RESULTS/results.json" --fail
 
       - name: Upload the mutation results
