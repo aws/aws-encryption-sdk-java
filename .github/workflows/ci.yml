@@ -87,6 +87,26 @@ jobs:
         with:
           name: local-coverage-esdk
           path: coverage/*.lcov
+      - name: Check out the repository for the branch coverage gate
+        if: matrix.version == 17 && github.event_name == 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          path: repo
+          fetch-depth: 0
+      - name: Check out the branch coverage gate
+        if: matrix.version == 17 && github.event_name == 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          repository: aws/aws-crypto-tools-commons
+          ref: lucmcdon/test-server-branch-coverage
+          path: commons
+          sparse-checkout: test-server-common/tools
+      - name: Enforce 100% branch coverage of changed lines
+        if: matrix.version == 17 && github.event_name == 'pull_request'
+        working-directory: repo
+        run: |
+          python3 ../commons/test-server-common/tools/branch_gate.py --base 'origin/${{ github.base_ref }}' \
+            ../coverage/esdk.lcov
   vectorTestsMasterKeyProvider:
     name: Vector Tests MasterKeyProvider
     runs-on: ubuntu-latest
