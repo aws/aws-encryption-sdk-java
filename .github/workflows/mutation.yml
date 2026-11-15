@@ -1,0 +1,210 @@
+# Mutation testing with PIT.
+#
+# A mutant is a small change to the library, such as `<` turned into `<=`.
+# PIT records which tests run each line, then runs only those tests against each mutant.
+# A mutant is killed when one of those tests fails.
+# The mutation profile in pom.xml sets the PIT options.
+#
+# A pull request mutates the library classes it changes and keeps the mutants on its changed lines.
+# The job fails if one of those mutants survives or sits on a line that no test runs.
+# A push to master mutates the whole library and only reports.
+# The job uploads mutation-results-esdk-java (results.json) for the
+# Mutation testing page of the aws-crypto-tools-commons dashboard.
+
+name: Mutation testing
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+    inputs:
+      commons-ref:
+        description: The aws-crypto-tools-commons ref whose mutation tools run. Empty means main.
+        type: string
+
+jobs:
+  mutation:
+    name: esdk mutation testing
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    permissions:
+      contents: read
+      id-token: write
+      # The resolve script reads this pull request's Test-Server-Override lines.
+      pull-requests: read
+    env:
+      TOOLS: ${{ github.workspace }}/commons/test-server-common/tools/mutation
+      RESULTS: ${{ github.workspace }}/results
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check out the resolve script
+        uses: actions/checkout@v4
+        with:
+          repository: aws/aws-crypto-tools-commons
+          ref: ${{ inputs.commons-ref }}
+          token: ${{ secrets.COMMONS_REPO_PAT }}
+          sparse-checkout: .github/scripts
+          path: resolve
+
+      - name: Resolve the commons ref, Test-Server-Override lines included
+        id: refs
+        env:
+          REPOSITORY: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_REF: ${{ github.head_ref }}
+          EVENT_BODY: ${{ github.event.pull_request.body }}
+          INPUT_COMMONS_REF: ${{ inputs.commons-ref }}
+          GH_TOKEN: ${{ github.token }}
+          REPO_PAT: ${{ secrets.COMMONS_REPO_PAT }}
+        run: resolve/.github/scripts/resolve-test-server-refs.sh resolve
+
+      - uses: actions/checkout@v4
+        with:
+          repository: aws/aws-crypto-tools-commons
+          ref: ${{ steps.refs.outputs.commons_ref }}
+          token: ${{ secrets.COMMONS_REPO_PAT }}
+          sparse-checkout: test-server-common/tools/mutation
+          path: commons
+
+      - name: Mutate the whole library
+        if: github.event_name != 'pull_request'
+        run: |
+          echo "SCOPE=full" >> "$GITHUB_ENV"
+          echo "MUTATE=true" >> "$GITHUB_ENV"
+          echo "TARGET_CLASSES=com.amazonaws.encryptionsdk.*" >> "$GITHUB_ENV"
+
+      - name: Mutate only the library classes this pull request changes
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/mutation"
+          git fetch --no-tags origin "$BASE"
+          python3 "$TOOLS/results.py" changed-lines --repo . --base "$BASE" --out "$RUNNER_TEMP/mutation/lines.json" \
+            --glob 'src/main/java/*.java'
+          classes=$(python3 "$TOOLS/pit.py" target-classes "$RUNNER_TEMP/mutation/lines.json" --source-root src/main/java)
+          echo "SCOPE=changed" >> "$GITHUB_ENV"
+          echo "LINES=--lines $RUNNER_TEMP/mutation/lines.json" >> "$GITHUB_ENV"
+          echo "TARGET_CLASSES=$classes" >> "$GITHUB_ENV"
+          if [ -n "$classes" ]; then
+            echo "MUTATE=true" >> "$GITHUB_ENV"
+          else
+            echo "This pull request changes no esdk source line." | tee -a "$GITHUB_STEP_SUMMARY"
+            echo "MUTATE=false" >> "$GITHUB_ENV"
+          fi
+
+      - name: Setup Java 17
+        if: env.MUTATE == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: corretto
+          java-version: 17
+          cache: maven
+
+      # The tests need TestAwsCryptographicMaterialProviders, which Maven Central does not have.
+      # It is built from the MaterialProviders submodule, the same way codebuild/ci/vectors-ci.yml builds it.
+      - name: Read the MaterialProviders submodule commit
+        if: env.MUTATE == 'true'
+        id: mpl
+        run: echo "commit=$(git rev-parse HEAD:submodules/MaterialProviders)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore the test vectors library
+        if: env.MUTATE == 'true'
+        id: vectors
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.m2/repository/software/amazon/cryptography
+          key: mpl-test-vectors-java-${{ steps.mpl.outputs.commit }}
+
+      - name: Check out the MaterialProviders submodule
+        if: env.MUTATE == 'true' && steps.vectors.outputs.cache-hit != 'true'
+        run: |
+          git submodule update --init submodules/MaterialProviders
+          git -C submodules/MaterialProviders submodule update --init libraries smithy-dafny
+
+      - name: Setup Dafny
+        if: env.MUTATE == 'true' && steps.vectors.outputs.cache-hit != 'true'
+        uses: dafny-lang/setup-dafny-action@v1.7.0
+        with:
+          dafny-version: 4.8.0
+
+      - name: Setup Gradle
+        if: env.MUTATE == 'true' && steps.vectors.outputs.cache-hit != 'true'
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "7.6"
+
+      - name: Build the test vectors library
+        if: env.MUTATE == 'true' && steps.vectors.outputs.cache-hit != 'true'
+        working-directory: submodules/MaterialProviders/TestVectorsAwsCryptographicMaterialProviders
+        run: make build_java CORES=4 && make mvn_local_deploy
+
+      # Saved here, because a pull request with a surviving mutant fails the job before a post-job save.
+      - name: Save the test vectors library
+        if: env.MUTATE == 'true' && steps.vectors.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.m2/repository/software/amazon/cryptography
+          key: mpl-test-vectors-java-${{ steps.mpl.outputs.commit }}
+
+      - name: Configure AWS credentials for the KMS tests
+        if: env.MUTATE == 'true'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-west-2
+          role-to-assume: arn:aws:iam::370957321024:role/GitHub-CI-Public-ESDK-Java-Role-us-west-2
+          role-session-name: JavaMutationTesting
+
+      - name: Restore earlier mutation results
+        if: env.MUTATE == 'true'
+        uses: actions/cache/restore@v4
+        with:
+          path: pit-history.bin
+          key: mutation-java-esdk-${{ github.run_id }}
+          restore-keys: mutation-java-esdk-
+
+      # The history file lets PIT reuse the result of every mutant whose class and covering tests did not change.
+      - name: Run the mutants
+        if: env.MUTATE == 'true'
+        run: |
+          start=$SECONDS
+          mvn -B -ntp -Pmutation -Djacoco.skip=true test-compile org.pitest:pitest-maven:mutationCoverage \
+            "-DtargetClasses=$TARGET_CLASSES" -Dthreads=4 \
+            -DhistoryInputFile=pit-history.bin -DhistoryOutputFile=pit-history.bin
+          echo "MUTATION_SECONDS=$((SECONDS - start))" >> "$GITHUB_ENV"
+
+      - name: Save the mutation results for the next run
+        if: always() && env.MUTATE == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: pit-history.bin
+          key: mutation-java-esdk-${{ github.run_id }}
+
+      - name: Write results.json
+        run: |
+          mkdir -p "$RESULTS"
+          python3 "$TOOLS/pit.py" convert target/pit-reports/mutations.xml --source-root src/main/java \
+            --out "$RESULTS/results.json" --repository "$GITHUB_REPOSITORY" --commit "$GITHUB_SHA" \
+            --language java --library esdk --scope "$SCOPE" --seconds "${MUTATION_SECONDS:-0}" $LINES
+
+      - name: Report the survivors
+        if: github.event_name != 'pull_request'
+        run: python3 "$TOOLS/results.py" check "$RESULTS/results.json"
+
+      - name: Fail on a survivor or a changed line that no test runs
+        if: github.event_name == 'pull_request'
+        run: python3 "$TOOLS/results.py" check "$RESULTS/results.json" --fail
+
+      - name: Upload the mutation results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-results-esdk-java
+          path: results/results.json
+          if-no-files-found: error

@@ -393,6 +393,41 @@
                 </plugins>
             </build>
         </profile>
+
+        <!-- Mutation testing with PIT: mvn -Pmutation test-compile org.pitest:pitest-maven:mutationCoverage -->
+        <profile>
+            <id>mutation</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.pitest</groupId>
+                        <artifactId>pitest-maven</artifactId>
+                        <version>1.30.2</version>
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.pitest</groupId>
+                                <artifactId>pitest-junit5-plugin</artifactId>
+                                <version>1.2.3</version>
+                            </dependency>
+                        </dependencies>
+                        <configuration>
+                            <!-- The suite picks the tests and shrinks the large parameter sets. Test classes
+                                 outside it, such as FrameEncryptionHandlerVeryLongTest, run for hours. -->
+                            <targetTests>
+                                <param>com.amazonaws.encryptionsdk.FastTestsOnlySuite</param>
+                            </targetTests>
+                            <outputFormats>
+                                <param>XML</param>
+                            </outputFormats>
+                            <timestampedReports>false</timestampedReports>
+                            <!-- A test that fails on the unmutated library (for example one that needs AWS
+                                 credentials the run lacks) drops out instead of stopping the run. -->
+                            <skipFailingTests>true</skipFailingTests>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 
 </project>
