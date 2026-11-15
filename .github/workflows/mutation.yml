@@ -171,30 +171,13 @@ jobs:
           role-to-assume: arn:aws:iam::370957321024:role/GitHub-CI-Public-ESDK-Java-Role-us-west-2
           role-session-name: JavaMutationTesting
 
-      - name: Restore earlier mutation results
-        if: env.MUTATE == 'true'
-        uses: actions/cache/restore@v4
-        with:
-          path: pit-history.bin
-          key: mutation-java-esdk-${{ github.run_id }}
-          restore-keys: mutation-java-esdk-
-
-      # The history file lets PIT reuse the result of every mutant whose class and covering tests did not change.
       - name: Run the mutants
         if: env.MUTATE == 'true'
         run: |
           start=$SECONDS
           mvn -B -ntp -Pmutation -Djacoco.skip=true test-compile org.pitest:pitest-maven:mutationCoverage \
-            "-DtargetClasses=$TARGET_CLASSES" -Dthreads=4 \
-            -DhistoryInputFile=pit-history.bin -DhistoryOutputFile=pit-history.bin
+            "-DtargetClasses=$TARGET_CLASSES" -Dthreads=4
           echo "MUTATION_SECONDS=$((SECONDS - start))" >> "$GITHUB_ENV"
-
-      - name: Save the mutation results for the next run
-        if: always() && env.MUTATE == 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: pit-history.bin
-          key: mutation-java-esdk-${{ github.run_id }}
 
       - name: Write results.json
         run: |
