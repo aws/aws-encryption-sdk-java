@@ -271,12 +271,19 @@ public class EncryptionHandler implements MessageCryptoHandler {
       throw new IllegalStateException("Attempted to call doFinal twice");
     }
 
+    int written = 0;
+    if (firstOperation_) {
+      // An empty message still needs its header written and included in the signature.
+      written = processBytes(new byte[0], 0, 0, out, outOff).getBytesWritten();
+    }
+
     complete_ = true;
 
     checkPlaintextSizeLimit(0);
 
-    int written = contentCryptoHandler_.doFinal(out, outOff);
-    updateTrailingSignature(out, outOff, written);
+    final int finalWritten = contentCryptoHandler_.doFinal(out, outOff + written);
+    updateTrailingSignature(out, outOff + written, finalWritten);
+    written += finalWritten;
     if (cryptoAlgo_.getTrailingSignatureLength() > 0) {
       try {
         CiphertextFooters footer = new CiphertextFooters(signContent());
