@@ -40,7 +40,7 @@ To use the AWS Encryption SDK for Java you must have:
         <dependency>
           <groupId>software.amazon.awssdk</groupId>
           <artifactId>bom</artifactId>
-          <version>2.32.10</version>
+          <version>2.35.2</version>
           <type>pom</type>
           <scope>import</scope>
         </dependency>
@@ -55,7 +55,7 @@ To use the AWS Encryption SDK for Java you must have:
       <dependency>
         <groupId>software.amazon.cryptography</groupId>
         <artifactId>aws-cryptographic-material-providers</artifactId>
-        <version>3.0.2</version>
+        <version>1.11.0</version>
       </dependency>
       <dependency>
         <groupId>software.amazon.awssdk</groupId>
@@ -69,7 +69,7 @@ To use the AWS Encryption SDK for Java you must have:
       <dependency>
           <groupId>com.amazonaws</groupId>
           <artifactId>aws-java-sdk</artifactId>
-          <version>3.0.2</version>
+          <version>1.12.792</version>
           <optional>true</optional>
       </dependency>
     </dependencies>
@@ -80,13 +80,13 @@ To use the AWS Encryption SDK for Java you must have:
   * **Via Gradle Kotlin**  
     In a Gradle Java Project, add the following to the _dependencies_ section:
     ```kotlin
-    implementation("com.amazonaws:aws-encryption-sdk-java:3.0.0")
-    implementation("software.amazon.cryptography:aws-cryptographic-material-providers:1.0.2")
-    implementation(platform("software.amazon.awssdk:bom:2.20.91"))
+    implementation("com.amazonaws:aws-encryption-sdk-java:3.0.2")
+    implementation("software.amazon.cryptography:aws-cryptographic-material-providers:1.11.0")
+    implementation(platform("software.amazon.awssdk:bom:2.35.2"))
     implementation("software.amazon.awssdk:kms")
     implementation("software.amazon.awssdk:dynamodb")
     // The following are optional:
-    implementation("com.amazonaws:aws-java-sdk:1.12.394")
+    implementation("com.amazonaws:aws-java-sdk:1.12.792")
     ```
 
 * **Bouncy Castle** or **Bouncy Castle FIPS**
