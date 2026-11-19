@@ -226,3 +226,20 @@ jobs:
           JAVA_ENV_VERSION: ${{ matrix.platform.distribution }}${{ matrix.version }}
           JAVA_NUMERIC_VERSION: ${{ matrix.version }}
           GITHUB_EVENT_NAME: $GITHUB_EVENT_NAME
+  notify:
+    needs:
+      [
+        staticAnalysis,
+        vectorTests,
+        vectorTestsMasterKeyProvider,
+        netVectorTests,
+        generateTestVectors,
+        releaseCI,
+        validateCI
+      ]
+    if: ${{ failure() && github.event_name == 'schedule' }}
+    uses: aws/aws-cryptographic-material-providers-library/.github/workflows/slack-notification.yml@main
+    with:
+      message: "Daily CI failed on `${{ github.repository }}`. View run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL_CI }}  
