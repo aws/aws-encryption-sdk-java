@@ -24,7 +24,7 @@ jobs:
   # The cross-language TestServer run, from the shared commons workflow. This
   # checkout supplies the java server and library; every other server comes from
   # its configured branch. Only the pairs involving java run; the full matrix
-  # runs in commons. repo-pat reads the private aws-crypto-tools-rust clones.
+  # runs in commons.
   test-server:
     name: TestServer
     permissions:
@@ -36,5 +36,3 @@ jobs:
       runner: ubuntu-latest
       focus: java
       checkout-languages: java
-    secrets:
-      repo-pat: ${{ secrets.COMMONS_REPO_PAT }}
