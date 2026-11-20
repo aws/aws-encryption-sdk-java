@@ -32,3 +32,14 @@ phases:
     commands:
       # NOTE: We need to pass the absolute path of the vectors
       - mvn install -T 8 -Dgpg.skip=true -ntp "-DtestVectorZip=file://$CODEBUILD_SRC_DIR/src/test/resources/aws-encryption-sdk-test-vectors/vectors/awses-decrypt/python-2.3.0.zip"
+  post_build:
+    commands:
+      # The GitHub workflow reads the line coverage report back out of this
+      # build's log and uploads it.
+      - |
+        cd "$CODEBUILD_SRC_DIR"
+        if [ -f target/site/jacoco/jacoco.xml ]; then
+          echo LCOV-GZ-BASE64-BEGIN
+          python3 codebuild/ci/jacoco_lcov.py target/site/jacoco/jacoco.xml src/main/java | gzip | base64
+          echo LCOV-GZ-BASE64-END
+        fi
