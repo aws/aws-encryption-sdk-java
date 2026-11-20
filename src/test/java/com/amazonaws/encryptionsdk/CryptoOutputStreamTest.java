@@ -457,7 +457,6 @@ public class CryptoOutputStreamTest {
         final int frameSize = frameSizeToTest[i];
         invalidWriteLen(frameSize);
         invalidWriteOffset(frameSize);
-        noOpStream(frameSize);
       }
     }
 
@@ -494,22 +493,39 @@ public class CryptoOutputStreamTest {
           () -> encryptionOutStream.write(writeBytes, writeBytes.length + 1, writeBytes.length));
     }
 
-    private void noOpStream(final int frameSize) throws Exception {
+    @Test
+    public void closeWithoutWrite() throws Exception {
+      for (final CryptoAlgorithm cryptoAlg : EnumSet.allOf(CryptoAlgorithm.class)) {
+        for (final int frameSize : new int[] {0, getDefaultFrameSize()}) {
+          noOpStream(cryptoAlg, frameSize);
+        }
+      }
+    }
+
+    private void noOpStream(final CryptoAlgorithm cryptoAlg, final int frameSize) throws Exception {
+      final AwsCrypto awsCrypto =
+          AwsCrypto.builder()
+              .withCommitmentPolicy(
+                  cryptoAlg.isCommitting()
+                      ? CommitmentPolicy.RequireEncryptRequireDecrypt
+                      : CommitmentPolicy.ForbidEncryptAllowDecrypt)
+              .withEncryptionAlgorithm(cryptoAlg)
+              .withEncryptionFrameSize(frameSize)
+              .build();
       final Map<String, String> encryptionContext = new HashMap<String, String>(1);
       encryptionContext.put("ENC", "noOpStream size " + frameSize);
 
       final ByteArrayOutputStream outStream = new ByteArrayOutputStream();
       final OutputStream encryptionOutStream =
-          encryptionClient_.createEncryptingStream(customerMasterKey, outStream, encryptionContext);
+          awsCrypto.createEncryptingStream(customerMasterKey, outStream, encryptionContext);
 
       encryptionOutStream.close();
 
-      testRoundTrip(
-          0,
-          crypto -> crypto.setEncryptionFrameSize(frameSize),
-          encryptWithContext(encryptionContext),
-          basicDecrypt(),
-          CommitmentPolicy.RequireEncryptRequireDecrypt);
+      final CryptoResult<byte[], JceMasterKey> result =
+          awsCrypto.decryptData(customerMasterKey, outStream.toByteArray());
+      assertArrayEquals(new byte[0], result.getResult());
+      assertEquals(cryptoAlg, result.getCryptoAlgorithm());
+      assertEquals(encryptionContext.get("ENC"), result.getEncryptionContext().get("ENC"));
     }
 
     @Test
