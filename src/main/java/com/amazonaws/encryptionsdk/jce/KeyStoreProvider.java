@@ -36,6 +36,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -79,7 +80,7 @@ public class KeyStoreProvider extends MasterKeyProvider<JceMasterKey> {
     wrappingAlgorithm_ = wrappingAlgorithm;
     aliasNames_ = Arrays.asList(aliasNames);
     providerName_ = providerName;
-    keyAlgorithm_ = wrappingAlgorithm.split("/", 2)[0].toUpperCase();
+    keyAlgorithm_ = wrappingAlgorithm.split("/", 2)[0].toUpperCase(Locale.ROOT);
   }
 
   /**

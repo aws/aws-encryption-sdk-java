@@ -25,6 +25,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,11 +43,21 @@ import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.mockito.ArgumentCaptor;
+import software.amazon.cryptography.materialproviders.IKeyring;
+import software.amazon.cryptography.materialproviders.MaterialProviders;
+import software.amazon.cryptography.materialproviders.model.AesWrappingAlg;
+import software.amazon.cryptography.materialproviders.model.CreateRawAesKeyringInput;
+import software.amazon.cryptography.materialproviders.model.MaterialProvidersConfig;
 
 @RunWith(Enclosed.class)
 public class CryptoOutputStreamTest {
   private static final SecureRandom RND = new SecureRandom();
+  private static final MaterialProviders materialProviders =
+      MaterialProviders.builder()
+          .MaterialProvidersConfig(MaterialProvidersConfig.builder().build())
+          .build();
   private static final MasterKey<JceMasterKey> customerMasterKey;
+  private static final IKeyring keyring;
   private static final AtomicReference<byte[]> RANDOM_BUFFER = new AtomicReference<>(new byte[0]);
   private static final CommitmentPolicy commitmentPolicy = TestUtils.DEFAULT_TEST_COMMITMENT_POLICY;
 
@@ -56,6 +67,14 @@ public class CryptoOutputStreamTest {
     customerMasterKey =
         JceMasterKey.getInstance(
             new SecretKeySpec(rawKey, "AES"), "mockProvider", "mockKey", "AES/GCM/NoPadding");
+    keyring =
+        materialProviders.CreateRawAesKeyring(
+            CreateRawAesKeyringInput.builder()
+                .keyName("mockKey")
+                .keyNamespace("mockProvider")
+                .wrappingAlg(AesWrappingAlg.ALG_AES128_GCM_IV12_TAG16)
+                .wrappingKey(ByteBuffer.wrap(new SecretKeySpec(rawKey, "AES").getEncoded()))
+                .build());
   }
 
   private static void testRoundTrip(
@@ -117,6 +136,39 @@ public class CryptoOutputStreamTest {
     return (awsCrypto, inStream, outStream) -> {
       final OutputStream decryptionOutStream =
           awsCrypto.createDecryptingStream(customerMasterKey, outStream);
+
+      TestIOUtils.copyInStreamToOutStream(inStream, decryptionOutStream);
+    };
+  }
+
+  private static Callback encryptWithContextKeyring(Map<String, String> encryptionContext) {
+    return (awsCrypto, inStream, outStream) -> {
+      final OutputStream encryptionOutStream =
+          awsCrypto.createEncryptingStream(keyring, outStream, encryptionContext);
+
+      TestIOUtils.copyInStreamToOutStream(inStream, encryptionOutStream);
+    };
+  }
+
+  private static Callback encryptWithoutContextKeyrin() {
+    return (awsCrypto, inStream, outStream) -> {
+      final OutputStream encryptionOutStream = awsCrypto.createEncryptingStream(keyring, outStream);
+
+      TestIOUtils.copyInStreamToOutStream(inStream, encryptionOutStream);
+    };
+  }
+
+  private static Callback basicDecryptKeyrin(int readLen) {
+    return (awsCrypto, inStream, outStream) -> {
+      final OutputStream decryptionOutStream = awsCrypto.createDecryptingStream(keyring, outStream);
+
+      TestIOUtils.copyInStreamToOutStream(inStream, decryptionOutStream, readLen);
+    };
+  }
+
+  private static Callback basicDecryptKeyrin() {
+    return (awsCrypto, inStream, outStream) -> {
+      final OutputStream decryptionOutStream = awsCrypto.createDecryptingStream(keyring, outStream);
 
       TestIOUtils.copyInStreamToOutStream(inStream, decryptionOutStream);
     };
@@ -205,6 +257,26 @@ public class CryptoOutputStreamTest {
           },
           encryptWithContext(encryptionContext),
           basicDecrypt(readLen),
+          commitmentPolicy);
+    }
+
+    @Test
+    public void encryptDecryptWithKeyring() throws Exception {
+      final Map<String, String> encryptionContext = new HashMap<String, String>(1);
+      encryptionContext.put("ENC", "Streaming Test");
+      final CommitmentPolicy commitmentPolicy =
+          cryptoAlg.isCommitting()
+              ? CommitmentPolicy.RequireEncryptRequireDecrypt
+              : CommitmentPolicy.ForbidEncryptAllowDecrypt;
+
+      testRoundTrip(
+          byteSize,
+          awsCrypto -> {
+            awsCrypto.setEncryptionFrameSize(frameSize);
+            awsCrypto.setEncryptionAlgorithm(cryptoAlg);
+          },
+          encryptWithContextKeyring(encryptionContext),
+          basicDecryptKeyrin(readLen),
           commitmentPolicy);
     }
   }

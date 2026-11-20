@@ -13,6 +13,7 @@ import com.amazonaws.encryptionsdk.internal.StaticMasterKey;
 import com.amazonaws.encryptionsdk.internal.Utils;
 import com.amazonaws.encryptionsdk.model.CiphertextHeaders;
 import com.amazonaws.encryptionsdk.model.EncryptionMaterials;
+import com.amazonaws.encryptionsdk.model.EncryptionMaterialsHandler;
 import com.amazonaws.encryptionsdk.model.EncryptionMaterialsRequest;
 import java.security.InvalidKeyException;
 import java.util.Collections;
@@ -149,7 +150,8 @@ public class CryptoAlgorithmTest {
             .getMaterialsForEncrypt(encryptionMaterialsRequest);
 
     final EncryptionHandler encryptionHandler =
-        new EncryptionHandler(frameSize_, encryptionMaterials, policy);
+        new EncryptionHandler(
+            frameSize_, new EncryptionMaterialsHandler(encryptionMaterials), policy);
 
     final byte[] in = new byte[0];
     final int ciphertextLen = encryptionHandler.estimateOutputSize(in.length);

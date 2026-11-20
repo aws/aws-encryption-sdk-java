@@ -28,6 +28,7 @@ import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -59,7 +60,7 @@ public class JceMasterKey extends MasterKey<JceMasterKey> {
       final String provider,
       final String keyId,
       final String wrappingAlgorithm) {
-    switch (wrappingAlgorithm.toUpperCase()) {
+    switch (wrappingAlgorithm.toUpperCase(Locale.ROOT)) {
       case "AES/GCM/NOPADDING":
         return new JceMasterKey(provider, keyId, JceKeyCipher.aesGcm(key));
       default:
@@ -82,7 +83,7 @@ public class JceMasterKey extends MasterKey<JceMasterKey> {
       final String provider,
       final String keyId,
       final String wrappingAlgorithm) {
-    if (wrappingAlgorithm.toUpperCase().startsWith("RSA/ECB/")) {
+    if (wrappingAlgorithm.toUpperCase(Locale.ROOT).startsWith("RSA/ECB/")) {
       return new JceMasterKey(
           provider, keyId, JceKeyCipher.rsa(wrappingKey, unwrappingKey, wrappingAlgorithm));
     }

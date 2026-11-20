@@ -35,18 +35,20 @@ public class CryptoResult<T, K extends MasterKey<K>> {
   private final CiphertextHeaders headers_;
 
   /** Note, does not make a defensive copy of any of the data. */
-  CryptoResult(final T result, final List<K> masterKeys, final CiphertextHeaders headers) {
+  CryptoResult(
+      final T result,
+      final List<K> masterKeys,
+      final CiphertextHeaders headers,
+      Map<String, String> encryptionContext) {
     result_ = result;
     masterKeys_ = Collections.unmodifiableList(masterKeys);
     headers_ = headers;
-    encryptionContext_ = headers_.getEncryptionContextMap();
+    encryptionContext_ = encryptionContext;
   }
 
   /**
    * The actual result of the cryptographic operation. This is not a defensive copy and callers
    * should not modify it.
-   *
-   * @return
    */
   public T getResult() {
     return result_;
@@ -56,8 +58,6 @@ public class CryptoResult<T, K extends MasterKey<K>> {
    * Returns all relevant {@link MasterKey}s. In the case of encryption, returns all {@code
    * MasterKey}s used to protect the ciphertext. In the case of decryption, returns just the {@code
    * MasterKey} used to decrypt the ciphertext.
-   *
-   * @return
    */
   public List<K> getMasterKeys() {
     return masterKeys_;

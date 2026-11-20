@@ -131,6 +131,10 @@ public final class AwsKmsMrkAwareMasterKeyProvider
      * <p>Note: The AWS Encryption SDK for Java does not support the {@code KmsAsyncClient}
      * interface.
      *
+     * <p>WARNING: {@link KmsClientBuilder}s are NOT thread safe. If {@link KmsMasterKeyProvider} is
+     * going to be used concurrently, a proper supplier MUST be provided, or use a {@link
+     * #customRegionalClientSupplier(RegionalClientSupplier)}
+     *
      * @see KmsMasterKeyProvider.Builder#builderSupplier(Supplier)
      */
     public Builder builderSupplier(Supplier<KmsClientBuilder> supplier) {

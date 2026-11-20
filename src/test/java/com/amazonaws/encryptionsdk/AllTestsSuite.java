@@ -3,21 +3,43 @@
 
 package com.amazonaws.encryptionsdk;
 
-import com.amazonaws.crypto.examples.BasicEncryptionExampleTest;
-import com.amazonaws.crypto.examples.BasicMultiRegionKeyEncryptionExampleTest;
-import com.amazonaws.crypto.examples.DiscoveryDecryptionExampleTest;
-import com.amazonaws.crypto.examples.DiscoveryMultiRegionDecryptionExampleTest;
-import com.amazonaws.crypto.examples.MultipleCmkEncryptExampleTest;
-import com.amazonaws.crypto.examples.RestrictRegionExampleTest;
-import com.amazonaws.crypto.examples.SetCommitmentPolicyExampleTest;
-import com.amazonaws.crypto.examples.SetEncryptionAlgorithmExampleTest;
-import com.amazonaws.crypto.examples.SimpleDataKeyCachingExampleTest;
+import com.amazonaws.crypto.examples.keyrings.AwsKmsHierarchicalKeyringExampleTest;
+import com.amazonaws.crypto.examples.keyrings.AwsKmsRsaKeyringExampleTest;
+import com.amazonaws.crypto.examples.keyrings.BasicEncryptionKeyringExampleTest;
+import com.amazonaws.crypto.examples.keyrings.DiscoveryDecryptionKeyringExampleTest;
+import com.amazonaws.crypto.examples.keyrings.MultiKeyringExampleTest;
+import com.amazonaws.crypto.examples.keyrings.RawAesKeyringExampleTest;
+import com.amazonaws.crypto.examples.keyrings.RawRsaKeyringExampleTest;
+import com.amazonaws.crypto.examples.keyrings.SetEncryptionAlgorithmKeyringExampleTest;
+import com.amazonaws.crypto.examples.keyrings.SharedCacheAcrossHierarchicalKeyringsExampleTest;
+import com.amazonaws.crypto.examples.v2.BasicEncryptionExampleTest;
+import com.amazonaws.crypto.examples.v2.BasicMultiRegionKeyEncryptionExampleTest;
+import com.amazonaws.crypto.examples.v2.CustomCMMExampleTest;
+import com.amazonaws.crypto.examples.v2.DiscoveryDecryptionExampleTest;
+import com.amazonaws.crypto.examples.v2.DiscoveryMultiRegionDecryptionExampleTest;
+import com.amazonaws.crypto.examples.v2.MultipleCmkEncryptExampleTest;
+import com.amazonaws.crypto.examples.v2.RestrictRegionExampleTest;
+import com.amazonaws.crypto.examples.v2.SetCommitmentPolicyExampleTest;
+import com.amazonaws.crypto.examples.v2.SetEncryptionAlgorithmExampleTest;
+import com.amazonaws.crypto.examples.v2.SimpleDataKeyCachingExampleTest;
 import com.amazonaws.encryptionsdk.caching.CacheIdentifierTests;
 import com.amazonaws.encryptionsdk.caching.CachingCryptoMaterialsManagerTest;
 import com.amazonaws.encryptionsdk.caching.LocalCryptoMaterialsCacheTest;
 import com.amazonaws.encryptionsdk.caching.LocalCryptoMaterialsCacheThreadStormTest;
 import com.amazonaws.encryptionsdk.caching.NullCryptoMaterialsCacheTest;
-import com.amazonaws.encryptionsdk.internal.*;
+import com.amazonaws.encryptionsdk.internal.AwsKmsCmkArnInfoTest;
+import com.amazonaws.encryptionsdk.internal.BlockDecryptionHandlerTest;
+import com.amazonaws.encryptionsdk.internal.BlockEncryptionHandlerTest;
+import com.amazonaws.encryptionsdk.internal.CipherHandlerTest;
+import com.amazonaws.encryptionsdk.internal.CommittedKeyTest;
+import com.amazonaws.encryptionsdk.internal.DecryptionHandlerTest;
+import com.amazonaws.encryptionsdk.internal.EncContextSerializerTest;
+import com.amazonaws.encryptionsdk.internal.EncryptionHandlerTest;
+import com.amazonaws.encryptionsdk.internal.FrameDecryptionHandlerTest;
+import com.amazonaws.encryptionsdk.internal.FrameEncryptionHandlerTest;
+import com.amazonaws.encryptionsdk.internal.PrimitivesParserTest;
+import com.amazonaws.encryptionsdk.internal.UtilsTest;
+import com.amazonaws.encryptionsdk.internal.VersionInfoTest;
 import com.amazonaws.encryptionsdk.jce.JceMasterKeyTest;
 import com.amazonaws.encryptionsdk.jce.KeyStoreProviderTest;
 import com.amazonaws.encryptionsdk.kms.AwsKmsMrkAwareMasterKeyProviderTest;
@@ -30,6 +52,7 @@ import com.amazonaws.encryptionsdk.model.CipherBlockHeadersTest;
 import com.amazonaws.encryptionsdk.model.CipherFrameHeadersTest;
 import com.amazonaws.encryptionsdk.model.CiphertextHeadersTest;
 import com.amazonaws.encryptionsdk.model.DecryptionMaterialsRequestTest;
+import com.amazonaws.encryptionsdk.model.DecryptionMaterialsTest;
 import com.amazonaws.encryptionsdk.model.EncryptionMaterialsRequestTest;
 import com.amazonaws.encryptionsdk.model.KeyBlobTest;
 import com.amazonaws.encryptionsdk.multi.MultipleMasterKeyTest;
@@ -53,12 +76,14 @@ import org.junit.runners.Suite;
   CipherBlockHeadersTest.class,
   CipherFrameHeadersTest.class,
   KeyBlobTest.class,
+  DecryptionMaterialsTest.class,
   DecryptionMaterialsRequestTest.class,
   MultipleMasterKeyTest.class,
   AwsCryptoTest.class,
   CryptoInputStreamTest.class,
   CryptoOutputStreamTest.class,
   TestVectorRunner.class,
+  TestVectorGenerator.class,
   XCompatDecryptTest.class,
   DefaultCryptoMaterialsManagerTest.class,
   NullCryptoMaterialsCacheTest.class,
@@ -79,6 +104,7 @@ import org.junit.runners.Suite;
   CommitmentKATRunner.class,
   BasicEncryptionExampleTest.class,
   BasicMultiRegionKeyEncryptionExampleTest.class,
+  CustomCMMExampleTest.class,
   DiscoveryDecryptionExampleTest.class,
   DiscoveryMultiRegionDecryptionExampleTest.class,
   MultipleCmkEncryptExampleTest.class,
@@ -86,7 +112,20 @@ import org.junit.runners.Suite;
   SimpleDataKeyCachingExampleTest.class,
   SetEncryptionAlgorithmExampleTest.class,
   SetCommitmentPolicyExampleTest.class,
+  BasicEncryptionKeyringExampleTest.class,
+  DiscoveryDecryptionKeyringExampleTest.class,
+  MultiKeyringExampleTest.class,
+  MultipleCmkEncryptExampleTest.class,
+  RawAesKeyringExampleTest.class,
+  RawRsaKeyringExampleTest.class,
+  AwsKmsRsaKeyringExampleTest.class,
+  DiscoveryDecryptionKeyringExampleTest.class,
+  AwsKmsHierarchicalKeyringExampleTest.class,
+  SharedCacheAcrossHierarchicalKeyringsExampleTest.class,
+  SetCommitmentPolicyExampleTest.class,
+  SetEncryptionAlgorithmKeyringExampleTest.class,
   ParsedCiphertextTest.class,
+  AwsCryptoIntegrationTest.class,
   AwsKmsMrkAwareMasterKeyProviderTest.class,
   AwsKmsMrkAwareMasterKeyTest.class,
   VersionInfoTest.class,

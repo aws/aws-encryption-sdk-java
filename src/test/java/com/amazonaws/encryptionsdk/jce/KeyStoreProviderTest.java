@@ -32,26 +32,18 @@ import java.security.KeyStore;
 import java.security.KeyStore.PasswordProtection;
 import java.security.KeyStoreException;
 import java.security.SecureRandom;
+import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import javax.crypto.spec.SecretKeySpec;
+import javax.security.auth.x500.X500Principal;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.x509.X509V3CertificateGenerator;
 import org.junit.Before;
 import org.junit.Test;
-import sun.security.x509.AlgorithmId;
-import sun.security.x509.CertificateAlgorithmId;
-import sun.security.x509.CertificateSerialNumber;
-import sun.security.x509.CertificateValidity;
-import sun.security.x509.CertificateX509Key;
-import sun.security.x509.X500Name;
-import sun.security.x509.X509CertImpl;
-import sun.security.x509.X509CertInfo;
-
-/* These internal sun classes are included solely for test purposes as
-this test cannot use BouncyCastle cert generation, as there are incompatibilities
-between how standard BC and FIPS BC perform cert generation. */
 
 public class KeyStoreProviderTest {
   private static final SecureRandom RND = new SecureRandom();
@@ -72,6 +64,7 @@ public class KeyStoreProviderTest {
 
   @Before
   public void setup() throws Exception {
+    Security.addProvider(new BouncyCastleProvider());
     ks = KeyStore.getInstance(KeyStore.getDefaultType());
     ks.load(null, PASSWORD);
   }
@@ -286,26 +279,24 @@ public class KeyStoreProviderTest {
   }
 
   private X509Certificate generateCertificate(final KeyPair pair, final String alias)
-      throws GeneralSecurityException, IOException {
-    final X509CertInfo info = new X509CertInfo();
-    final X500Name name = new X500Name("dc=" + alias);
-    info.set(X509CertInfo.SERIAL_NUMBER, new CertificateSerialNumber(new BigInteger(256, RND)));
-    info.set(X509CertInfo.SUBJECT, name);
-    info.set(X509CertInfo.ISSUER, name);
-    info.set(
-        X509CertInfo.VALIDITY,
-        new CertificateValidity(
-            Date.from(Instant.now().minus(1, ChronoUnit.DAYS)),
-            Date.from(Instant.now().plus(730, ChronoUnit.DAYS))));
-    info.set(X509CertInfo.KEY, new CertificateX509Key(pair.getPublic()));
-    info.set(
-        X509CertInfo.ALGORITHM_ID,
-        new CertificateAlgorithmId(new AlgorithmId(AlgorithmId.sha256WithRSAEncryption_oid)));
+      throws GeneralSecurityException {
+    final X509Certificate certificate;
 
-    final X509CertImpl cert = new X509CertImpl(info);
-    cert.sign(pair.getPrivate(), AlgorithmId.sha256WithRSAEncryption_oid.toString());
+    // Generate self-signed certificate
+    final X509V3CertificateGenerator certGen = new X509V3CertificateGenerator();
+    final X500Principal dnName = new X500Principal("dc=" + alias);
 
-    return cert;
+    certGen.setSerialNumber(new BigInteger(256, new SecureRandom()));
+    certGen.setIssuerDN(dnName);
+    certGen.setNotBefore(Date.from(Instant.now().minus(1, ChronoUnit.DAYS)));
+    certGen.setNotAfter(Date.from(Instant.now().plus(730, ChronoUnit.DAYS)));
+    certGen.setSubjectDN(dnName);
+    certGen.setPublicKey(pair.getPublic());
+    certGen.setSignatureAlgorithm("SHA256WithRSA");
+
+    certificate = certGen.generate(pair.getPrivate());
+
+    return certificate;
   }
 
   private void copyPublicPart(final KeyStore src, final KeyStore dst, final String alias)

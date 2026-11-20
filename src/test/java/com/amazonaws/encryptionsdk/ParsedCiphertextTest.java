@@ -4,7 +4,9 @@
 package com.amazonaws.encryptionsdk;
 
 import static com.amazonaws.encryptionsdk.TestUtils.assertThrows;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.spy;
 
 import com.amazonaws.encryptionsdk.exception.AwsCryptoException;

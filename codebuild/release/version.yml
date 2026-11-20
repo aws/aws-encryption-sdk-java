@@ -12,13 +12,14 @@ env:
 phases:
   install:
     commands:
+      - n 20
+      - node -v
       - npm install --save-dev semantic-release
       - npm install @semantic-release/changelog -d
       - npm install @semantic-release/exec -d
       - npm install @semantic-release/git -d
+      - npm install conventional-changelog-conventionalcommits -d
       - npm install --save conventional-changelog
-    runtime-versions:
-      nodejs: 14
   pre_build:
     commands:
       - git config --global user.name "aws-crypto-tools-ci-bot"

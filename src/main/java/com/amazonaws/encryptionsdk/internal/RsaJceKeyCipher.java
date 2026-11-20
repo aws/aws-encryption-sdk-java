@@ -19,6 +19,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.MGF1ParameterSpec;
+import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -49,7 +50,7 @@ class RsaJceKeyCipher extends JceKeyCipher {
       final String hashUnknownCase = matcher.group(1);
       if (hashUnknownCase != null) {
         // OAEP mode a.k.a PKCS #1v2
-        final String hash = hashUnknownCase.toUpperCase();
+        final String hash = hashUnknownCase.toUpperCase(Locale.ROOT);
         transformation_ = "RSA/ECB/OAEPPadding";
 
         final MGF1ParameterSpec mgf1Spec;

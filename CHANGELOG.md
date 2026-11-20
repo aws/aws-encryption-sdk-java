@@ -1,5 +1,165 @@
 # Changelog
 
+## [3.0.2](https://github.com/aws/aws-encryption-sdk-java/compare/v3.0.1...v3.0.2) (2025-06-04)
+
+### Fixes
+
+* **AwsCrypto:** remove pre-mature Deprecation notices ([#2118](https://github.com/aws/aws-encryption-sdk-java/issues/2118)) ([4a19b04](https://github.com/aws/aws-encryption-sdk-java/commit/4a19b041a592e299f02d26a3625c5b5bc810897e))
+* do not truncate encrypted streams when offset is greater than zero ([#2113](https://github.com/aws/aws-encryption-sdk-java/issues/2113)) ([adb0a42](https://github.com/aws/aws-encryption-sdk-java/commit/adb0a42dd23946b47d5486377fc2b560ebb18b0f))
+* guard against null version and change property name to avoid conflicts ([#2116](https://github.com/aws/aws-encryption-sdk-java/issues/2116)) ([313caa7](https://github.com/aws/aws-encryption-sdk-java/commit/313caa7d24f86c875448dafd633cc74dc6d619c7))
+
+### Maintenance
+
+* add a test for offset against BlockEncryptionHandler ([#2115](https://github.com/aws/aws-encryption-sdk-java/issues/2115)) ([08cf1a3](https://github.com/aws/aws-encryption-sdk-java/commit/08cf1a333727f938f0a9d01b6605e38a89f6d099))
+* bump to latest mpl ([#2046](https://github.com/aws/aws-encryption-sdk-java/issues/2046)) ([6dd2d12](https://github.com/aws/aws-encryption-sdk-java/commit/6dd2d128c96b4936c169966d911a19e63c976153))
+* **cfn:** Sonatype Migration to User Tokens; updated policies for CI project ([#2043](https://github.com/aws/aws-encryption-sdk-java/issues/2043)) ([7cfe049](https://github.com/aws/aws-encryption-sdk-java/commit/7cfe049eeadc6c2c6d5eafa36f2ecd6e9f855302))
+* **deps-dev:** bump commons-io:commons-io from 2.11.0 to 2.14.0 ([#2047](https://github.com/aws/aws-encryption-sdk-java/issues/2047)) ([1695a39](https://github.com/aws/aws-encryption-sdk-java/commit/1695a395692c0a42fd9149d4b1b7bc66df24d6d8))
+* **examples:** Shared cache across Hierarchical Keyrings ([#2045](https://github.com/aws/aws-encryption-sdk-java/issues/2045)) ([fd00cd0](https://github.com/aws/aws-encryption-sdk-java/commit/fd00cd0e08f39a3ace414472a99f57b92e51be14))
+* fix semantic release installation ([#2119](https://github.com/aws/aws-encryption-sdk-java/issues/2119)) ([0586279](https://github.com/aws/aws-encryption-sdk-java/commit/0586279c7842b9680aaa7080ddca55f1ff3e6707))
+* **JavaDocs:** detail thread saftey of SDK Client Builders ([#2048](https://github.com/aws/aws-encryption-sdk-java/issues/2048)) ([86d5b62](https://github.com/aws/aws-encryption-sdk-java/commit/86d5b6275782eef2690823dbc7000f9aa2153a94))
+* move release to Nexus Central ([#2117](https://github.com/aws/aws-encryption-sdk-java/issues/2117)) ([9e91dad](https://github.com/aws/aws-encryption-sdk-java/commit/9e91dade73f3b7fd165312e123cdfbe7dbd44483))
+
+## [3.0.1](https://github.com/aws/aws-encryption-sdk-java/compare/v3.0.0...v3.0.1) (2024-06-12)
+
+### Fixes
+
+* Add Locale.ROOT to String uppercase conversions ([#1880](https://github.com/aws/aws-encryption-sdk-java/issues/1880)) ([9a9950e](https://github.com/aws/aws-encryption-sdk-java/commit/9a9950e880a137ed75b6c9329cbb77cbcdae7ef8)), closes [#1879](https://github.com/aws/aws-encryption-sdk-java/issues/1879)
+* Update DecryptionMaterials code to support legacy custom CMMs ([#2037](https://github.com/aws/aws-encryption-sdk-java/issues/2037)) ([8807d79](https://github.com/aws/aws-encryption-sdk-java/commit/8807d79614394ce5a05a4f356e868470aa0b0f78))
+
+### Maintenance
+
+* deprecate getMasterKeyIds() in CryptoResult ([#1976](https://github.com/aws/aws-encryption-sdk-java/issues/1976)) ([1890ebb](https://github.com/aws/aws-encryption-sdk-java/commit/1890ebbd1baf40906f819a6b93ded8f936e20b50))
+* **deps:** bump bcprov-jdk18on from 1.77 to 1.78.1 ([#2032](https://github.com/aws/aws-encryption-sdk-java/issues/2032)) ([713ca11](https://github.com/aws/aws-encryption-sdk-java/commit/713ca11a3f3eaf6d8b8926bf29340d30cda35b4b))
+* **deps:** udpate org.bouncycastle to bcprov-jdk18on ([#1891](https://github.com/aws/aws-encryption-sdk-java/issues/1891)) ([32a92a9](https://github.com/aws/aws-encryption-sdk-java/commit/32a92a9333858cad1c40cebbc5cafc4637a81504))
+* **deps:** update dependencies ([#1973](https://github.com/aws/aws-encryption-sdk-java/issues/1973)) ([800bd01](https://github.com/aws/aws-encryption-sdk-java/commit/800bd0137c53f58bae2588945dab143a4c760224))
+* **Examples:** Customize KMS Client ([#2001](https://github.com/aws/aws-encryption-sdk-java/issues/2001)) ([e94ee85](https://github.com/aws/aws-encryption-sdk-java/commit/e94ee8538501f270138feab0a6138bed7ce640ea))
+* fix release script ([#1912](https://github.com/aws/aws-encryption-sdk-java/issues/1912)) ([57e8a0b](https://github.com/aws/aws-encryption-sdk-java/commit/57e8a0b603c542e708aab5d04e13c2c314ec6aa5))
+* **README:** update README.md ([#1940](https://github.com/aws/aws-encryption-sdk-java/issues/1940)) ([7a0899e](https://github.com/aws/aws-encryption-sdk-java/commit/7a0899e969b7b03ed73851fad44664d59d6b0bb5))
+* update node version in version step ([#1959](https://github.com/aws/aws-encryption-sdk-java/issues/1959)) ([905385d](https://github.com/aws/aws-encryption-sdk-java/commit/905385d790011e2402543c6eddef400350b1229d))
+* Update SUPPORT_POLICY.rst ([#1924](https://github.com/aws/aws-encryption-sdk-java/issues/1924)) ([57e40b5](https://github.com/aws/aws-encryption-sdk-java/commit/57e40b5788c80811bc3de972a48cb5b36940729d))
+
+## [3.0.0](https://github.com/aws/aws-encryption-sdk-java/compare/v2.4.1...v3.0.0) (2023-12-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* This feature update includes a breaking change that requires AWS SDK v2 Java as a hard dependency.
+
+### Features
+
+* Integrate ESDK-Java with AWS Cryptographic Material Providers Library (MPL) for Keyring and CMM Support. ([#1864](https://github.com/aws/aws-encryption-sdk-java/issues/1864)) ([9297e1b](https://github.com/aws/aws-encryption-sdk-java/commit/9297e1bad3860301bcf52b73466ec4b762e4f817))
+
+
+### Maintenance
+
+* **CFN:** remove unused policy ([#1862](https://github.com/aws/aws-encryption-sdk-java/issues/1862)) ([43e078a](https://github.com/aws/aws-encryption-sdk-java/commit/43e078ae1a99c751dc59a354fbc2c7b70b4afd82))
+* **CFN:** update CFN stack to add managed policies to ci and release role ([#1856](https://github.com/aws/aws-encryption-sdk-java/issues/1856)) ([64c970f](https://github.com/aws/aws-encryption-sdk-java/commit/64c970f11ac7e14998c8939f937feeb48eee6c66))
+* **deps:** bump org.apache.commons:commons-lang3 from 3.12.0 to 3.13.0 ([#1717](https://github.com/aws/aws-encryption-sdk-java/issues/1717)) ([ec41ae2](https://github.com/aws/aws-encryption-sdk-java/commit/ec41ae2d492699bfbbc7d9ac477105cd2dccbabd))
+* fix release script ([#1796](https://github.com/aws/aws-encryption-sdk-java/issues/1796)) ([3617210](https://github.com/aws/aws-encryption-sdk-java/commit/3617210c1e60949aacd75f3c436b3b3010d0db71))
+* fix release-ci ([#1883](https://github.com/aws/aws-encryption-sdk-java/issues/1883)) ([92f29d0](https://github.com/aws/aws-encryption-sdk-java/commit/92f29d0c47e09807c46201bb2c100f2172c51294))
+* **tests:** update ESDK tests to replace sun.security.* API ([#1852](https://github.com/aws/aws-encryption-sdk-java/issues/1852)) ([ca4c763](https://github.com/aws/aws-encryption-sdk-java/commit/ca4c763fc8b6bf11df2914d37188aa5db5248042))
+* update release process ([#1888](https://github.com/aws/aws-encryption-sdk-java/issues/1888)) ([f222462](https://github.com/aws/aws-encryption-sdk-java/commit/f2224626ed5bb6cdc90ee6d8f8eb61f07d3422ee))
+* update the javadoc release script ([#1857](https://github.com/aws/aws-encryption-sdk-java/issues/1857)) ([1870a08](https://github.com/aws/aws-encryption-sdk-java/commit/1870a082358d59e32c60d74116d6f43c0efa466b))
+
+## [2.4.1](https://github.com/aws/aws-encryption-sdk-java/compare/v2.4.0...v2.4.1) (2023-08-09)
+
+
+### Fixes
+
+* **ci:** Quote commit statement to prevent errant YAML parsing ([#581](https://github.com/aws/aws-encryption-sdk-java/issues/581)) ([2166f2d](https://github.com/aws/aws-encryption-sdk-java/commit/2166f2d49c2d80e90778b66e8189a23d55608265))
+* Fix errors in the example code in README.md ([#1306](https://github.com/aws/aws-encryption-sdk-java/issues/1306)) ([b3f5b00](https://github.com/aws/aws-encryption-sdk-java/commit/b3f5b0021efeeee507c5bd3bcf2b8ec1720acfc4))
+* NOTICE.txt ([#1617](https://github.com/aws/aws-encryption-sdk-java/issues/1617)) ([6dbf436](https://github.com/aws/aws-encryption-sdk-java/commit/6dbf436b026e289f0de7b484ff807b0c496b6ef3))
+
+
+### Maintenance
+
+* **ci:** add missing @Test annotation ([#1333](https://github.com/aws/aws-encryption-sdk-java/issues/1333)) ([3f289ac](https://github.com/aws/aws-encryption-sdk-java/commit/3f289ac6b8e2f29a2e1101747bf933027af6287f))
+* **CommitmentPolicy:** Detail Commitment Policy on Enum ([#913](https://github.com/aws/aws-encryption-sdk-java/issues/913)) ([753bf7d](https://github.com/aws/aws-encryption-sdk-java/commit/753bf7dea8971bf5ca09b5512a6eb06da4eafcc7))
+* **deps-dev:** bump junit-jupiter-api from 5.8.2 to 5.9.0 ([#1022](https://github.com/aws/aws-encryption-sdk-java/issues/1022)) ([3706959](https://github.com/aws/aws-encryption-sdk-java/commit/3706959c8730058ea0d567798ab21f4201e4be76))
+* **deps-dev:** bump junit-jupiter-api from 5.9.0 to 5.9.1 ([#1073](https://github.com/aws/aws-encryption-sdk-java/issues/1073)) ([a85666c](https://github.com/aws/aws-encryption-sdk-java/commit/a85666c348ca8f329e588989f4154dedbce53486))
+* **deps-dev:** bump junit-jupiter-api from 5.9.1 to 5.9.2 ([#1313](https://github.com/aws/aws-encryption-sdk-java/issues/1313)) ([1466784](https://github.com/aws/aws-encryption-sdk-java/commit/14667842311da250ad98a74e8143a44cda886823))
+* **deps-dev:** bump junit-vintage-engine from 5.8.2 to 5.9.0 ([#1050](https://github.com/aws/aws-encryption-sdk-java/issues/1050)) ([4a1222c](https://github.com/aws/aws-encryption-sdk-java/commit/4a1222c8fb8beb64be98e9cad5a5db903e0679b8))
+* **deps-dev:** bump junit-vintage-engine from 5.9.0 to 5.9.1 ([#1074](https://github.com/aws/aws-encryption-sdk-java/issues/1074)) ([55746cf](https://github.com/aws/aws-encryption-sdk-java/commit/55746cf2e86c34a04e3d8311e689de6171ed8681))
+* **deps-dev:** bump junit-vintage-engine from 5.9.1 to 5.9.3 ([#1550](https://github.com/aws/aws-encryption-sdk-java/issues/1550)) ([14b6766](https://github.com/aws/aws-encryption-sdk-java/commit/14b6766b23c18ca59fd8309ca3d60d91ea977e91))
+* **deps-dev:** bump mockito-core from 4.10.0 to 4.11.0 ([#1283](https://github.com/aws/aws-encryption-sdk-java/issues/1283)) ([5311392](https://github.com/aws/aws-encryption-sdk-java/commit/53113926a6af4f8537a705f21a654dd34c8a509b))
+* **deps-dev:** bump mockito-core from 4.3.1 to 4.4.0 ([#625](https://github.com/aws/aws-encryption-sdk-java/issues/625)) ([3e6edf3](https://github.com/aws/aws-encryption-sdk-java/commit/3e6edf3de6e59c995b9ce7b7ef7164bbe24706a1))
+* **deps-dev:** bump mockito-core from 4.4.0 to 4.6.1 ([#918](https://github.com/aws/aws-encryption-sdk-java/issues/918)) ([bf7978b](https://github.com/aws/aws-encryption-sdk-java/commit/bf7978b23e16b706686e33c9696ac17232e0ef78))
+* **deps-dev:** bump mockito-core from 4.6.1 to 4.8.0 ([#1055](https://github.com/aws/aws-encryption-sdk-java/issues/1055)) ([d47e1de](https://github.com/aws/aws-encryption-sdk-java/commit/d47e1de49bab2d13dd146a67b988803b7f73303f))
+* **deps-dev:** bump mockito-core from 4.8.0 to 4.8.1 ([#1147](https://github.com/aws/aws-encryption-sdk-java/issues/1147)) ([e2a0f52](https://github.com/aws/aws-encryption-sdk-java/commit/e2a0f52493bf1edaa8d6ca03a2e14a66273c3f03))
+* **deps-dev:** bump mockito-core from 4.8.1 to 4.9.0 ([#1194](https://github.com/aws/aws-encryption-sdk-java/issues/1194)) ([28c2e71](https://github.com/aws/aws-encryption-sdk-java/commit/28c2e7101c1ba5581c43e3074bf932cce103cb55))
+* **deps-dev:** bump mockito-core from 4.9.0 to 4.10.0 ([#1254](https://github.com/aws/aws-encryption-sdk-java/issues/1254)) ([07e2ed2](https://github.com/aws/aws-encryption-sdk-java/commit/07e2ed2a0c525429698f247cc880db730e745aca))
+* **deps:** bump actions/checkout from 2 to 3 ([#558](https://github.com/aws/aws-encryption-sdk-java/issues/558)) ([6652268](https://github.com/aws/aws-encryption-sdk-java/commit/66522687d6e74791a33a29d3a70727c6a604cd33))
+* **deps:** bump aws-actions/configure-aws-credentials from 1 to 2 ([#1437](https://github.com/aws/aws-encryption-sdk-java/issues/1437)) ([91a5811](https://github.com/aws/aws-encryption-sdk-java/commit/91a5811e4ef14b9abbf2e12d6d8f615ec6bb84a4))
+* **deps:** bump aws-java-sdk from 1.12.162 to 1.12.186 ([#629](https://github.com/aws/aws-encryption-sdk-java/issues/629)) ([ec38abe](https://github.com/aws/aws-encryption-sdk-java/commit/ec38abe2aea13be02b5c0e666efb58d44ce65ff1))
+* **deps:** bump aws-java-sdk from 1.12.186 to 1.12.256 ([#920](https://github.com/aws/aws-encryption-sdk-java/issues/920)) ([ef4126b](https://github.com/aws/aws-encryption-sdk-java/commit/ef4126b8b4384a4e4ba70db2bc89520dbe85030f))
+* **deps:** bump aws-java-sdk from 1.12.256 to 1.12.299 ([#1047](https://github.com/aws/aws-encryption-sdk-java/issues/1047)) ([fdf0a6d](https://github.com/aws/aws-encryption-sdk-java/commit/fdf0a6d7338882e35f1a1297c203320817effce1))
+* **deps:** bump aws-java-sdk from 1.12.299 to 1.12.301 ([#1053](https://github.com/aws/aws-encryption-sdk-java/issues/1053)) ([718b3a2](https://github.com/aws/aws-encryption-sdk-java/commit/718b3a2abc2678e998100c05a060358e45ae50cc))
+* **deps:** bump aws-java-sdk from 1.12.301 to 1.12.303 ([#1059](https://github.com/aws/aws-encryption-sdk-java/issues/1059)) ([970e9db](https://github.com/aws/aws-encryption-sdk-java/commit/970e9db0689170ade369084c8cb66e2a16c54f33))
+* **deps:** bump aws-java-sdk from 1.12.303 to 1.12.304 ([#1063](https://github.com/aws/aws-encryption-sdk-java/issues/1063)) ([e8471dc](https://github.com/aws/aws-encryption-sdk-java/commit/e8471dc57f6cfbd0ec79df31261dd9b541d53c42))
+* **deps:** bump aws-java-sdk from 1.12.304 to 1.12.305 ([#1066](https://github.com/aws/aws-encryption-sdk-java/issues/1066)) ([5bc4b3b](https://github.com/aws/aws-encryption-sdk-java/commit/5bc4b3b5f18c6326bcb0cd4899aeb73b919a1e1c))
+* **deps:** bump aws-java-sdk from 1.12.305 to 1.12.306 ([#1071](https://github.com/aws/aws-encryption-sdk-java/issues/1071)) ([93c8314](https://github.com/aws/aws-encryption-sdk-java/commit/93c8314117a7907bc6015385dcb42dc72129e179))
+* **deps:** bump aws-java-sdk from 1.12.306 to 1.12.307 ([#1076](https://github.com/aws/aws-encryption-sdk-java/issues/1076)) ([88f85f4](https://github.com/aws/aws-encryption-sdk-java/commit/88f85f4427461041916000b1c50ccb8aaf1692df))
+* **deps:** bump aws-java-sdk from 1.12.307 to 1.12.308 ([#1081](https://github.com/aws/aws-encryption-sdk-java/issues/1081)) ([53345b8](https://github.com/aws/aws-encryption-sdk-java/commit/53345b8979bd31f1ce7183621ec1cc2375095e87))
+* **deps:** bump aws-java-sdk from 1.12.308 to 1.12.309 ([#1085](https://github.com/aws/aws-encryption-sdk-java/issues/1085)) ([658f9e9](https://github.com/aws/aws-encryption-sdk-java/commit/658f9e9e5d408a2b8df9ad00e373af4e5d0854ef))
+* **deps:** bump aws-java-sdk from 1.12.309 to 1.12.318 ([#1121](https://github.com/aws/aws-encryption-sdk-java/issues/1121)) ([18443d4](https://github.com/aws/aws-encryption-sdk-java/commit/18443d47b416b34dc8f634107b0dfef86ca881c7))
+* **deps:** bump aws-java-sdk from 1.12.318 to 1.12.319 ([#1124](https://github.com/aws/aws-encryption-sdk-java/issues/1124)) ([624c592](https://github.com/aws/aws-encryption-sdk-java/commit/624c592e76ae358b216381ec22b509a6b63dfbe0))
+* **deps:** bump aws-java-sdk from 1.12.319 to 1.12.323 ([#1138](https://github.com/aws/aws-encryption-sdk-java/issues/1138)) ([74b3dd3](https://github.com/aws/aws-encryption-sdk-java/commit/74b3dd325f52818f249c40b54c119b8708c808d8))
+* **deps:** bump aws-java-sdk from 1.12.323 to 1.12.335 ([#1173](https://github.com/aws/aws-encryption-sdk-java/issues/1173)) ([b8b0d53](https://github.com/aws/aws-encryption-sdk-java/commit/b8b0d5305ddf714105db1e258da25ad3973f2b13))
+* **deps:** bump aws-java-sdk from 1.12.335 to 1.12.337 ([#1176](https://github.com/aws/aws-encryption-sdk-java/issues/1176)) ([fa92676](https://github.com/aws/aws-encryption-sdk-java/commit/fa92676118ec1d5f8db97de0521bc34f0bd5b0ff))
+* **deps:** bump aws-java-sdk from 1.12.337 to 1.12.350 ([#1220](https://github.com/aws/aws-encryption-sdk-java/issues/1220)) ([35235a0](https://github.com/aws/aws-encryption-sdk-java/commit/35235a00b4ec12b9fae9a6ab76b8adb355a58ae3))
+* **deps:** bump aws-java-sdk from 1.12.350 to 1.12.366 ([#1259](https://github.com/aws/aws-encryption-sdk-java/issues/1259)) ([456a4ad](https://github.com/aws/aws-encryption-sdk-java/commit/456a4addd8c665ac68af09fec5216c01bb684f29))
+* **deps:** bump aws-java-sdk from 1.12.366 to 1.12.381 ([#1308](https://github.com/aws/aws-encryption-sdk-java/issues/1308)) ([80ed0a6](https://github.com/aws/aws-encryption-sdk-java/commit/80ed0a6f2277e1bf86b65fff55b073839f404d7e))
+* **deps:** bump aws-java-sdk from 1.12.381 to 1.12.394 ([#1351](https://github.com/aws/aws-encryption-sdk-java/issues/1351)) ([0445b9e](https://github.com/aws/aws-encryption-sdk-java/commit/0445b9e8fc16193a7e7f0b6a09f8a08dbec75094))
+* **deps:** bump BouncyCastle from 1.72 to 1.75 ([#1670](https://github.com/aws/aws-encryption-sdk-java/issues/1670)) ([61b6260](https://github.com/aws/aws-encryption-sdk-java/commit/61b6260e1df17507cd4cb01a8a7d08b05d8fd745))
+* **deps:** bump jacoco-maven-plugin from 0.8.7 to 0.8.8 ([#655](https://github.com/aws/aws-encryption-sdk-java/issues/655)) ([802946a](https://github.com/aws/aws-encryption-sdk-java/commit/802946a172fb538ffeb080b8efd0442d9717cee0))
+* **deps:** bump kms from 2.17.136 to 2.17.226 ([#916](https://github.com/aws/aws-encryption-sdk-java/issues/916)) ([6a4011e](https://github.com/aws/aws-encryption-sdk-java/commit/6a4011e7e36e5348f91c4a38d5ca7ef3f4792749))
+* **deps:** bump kms from 2.17.226 to 2.17.259 ([#1020](https://github.com/aws/aws-encryption-sdk-java/issues/1020)) ([6fc33b7](https://github.com/aws/aws-encryption-sdk-java/commit/6fc33b7a937164897336b12108a4a6ae751c5130))
+* **deps:** bump kms from 2.17.259 to 2.17.273 ([#1054](https://github.com/aws/aws-encryption-sdk-java/issues/1054)) ([d87cf16](https://github.com/aws/aws-encryption-sdk-java/commit/d87cf16813d8fe401c992cf03c8643a06723bae1))
+* **deps:** bump kms from 2.17.273 to 2.17.274 ([#1058](https://github.com/aws/aws-encryption-sdk-java/issues/1058)) ([4ab03c4](https://github.com/aws/aws-encryption-sdk-java/commit/4ab03c494c0981e9130c283243b8f8fbd8fb182a))
+* **deps:** bump kms from 2.17.274 to 2.17.275 ([#1062](https://github.com/aws/aws-encryption-sdk-java/issues/1062)) ([5a70da4](https://github.com/aws/aws-encryption-sdk-java/commit/5a70da4cb1c1c8496bdde602fc9da6cc1cf08742))
+* **deps:** bump kms from 2.17.275 to 2.17.276 ([#1065](https://github.com/aws/aws-encryption-sdk-java/issues/1065)) ([a3d1fae](https://github.com/aws/aws-encryption-sdk-java/commit/a3d1fae210285f3d32123b4ef08c489b42f9ddf2))
+* **deps:** bump kms from 2.17.276 to 2.17.277 ([#1070](https://github.com/aws/aws-encryption-sdk-java/issues/1070)) ([7ca5c11](https://github.com/aws/aws-encryption-sdk-java/commit/7ca5c11d4b18d79f83ec0ed88e9d32c5431cd8b1))
+* **deps:** bump kms from 2.17.277 to 2.17.278 ([#1075](https://github.com/aws/aws-encryption-sdk-java/issues/1075)) ([cbac0a3](https://github.com/aws/aws-encryption-sdk-java/commit/cbac0a393ba08262fe4ca515608c2f8479464b98))
+* **deps:** bump kms from 2.17.278 to 2.17.279 ([#1080](https://github.com/aws/aws-encryption-sdk-java/issues/1080)) ([558b2f4](https://github.com/aws/aws-encryption-sdk-java/commit/558b2f449c1d9904ff76615253c288ecd429f1eb))
+* **deps:** bump kms from 2.17.279 to 2.17.280 ([#1086](https://github.com/aws/aws-encryption-sdk-java/issues/1086)) ([29774ad](https://github.com/aws/aws-encryption-sdk-java/commit/29774ade298282dcac668c3afb622e6ec06fe4ab))
+* **deps:** bump kms from 2.17.280 to 2.17.288 ([#1118](https://github.com/aws/aws-encryption-sdk-java/issues/1118)) ([8d94a69](https://github.com/aws/aws-encryption-sdk-java/commit/8d94a6981838c5e01b3c1626c681e64991f35994))
+* **deps:** bump kms from 2.17.288 to 2.17.289 ([#1122](https://github.com/aws/aws-encryption-sdk-java/issues/1122)) ([d09ff99](https://github.com/aws/aws-encryption-sdk-java/commit/d09ff99714f906b46b224a4747d1c6d96b682b91))
+* **deps:** bump kms from 2.17.289 to 2.17.292 ([ff69200](https://github.com/aws/aws-encryption-sdk-java/commit/ff692006dc6ea7c5d19de6c2b93f7c1392abf95f))
+* **deps:** bump kms from 2.17.292 to 2.18.8 ([#1167](https://github.com/aws/aws-encryption-sdk-java/issues/1167)) ([fa16a2d](https://github.com/aws/aws-encryption-sdk-java/commit/fa16a2d15876a91ac59d2c45efcb3ee6e7e2f68f))
+* **deps:** bump kms from 2.18.12 to 2.18.38 ([#1252](https://github.com/aws/aws-encryption-sdk-java/issues/1252)) ([e35cf06](https://github.com/aws/aws-encryption-sdk-java/commit/e35cf06277cd4dea359ecabb96ec3a160b9a3c31))
+* **deps:** bump kms from 2.18.8 to 2.18.12 ([#1177](https://github.com/aws/aws-encryption-sdk-java/issues/1177)) ([f514633](https://github.com/aws/aws-encryption-sdk-java/commit/f514633f91ecf2df39f90e0bbcd7469097ca79ca))
+* **deps:** bump maven-compiler-plugin from 3.9.0 to 3.10.1 ([#582](https://github.com/aws/aws-encryption-sdk-java/issues/582)) ([9e24357](https://github.com/aws/aws-encryption-sdk-java/commit/9e243579269df1f3d08769abc8b11c3354e4400c))
+* **deps:** bump maven-javadoc-plugin from 3.3.1 to 3.3.2 ([#525](https://github.com/aws/aws-encryption-sdk-java/issues/525)) ([8489bd6](https://github.com/aws/aws-encryption-sdk-java/commit/8489bd6d7accf7d48d2070873fe6daefad77ca8c))
+* **deps:** bump maven-javadoc-plugin from 3.3.2 to 3.4.1 ([#998](https://github.com/aws/aws-encryption-sdk-java/issues/998)) ([44be313](https://github.com/aws/aws-encryption-sdk-java/commit/44be313eeb13236b376975290fb52a5583f21941))
+* **deps:** bump maven-surefire-plugin from 2.22.2 to 3.1.2 ([#1632](https://github.com/aws/aws-encryption-sdk-java/issues/1632)) ([ea0a848](https://github.com/aws/aws-encryption-sdk-java/commit/ea0a848c1f2e3ad42f2be7d67add9b33cafa7f4f))
+* **deps:** bump nexus-staging-maven-plugin from 1.6.12 to 1.6.13 ([#704](https://github.com/aws/aws-encryption-sdk-java/issues/704)) ([15fab9f](https://github.com/aws/aws-encryption-sdk-java/commit/15fab9fafc5ccc9e689775db3075690f9869e513))
+* **deps:** bump software.amazon.awssdk:bom from 2.17.136 to 2.17.228 ([#925](https://github.com/aws/aws-encryption-sdk-java/issues/925)) ([ae52cef](https://github.com/aws/aws-encryption-sdk-java/commit/ae52cef6b55f753b2d6ca0909e30972ca59176d6))
+* **deps:** bump software.amazon.awssdk:bom from 2.17.228 to 2.17.273 ([#1056](https://github.com/aws/aws-encryption-sdk-java/issues/1056)) ([e40651c](https://github.com/aws/aws-encryption-sdk-java/commit/e40651c24599ff505a0f9925063e486d5bf55af7))
+* **deps:** bump software.amazon.awssdk:bom from 2.17.273 to 2.17.274 ([#1057](https://github.com/aws/aws-encryption-sdk-java/issues/1057)) ([35f38bd](https://github.com/aws/aws-encryption-sdk-java/commit/35f38bd85df2d919cdb40acb730380158d3fca86))
+* **deps:** bump software.amazon.awssdk:bom from 2.17.274 to 2.17.275 ([#1061](https://github.com/aws/aws-encryption-sdk-java/issues/1061)) ([18c8172](https://github.com/aws/aws-encryption-sdk-java/commit/18c8172f83c63f539c4ebd2db29be694e79d6499))
+* **deps:** bump software.amazon.awssdk:bom from 2.17.275 to 2.17.276 ([#1067](https://github.com/aws/aws-encryption-sdk-java/issues/1067)) ([efd340d](https://github.com/aws/aws-encryption-sdk-java/commit/efd340d713f7a1979d4d5f2f7e790a7ec15aabb1))
+* **deps:** bump software.amazon.awssdk:bom from 2.17.276 to 2.17.277 ([#1069](https://github.com/aws/aws-encryption-sdk-java/issues/1069)) ([5721a81](https://github.com/aws/aws-encryption-sdk-java/commit/5721a8172fa62564530ec9d000372f0719269858))
+* **deps:** bump software.amazon.awssdk:bom from 2.17.277 to 2.17.278 ([#1077](https://github.com/aws/aws-encryption-sdk-java/issues/1077)) ([49b867e](https://github.com/aws/aws-encryption-sdk-java/commit/49b867eea38e218906fa1467a896d4d1e800a1e2))
+* **deps:** bump software.amazon.awssdk:bom from 2.17.278 to 2.17.280 ([#1084](https://github.com/aws/aws-encryption-sdk-java/issues/1084)) ([cb2a92f](https://github.com/aws/aws-encryption-sdk-java/commit/cb2a92f728a833270f8ca0c8199c2ff270718b78))
+* **deps:** bump software.amazon.awssdk:bom from 2.17.280 to 2.17.288 ([#1116](https://github.com/aws/aws-encryption-sdk-java/issues/1116)) ([7ff4e14](https://github.com/aws/aws-encryption-sdk-java/commit/7ff4e14ff07156dd82c374af9ef16906b2e7d6a8))
+* **deps:** bump software.amazon.awssdk:bom from 2.17.288 to 2.17.292 ([98236cd](https://github.com/aws/aws-encryption-sdk-java/commit/98236cd4ceb51d2dd3c0e62e08a1366a15a3f462))
+* **deps:** bump software.amazon.awssdk:bom from 2.17.292 to 2.18.1 ([#1148](https://github.com/aws/aws-encryption-sdk-java/issues/1148)) ([f7f6088](https://github.com/aws/aws-encryption-sdk-java/commit/f7f6088285eefe1ba513ac7c4eeab1b966e96155))
+* **deps:** bump software.amazon.awssdk:bom from 2.18.1 to 2.18.8 ([#1168](https://github.com/aws/aws-encryption-sdk-java/issues/1168)) ([12e5383](https://github.com/aws/aws-encryption-sdk-java/commit/12e53837dddd098cadeebf31e0f19124d6b4f93f))
+* **deps:** bump software.amazon.awssdk:bom from 2.18.12 to 2.18.38 ([#1251](https://github.com/aws/aws-encryption-sdk-java/issues/1251)) ([6593b98](https://github.com/aws/aws-encryption-sdk-java/commit/6593b983c42b749b2ceed64901f81ca92f32d172))
+* **deps:** bump software.amazon.awssdk:bom from 2.18.38 to 2.19.11 ([#1299](https://github.com/aws/aws-encryption-sdk-java/issues/1299)) ([cd08a3b](https://github.com/aws/aws-encryption-sdk-java/commit/cd08a3ba01ade863bd75f65dbcadb2c852b91b83))
+* **deps:** bump software.amazon.awssdk:bom from 2.18.8 to 2.18.12 ([#1178](https://github.com/aws/aws-encryption-sdk-java/issues/1178)) ([03bc7bd](https://github.com/aws/aws-encryption-sdk-java/commit/03bc7bd08c8f50f170c754e2dd802cf538a01394))
+* **deps:** bump software.amazon.awssdk:bom from 2.19.11 to 2.19.26 ([#1354](https://github.com/aws/aws-encryption-sdk-java/issues/1354)) ([7ee7f55](https://github.com/aws/aws-encryption-sdk-java/commit/7ee7f55691251c207f9667a0da899b98b4f07149))
+* **deps:** bump software.amazon.awssdk:bom from 2.19.26 to 2.20.91 ([#1667](https://github.com/aws/aws-encryption-sdk-java/issues/1667)) ([2b5f92a](https://github.com/aws/aws-encryption-sdk-java/commit/2b5f92a68d3e5304ee0fda75541c03f797b8a78f))
+* Detail AWS SDK v2 support ([#835](https://github.com/aws/aws-encryption-sdk-java/issues/835)) ([5705e1f](https://github.com/aws/aws-encryption-sdk-java/commit/5705e1f2aaa8def520b2ea73a7dd50c845cf6ed9))
+* Fix re-run CI workflows ([#1219](https://github.com/aws/aws-encryption-sdk-java/issues/1219)) ([3bec521](https://github.com/aws/aws-encryption-sdk-java/commit/3bec521ba0bf6cb8a91c1a585d3b7b6a355d095c))
+* remove mainline-1.x from dependabot ([#1120](https://github.com/aws/aws-encryption-sdk-java/issues/1120)) ([3956822](https://github.com/aws/aws-encryption-sdk-java/commit/3956822018126c03158cf7b6d9f8ea18ebee990a))
+* Run CodeBuild CI from Github Actions ([#1213](https://github.com/aws/aws-encryption-sdk-java/issues/1213)) ([ba726b5](https://github.com/aws/aws-encryption-sdk-java/commit/ba726b5037cad31c94a1e1f4fbcd53786c446d2b))
+* **SupportPolicy:** Mark 1.x End-of-Support ([#1026](https://github.com/aws/aws-encryption-sdk-java/issues/1026)) ([ff93eab](https://github.com/aws/aws-encryption-sdk-java/commit/ff93eab16c8059d0e6f11f0719cf5cb5e65050b9))
+* Update `org.bouncycastle` to `bcprov-ext-jdk18on` ([#1572](https://github.com/aws/aws-encryption-sdk-java/issues/1572)) ([c56aff3](https://github.com/aws/aws-encryption-sdk-java/commit/c56aff30471899460a7821ae97e3869b22a24612))
+* update node version in versioning cb step ([#1712](https://github.com/aws/aws-encryption-sdk-java/issues/1712)) ([a34e0ad](https://github.com/aws/aws-encryption-sdk-java/commit/a34e0add6f900575f399f332a44f573e6884a615))
+* use correct signing key for release ([#928](https://github.com/aws/aws-encryption-sdk-java/issues/928)) ([86332e4](https://github.com/aws/aws-encryption-sdk-java/commit/86332e4b895bf0cdeef0570974e5d3707db0643c))
+* use new signing keys for ci ([#840](https://github.com/aws/aws-encryption-sdk-java/issues/840)) ([6043417](https://github.com/aws/aws-encryption-sdk-java/commit/60434173026c3f6a6e268124bfebcf308d78cf2c))
+
 ## [2.4.0](https://github.com/aws/aws-encryption-sdk-java/compare/v2.3.3...v2.4.0) (2022-03-09)
 
 

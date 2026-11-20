@@ -91,7 +91,7 @@ Resources:
         ## If this value is 0, greater than 25, or not provided then the full history is downloaded with each build project.
         GitCloneDepth: 0
         GitSubmodulesConfig:
-          FetchSubmodules: false
+          FetchSubmodules: true
         InsecureSsl: false
         ReportBuildStatus: false
         Type: GITHUB
@@ -137,10 +137,10 @@ Resources:
       ManagedPolicyArns:
         - !Ref CryptoToolsKMS
         - !Ref CodeBuildBatchPolicy
-        - !Ref CodeBuildBasePolicy
+        - !Ref CodeBuildBasePolicyCI
         - !Ref SecretsManagerPolicyCI
         - !Ref ParameterStorePolicy
-        - !Ref CodeBuildBasePolicyCI
+        - !Ref CodeBuildCISTSAllow
         - "arn:aws:iam::aws:policy/AWSCodeArtifactReadOnlyAccess"
         - "arn:aws:iam::aws:policy/AWSCodeArtifactAdminAccess"
 
@@ -159,8 +159,26 @@ Resources:
         - !Ref CodeBuildBasePolicy
         - !Ref SecretsManagerPolicyRelease
         - !Ref ParameterStorePolicy
+        - !Ref CodeBuildCISTSAllow
         - "arn:aws:iam::aws:policy/AWSCodeArtifactReadOnlyAccess"
         - "arn:aws:iam::aws:policy/AWSCodeArtifactAdminAccess"
+
+  CodeBuildCISTSAllow:
+    Type: "AWS::IAM::ManagedPolicy"
+    Properties:
+      ManagedPolicyName: !Sub CodeBuildCISTSAllow-${ProjectName}
+      Path: /service-role/
+      PolicyDocument: |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+              {
+                  "Effect": "Allow",
+                  "Action": "sts:AssumeRole",
+                  "Resource": "arn:aws:iam::370957321024:role/GitHub-CI-Public-ESDK-Java-Role-us-west-2"
+              }
+          ]
+        }
 
   CodeBuildBatchPolicy:
     Type: "AWS::IAM::ManagedPolicy"
@@ -175,9 +193,7 @@ Resources:
             {
               "Effect": "Allow",
               "Resource": [
-                "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${ProjectName}-Release",
-                "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${ProjectName}-CI",
-                "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${ProjectName}"
+                "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${ProjectName}-CI"
               ],
               "Action": [
                 "codebuild:StartBuild",
@@ -202,7 +218,7 @@ Resources:
                 {
                     "Effect": "Allow",
                     "Resource": [
-                        "arn:aws:codebuild:us-west-2:${AWS::AccountId}:project/AWS-ESDK-Java-Release"
+                        "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${ProjectName}-Release"
                     ],
                     "Action": [
                         "codebuild:StartBuild",
@@ -225,8 +241,6 @@ Resources:
             {
               "Effect": "Allow",
               "Resource": [
-                "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${ProjectName}",
-                "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${ProjectName}:*",
                 "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${ProjectName}-CI",
                 "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${ProjectName}-CI:*",
                 "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${ProjectName}-Release",
@@ -286,7 +300,8 @@ Resources:
                       "Action": [
                           "logs:CreateLogGroup",
                           "logs:CreateLogStream",
-                          "logs:PutLogEvents"
+                          "logs:PutLogEvents",
+                          "logs:GetLogEvents"
                       ]
                   },
                   {
@@ -312,7 +327,7 @@ Resources:
                           "codebuild:BatchPutCodeCoverages"
                       ],
                       "Resource": [
-                          "arn:aws:codebuild:us-west-2:${AWS::AccountId}:report-group/AWS-ESDK-Java-CI-*"
+                          "arn:aws:codebuild:us-west-2:${AWS::AccountId}:report-group/${ProjectName}-CI-*"
                       ]
                   }
               ]
@@ -360,7 +375,8 @@ Resources:
               "Resource": [
                 "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Maven-GPG-Keys-Release-haLIjZ",
                 "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Maven-GPG-Keys-Release-Credentials-WgJanS",
-                "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Sonatype-Team-Account-0tWvZm",
+                "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Sonatype-User-Token-zK61bM",
+                "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Sonatype-Central-Portal-XrYUs2",
                 "arn:aws:secretsmanager:us-west-2:${AWS::AccountId}:secret:Github/aws-crypto-tools-ci-bot-AGUB3U"
               ],
               "Action": "secretsmanager:GetSecretValue"
@@ -382,12 +398,17 @@ Resources:
               "Effect": "Allow",
               "Resource": [
                 "arn:aws:kms:*:658956600833:key/*",
-                "arn:aws:kms:*:658956600833:alias/*"
+                "arn:aws:kms:*:658956600833:alias/*",
+                "arn:aws:kms:*:370957321024:key/*",
+                "arn:aws:kms:*:370957321024:alias/*"
               ],
               "Action": [
                 "kms:Encrypt",
                 "kms:Decrypt",
-                "kms:GenerateDataKey"
+                "kms:ReEncrypt*",
+                "kms:Generate*",
+                "kms:GetPublicKey",
+                "kms:DescribeKey"
               ]
             }
           ]

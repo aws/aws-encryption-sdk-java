@@ -9,21 +9,42 @@ env:
   secrets-manager:
     GPG_KEY: Maven-GPG-Keys-Release-Credentials:Keyname
     GPG_PASS: Maven-GPG-Keys-Release-Credentials:Passphrase
-    SONA_USERNAME: Sonatype-Team-Account:Username 
-    SONA_PASSWORD: Sonatype-Team-Account:Password
+    SONA_USERNAME: Sonatype-Central-Portal:Username
+    SONA_PASSWORD: Sonatype-Central-Portal:Password
 
 phases:
   install:
     runtime-versions:
       java: corretto11
+    commands:
+      - git submodule update --init submodules/MaterialProviders
+      # Get Dafny
+      - curl https://github.com/dafny-lang/dafny/releases/download/v4.8.0/dafny-4.8.0-x64-ubuntu-20.04.zip  -L -o dafny.zip
+      - unzip -qq dafny.zip && rm dafny.zip
+      - export PATH="$PWD/dafny:$PATH"
+      # Get Gradle 7.6
+      - curl https://services.gradle.org/distributions/gradle-7.6-all.zip -L -o gradle.zip
+      - unzip -qq gradle.zip && rm gradle.zip
+      - export PATH="$PWD/gradle-7.6/bin:$PATH"
   pre_build:
     commands:
       - git checkout $BRANCH
       - export SETTINGS_FILE=$(pwd)/codebuild/release/settings.xml
       - aws secretsmanager get-secret-value --region us-west-2 --secret-id Maven-GPG-Keys-Release --query SecretBinary --output text | base64 -d > ~/mvn_gpg.tgz
       - tar -xvf ~/mvn_gpg.tgz -C ~
+      # Build and deploy TestVectors to maven local
+      - cd submodules/MaterialProviders/TestVectorsAwsCryptographicMaterialProviders/
+      - make build_java && make mvn_local_deploy
+      - cd $CODEBUILD_SRC_DIR
   build:
     commands:
+      # Assume Role to access non-prod resources
+      - TMP_ROLE=$(aws sts assume-role --role-arn "arn:aws:iam::370957321024:role/GitHub-CI-Public-ESDK-Java-Role-us-west-2" --role-session-name "CB-TestVectorResources")
+      - export TMP_ROLE
+      - export AWS_ACCESS_KEY_ID=$(echo "${TMP_ROLE}" | jq -r '.Credentials.AccessKeyId')
+      - export AWS_SECRET_ACCESS_KEY=$(echo "${TMP_ROLE}" | jq -r '.Credentials.SecretAccessKey')
+      - export AWS_SESSION_TOKEN=$(echo "${TMP_ROLE}" | jq -r '.Credentials.SessionToken')
+      - aws sts get-caller-identity
       - |
         mvn deploy \
           -Ppublishing \

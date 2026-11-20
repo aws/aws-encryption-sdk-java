@@ -9,22 +9,26 @@ import static org.apache.commons.lang3.Validate.notNull;
 
 import com.amazonaws.encryptionsdk.CryptoAlgorithm;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECFieldFp;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPoint;
+import java.security.spec.ECPrivateKeySpec;
 import java.security.spec.ECPublicKeySpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.InvalidParameterSpecException;
 import java.util.Arrays;
+import software.amazon.cryptography.materialproviders.model.AlgorithmSuiteInfo;
 
 /**
  * Provides a consistent interface across various trailing signature algorithms.
@@ -32,7 +36,6 @@ import java.util.Arrays;
  * <p>NOTE: This is not a stable API and may undergo breaking changes in the future.
  */
 public abstract class TrailingSignatureAlgorithm {
-
   private TrailingSignatureAlgorithm() {
     /* Do not allow arbitrary subclasses */
   }
@@ -45,23 +48,27 @@ public abstract class TrailingSignatureAlgorithm {
 
   public abstract PublicKey deserializePublicKey(String keyString);
 
+  public abstract PublicKey decompressPublicKey(byte[] decodedKey);
+
   public abstract String serializePublicKey(PublicKey key);
 
   public abstract KeyPair generateKey() throws GeneralSecurityException;
+
+  public abstract PrivateKey privateKeyFromByteBuffer(ByteBuffer privateKey);
 
   /* Standards for Efficient Cryptography over a prime field */
   private static final String SEC_PRIME_FIELD_PREFIX = "secp";
 
   private static final class ECDSASignatureAlgorithm extends TrailingSignatureAlgorithm {
-    private final ECGenParameterSpec ecSpec;
-    private final ECParameterSpec ecParameterSpec;
-    private final String messageDigestAlgorithm;
-    private final String hashAndSignAlgorithm;
     private static final String ELLIPTIC_CURVE_ALGORITHM = "EC";
     /* Constants used by SEC-1 v2 point compression and decompression algorithms */
     private static final BigInteger TWO = BigInteger.valueOf(2);
     private static final BigInteger THREE = BigInteger.valueOf(3);
     private static final BigInteger FOUR = BigInteger.valueOf(4);
+    private final ECGenParameterSpec ecSpec;
+    private final ECParameterSpec ecParameterSpec;
+    private final String messageDigestAlgorithm;
+    private final String hashAndSignAlgorithm;
 
     private ECDSASignatureAlgorithm(
         ECGenParameterSpec ecSpec, String messageDigestAlgorithm, String hashAndSignAlgorithm) {
@@ -106,15 +113,28 @@ public abstract class TrailingSignatureAlgorithm {
     /**
      * Decodes a compressed elliptic curve point as described in SEC-1 v2 section 2.3.4
      *
-     * @param keyString The serialized and compressed public key
+     * @param keyString The serialized and compressed public key as Base64 Encoded String
      * @return The PublicKey
      * @see <a href="http://www.secg.org/sec1-v2.pdf">http://www.secg.org/sec1-v2.pdf</a>
      */
     @Override
-    public PublicKey deserializePublicKey(String keyString) {
+    public PublicKey deserializePublicKey(final String keyString) {
       notNull(keyString, "keyString is required");
-
       final byte[] decodedKey = Utils.decodeBase64String(keyString);
+      return decompressPublicKey(decodedKey);
+    }
+
+    /**
+     * Decodes a compressed elliptic curve point as described in SEC-1 v2 section 2.3.4
+     *
+     * @param decodedKey Byte Array of compressed elliptic curve point
+     * @return The PublicKey
+     * @see <a href="http://www.secg.org/sec1-v2.pdf">http://www.secg.org/sec1-v2.pdf</a>
+     */
+    @Override
+    public PublicKey decompressPublicKey(final byte[] decodedKey) {
+      notNull(decodedKey, "decodedKey is required");
+
       final BigInteger x = new BigInteger(1, Arrays.copyOfRange(decodedKey, 1, decodedKey.length));
 
       final byte compressedY = decodedKey[0];
@@ -165,7 +185,7 @@ public abstract class TrailingSignatureAlgorithm {
      * @see <a href="http://www.secg.org/sec1-v2.pdf">http://www.secg.org/sec1-v2.pdf</a>
      */
     @Override
-    public String serializePublicKey(PublicKey key) {
+    public String serializePublicKey(final PublicKey key) {
       notNull(key, "key is required");
       isInstanceOf(ECPublicKey.class, key, "key must be an instance of ECPublicKey");
 
@@ -185,10 +205,23 @@ public abstract class TrailingSignatureAlgorithm {
     }
 
     @Override
+    public PrivateKey privateKeyFromByteBuffer(final ByteBuffer privateKey) {
+      notNull(privateKey, "privateKey is required");
+
+      BigInteger privateKeyValue = new BigInteger(1, privateKey.array());
+      ECPrivateKeySpec privateKeySpec = new ECPrivateKeySpec(privateKeyValue, ecParameterSpec);
+      try {
+        KeyFactory keyFactory = KeyFactory.getInstance("EC");
+        return keyFactory.generatePrivate(privateKeySpec);
+      } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+        throw new IllegalStateException("Invalid algorithm", e);
+      }
+    }
+
+    @Override
     public KeyPair generateKey() throws GeneralSecurityException {
       KeyPairGenerator keyGen = KeyPairGenerator.getInstance(ELLIPTIC_CURVE_ALGORITHM);
       keyGen.initialize(ecSpec, Utils.getSecureRandom());
-
       return keyGen.generateKeyPair();
     }
   }
@@ -196,6 +229,7 @@ public abstract class TrailingSignatureAlgorithm {
   private static final ECDSASignatureAlgorithm SHA256_ECDSA_P256 =
       new ECDSASignatureAlgorithm(
           new ECGenParameterSpec(SEC_PRIME_FIELD_PREFIX + "256r1"), "SHA-256", "SHA256withECDSA");
+
   private static final ECDSASignatureAlgorithm SHA384_ECDSA_P384 =
       new ECDSASignatureAlgorithm(
           new ECGenParameterSpec(SEC_PRIME_FIELD_PREFIX + "384r1"), "SHA-384", "SHA384withECDSA");
@@ -211,5 +245,11 @@ public abstract class TrailingSignatureAlgorithm {
       default:
         throw new IllegalStateException("Algorithm does not support trailing signature");
     }
+  }
+
+  public static TrailingSignatureAlgorithm forCryptoAlgorithm(
+      AlgorithmSuiteInfo algorithmSuiteInfo) {
+    notNull(algorithmSuiteInfo, "algorithmSuiteInfo is required");
+    return forCryptoAlgorithm(CryptoAlgorithm.valueOf(algorithmSuiteInfo.id().ESDK().name()));
   }
 }

@@ -10,25 +10,226 @@ permissions:
   contents: read
 
 jobs:
-  runCodeBuildCI:
-    name: Run CodeBuild CI
+  staticAnalysis:
+    name: Static Analysis
     environment: ci
-    runs-on: ubuntu-latest
+    runs-on: &codebuild-linux codebuild-CryptoToolsCI-linux-aws-encryption-sdk-java-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ secrets.CI_AWS_ROLE_ARN }}
           aws-region: us-west-2
           role-duration-seconds: 3600
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Start CodeBuild Batch Build
+      - name: Run Static Analysis
+        uses: aws-actions/aws-codebuild-run-build@v1
+        timeout-minutes: 60
+        with:
+          project-name: AWS-ESDK-Java-CI
+          buildspec-override: codebuild/ci/static-analysis.yml
+          compute-type-override: BUILD_GENERAL1_MEDIUM
+          image-override: "aws/codebuild/amazonlinux-x86_64-standard:5.0"
+  vectorTests:
+    name: Vector Tests
+    environment: ci
+    runs-on: *codebuild-linux
+    strategy:
+      fail-fast: true
+      matrix:
+        platform:
+          # - distribution: openjdk
+          #   image: "aws/codebuild/amazonlinux-x86_64-standard:5.0"
+          - distribution: corretto
+            image: "aws/codebuild/amazonlinux-x86_64-standard:5.0" # Corretto only runs on AL2
+        version: [ 8, 11, 17, 21 ]
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.CI_AWS_ROLE_ARN }}
+          aws-region: us-west-2
+          role-duration-seconds: 3600
+      - name: Vector Tests ${{ matrix.platform.distribution }}${{ matrix.version }}
+        uses: aws-actions/aws-codebuild-run-build@v1
+        timeout-minutes: 60
+        with:
+          project-name: AWS-ESDK-Java-CI
+          buildspec-override: codebuild/ci/vectors-ci.yml
+          compute-type-override: BUILD_GENERAL1_LARGE
+          image-override: ${{ matrix.platform.image }}
+          env-vars-for-codebuild: JAVA_ENV_VERSION
+        env:
+          JAVA_ENV_VERSION: ${{ matrix.platform.distribution }}${{ matrix.version }}
+  vectorTestsMasterKeyProvider:
+    name: Vector Tests MasterKeyProvider
+    environment: ci
+    runs-on: *codebuild-linux
+    strategy:
+      fail-fast: true
+      matrix:
+        platform:
+          # - distribution: openjdk
+          #   image: "aws/codebuild/standard:3.0"
+          - distribution: corretto
+            image: "aws/codebuild/amazonlinux-x86_64-standard:5.0" # Corretto only runs on AL2
+        version: [ 8, 11, 17, 21 ]
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.CI_AWS_ROLE_ARN }}
+          aws-region: us-west-2
+          role-duration-seconds: 3600
+      - name: Vector Tests ${{ matrix.platform.distribution }}${{ matrix.version }}
+        uses: aws-actions/aws-codebuild-run-build@v1
+        timeout-minutes: 60
+        with:
+          project-name: AWS-ESDK-Java-CI
+          buildspec-override: codebuild/ci/vectors-ci-mkp.yml
+          compute-type-override: BUILD_GENERAL1_LARGE
+          image-override: ${{ matrix.platform.image }}
+          env-vars-for-codebuild: JAVA_ENV_VERSION
+        env:
+          JAVA_ENV_VERSION: ${{ matrix.platform.distribution }}${{ matrix.version }}
+  netVectorTests:
+    name: ESDK-NET Vector Tests
+    environment: ci
+    runs-on: *codebuild-linux
+    strategy:
+      fail-fast: true
+      matrix:
+        platform:
+          # - distribution: openjdk
+          #   image: "aws/codebuild/standard:3.0"
+          - distribution: corretto
+            image: "aws/codebuild/amazonlinux-x86_64-standard:5.0" # Corretto only runs on AL2
+        version: [ 8, 11, 17, 21 ]
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.CI_AWS_ROLE_ARN }}
+          aws-region: us-west-2
+          role-duration-seconds: 3600
+      - name: Vector Tests ${{ matrix.platform.distribution }}${{ matrix.version }}
+        uses: aws-actions/aws-codebuild-run-build@v1
+        timeout-minutes: 60
+        with:
+          project-name: AWS-ESDK-Java-CI
+          buildspec-override: codebuild/ci/net-vectors-ci.yml
+          compute-type-override: BUILD_GENERAL1_LARGE
+          image-override: ${{ matrix.platform.image }}
+          env-vars-for-codebuild: JAVA_ENV_VERSION
+        env:
+          JAVA_ENV_VERSION: ${{ matrix.platform.distribution }}${{ matrix.version }}
+  generateTestVectors:
+    name: Generate Vectors
+    environment: ci
+    runs-on: *codebuild-linux
+    strategy:
+      max-parallel: 1
+      fail-fast: true
+      matrix:
+        platform:
+          # - distribution: openjdk
+          #   image: "aws/codebuild/standard:3.0"
+          - distribution: corretto
+            image: "aws/codebuild/amazonlinux-x86_64-standard:5.0" # Corretto only runs on AL2
+        version: [ 8, 11, 17, 21 ]
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.CI_AWS_ROLE_ARN }}
+          aws-region: us-west-2
+          role-duration-seconds: 3600
+      - name: Generate Test Vectors
+        uses: aws-actions/aws-codebuild-run-build@v1
+        timeout-minutes: 60
+        with:
+          project-name: AWS-ESDK-Java-CI
+          buildspec-override: codebuild/ci/vectors-generator.yml
+          compute-type-override: BUILD_GENERAL1_LARGE
+          image-override: ${{ matrix.platform.image }}
+          env-vars-for-codebuild: JAVA_ENV_VERSION
+        env:
+          JAVA_ENV_VERSION: ${{ matrix.platform.distribution }}${{ matrix.version }}
+  validateConsumerCompiles:
+    name: Validate Consumer Smoke Test
+    runs-on: *codebuild-linux
+    strategy:
+      fail-fast: false
+      matrix:
+        java-version: [ 8, 11, 17, 21 ]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: corretto
+          java-version: ${{ matrix.java-version }}
+      - name: Compile and run smoke test against Maven Central
+        working-directory: codebuild/ci/validate-consumer
         run: |
-          echo "BATCH_ID<<EOF" >> $GITHUB_ENV
-          ./.github/scripts/start_codebuild_batch.sh ${{ github.sha }} >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-        shell: bash
-      - name: Wait for CodeBuild completion
-        run: ./.github/scripts/poll_build_status.sh ${{ env.BATCH_ID }}
-        shell: bash
+          mvn compile exec:java \
+            -Dexec.mainClass="validate.EsdkSmokeTest" \
+            -Desdk.version=3.0.1 \
+            -Djava.version=${{ matrix.java-version }} \
+            --no-transfer-progress
+  releaseCI:
+    name: Release CI
+    environment: ci
+    runs-on: *codebuild-linux
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.CI_AWS_ROLE_ARN }}
+          aws-region: us-west-2
+          role-duration-seconds: 3600
+      - name: Release CI
+        uses: aws-actions/aws-codebuild-run-build@v1
+        timeout-minutes: 60
+        with:
+          project-name: AWS-ESDK-Java-CI
+          buildspec-override: codebuild/ci/release-ci.yml
+          compute-type-override: BUILD_GENERAL1_LARGE
+          image-override: "aws/codebuild/amazonlinux-x86_64-standard:5.0"
+          env-vars-for-codebuild: GITHUB_EVENT_NAME
+        env:
+          GITHUB_EVENT_NAME: $GITHUB_EVENT_NAME
+
+  validateCI:
+    name: Validate CI
+    environment: ci
+    runs-on: *codebuild-linux
+    needs: releaseCI
+    strategy:
+      fail-fast: true
+      matrix:
+        platform:
+          - distribution: corretto
+            image: "aws/codebuild/amazonlinux-x86_64-standard:5.0"
+        version: [ 8, 11, 17, 21 ]
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.CI_AWS_ROLE_ARN }}
+          aws-region: us-west-2
+          role-duration-seconds: 3600
+      - name: Validate CI ${{ matrix.platform.distribution }}${{ matrix.version }}
+        uses: aws-actions/aws-codebuild-run-build@v1
+        timeout-minutes: 60
+        with:
+          project-name: AWS-ESDK-Java-CI
+          buildspec-override: codebuild/ci/validate-ci.yml
+          compute-type-override: BUILD_GENERAL1_MEDIUM
+          image-override: ${{ matrix.platform.image }}
+          env-vars-for-codebuild: |
+            JAVA_ENV_VERSION,
+            JAVA_NUMERIC_VERSION,
+            GITHUB_EVENT_NAME
+        env:
+          JAVA_ENV_VERSION: ${{ matrix.platform.distribution }}${{ matrix.version }}
+          JAVA_NUMERIC_VERSION: ${{ matrix.version }}
+          GITHUB_EVENT_NAME: $GITHUB_EVENT_NAME

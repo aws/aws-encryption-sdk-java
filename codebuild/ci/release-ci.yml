@@ -16,7 +16,17 @@ env:
 phases:
   install:
     runtime-versions:
-      java: openjdk11
+      java: corretto11
+    commands:
+      - git submodule update --init submodules/MaterialProviders
+      # Get Dafny
+      - curl https://github.com/dafny-lang/dafny/releases/download/v4.8.0/dafny-4.8.0-x64-ubuntu-20.04.zip  -L -o dafny.zip
+      - unzip -qq dafny.zip && rm dafny.zip
+      - export PATH="$PWD/dafny:$PATH"
+      # Get Gradle 7.6
+      - curl https://services.gradle.org/distributions/gradle-7.6-all.zip -L -o gradle.zip
+      - unzip -qq gradle.zip && rm gradle.zip
+      - export PATH="$PWD/gradle-7.6/bin:$PATH"
   pre_build:
     commands:
       - export SETTINGS_FILE=$(pwd)/codebuild/release/settings.xml
@@ -24,9 +34,15 @@ phases:
       - export CODEARTIFACT_REPO_URL=https://${DOMAIN}-${ACCOUNT}.d.codeartifact.${REGION}.amazonaws.com/maven/${REPOSITORY}
       - aws secretsmanager get-secret-value --region us-west-2 --secret-id Maven-GPG-Keys-CI --query SecretBinary --output text | base64 -d > ~/mvn_gpg.tgz
       - tar -xvf ~/mvn_gpg.tgz -C ~
+
+      # Build and deploy TestVectors to maven local
+      - cd submodules/MaterialProviders/TestVectorsAwsCryptographicMaterialProviders/
+      - make build_java && make mvn_local_deploy
+      - cd $CODEBUILD_SRC_DIR
+
   build:
     commands:
-      - VERSION_HASH="$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)-$CODEBUILD_RESOLVED_SOURCE_VERSION"
+      - VERSION_HASH="$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)-$CODEBUILD_RESOLVED_SOURCE_VERSION-$GITHUB_EVENT_NAME"
 
       # Remove any old artifacts with the same commit ID. This allows CI to run more than once for the same commit
       - |
@@ -37,7 +53,13 @@ phases:
           --package $PACKAGE \
           --versions $VERSION_HASH \
           --region $REGION;
-
+      # Assume Role to access non-prod resources
+      - TMP_ROLE=$(aws sts assume-role --role-arn "arn:aws:iam::370957321024:role/GitHub-CI-Public-ESDK-Java-Role-us-west-2" --role-session-name "CB-TestVectorResources")
+      - export TMP_ROLE
+      - export AWS_ACCESS_KEY_ID=$(echo "${TMP_ROLE}" | jq -r '.Credentials.AccessKeyId')
+      - export AWS_SECRET_ACCESS_KEY=$(echo "${TMP_ROLE}" | jq -r '.Credentials.SecretAccessKey')
+      - export AWS_SESSION_TOKEN=$(echo "${TMP_ROLE}" | jq -r '.Credentials.SessionToken')
+      - aws sts get-caller-identity
       # See https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-env-vars.html
       - echo "Setting version in POM to $VERSION_HASH"
       - mvn versions:set -DnewVersion="$VERSION_HASH" --no-transfer-progress
@@ -45,7 +67,7 @@ phases:
       - |
         mvn deploy \
           -PpublishingCodeArtifact \
-          -Dmaven.test.skip=true \
+          -Pfast-tests-only \
           -DperformRelease \
           -Dgpg.homedir="$HOME/mvn_gpg" \
           -DautoReleaseAfterClose=true \

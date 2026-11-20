@@ -18,6 +18,11 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import software.amazon.cryptography.materialproviders.MaterialProviders;
+import software.amazon.cryptography.materialproviders.model.AlgorithmSuiteId;
+import software.amazon.cryptography.materialproviders.model.AlgorithmSuiteInfo;
+import software.amazon.cryptography.materialproviders.model.HKDF;
+import software.amazon.cryptography.materialproviders.model.MaterialProvidersConfig;
 
 /**
  * Describes the cryptographic algorithms available for use in this library.
@@ -28,135 +33,57 @@ import javax.crypto.spec.SecretKeySpec;
  */
 public enum CryptoAlgorithm {
   /** AES-GCM 128 */
-  ALG_AES_128_GCM_IV12_TAG16_NO_KDF(
-      1, 128, 12, 16, Constants.GCM_MAX_CONTENT_LEN, "AES", 16, 0x0014, "AES", 16, false),
+  ALG_AES_128_GCM_IV12_TAG16_NO_KDF(0x0014),
   /** AES-GCM 192 */
-  ALG_AES_192_GCM_IV12_TAG16_NO_KDF(
-      1, 128, 12, 16, Constants.GCM_MAX_CONTENT_LEN, "AES", 24, 0x0046, "AES", 24, false),
+  ALG_AES_192_GCM_IV12_TAG16_NO_KDF(0x0046),
   /** AES-GCM 256 */
-  ALG_AES_256_GCM_IV12_TAG16_NO_KDF(
-      1, 128, 12, 16, Constants.GCM_MAX_CONTENT_LEN, "AES", 32, 0x0078, "AES", 32, false),
+  ALG_AES_256_GCM_IV12_TAG16_NO_KDF(0x0078),
   /** AES-GCM 128 with HKDF-SHA256 */
-  ALG_AES_128_GCM_IV12_TAG16_HKDF_SHA256(
-      1, 128, 12, 16, Constants.GCM_MAX_CONTENT_LEN, "AES", 16, 0x0114, "HkdfSHA256", 16, true),
-  /** AES-GCM 192 */
-  ALG_AES_192_GCM_IV12_TAG16_HKDF_SHA256(
-      1, 128, 12, 16, Constants.GCM_MAX_CONTENT_LEN, "AES", 24, 0x0146, "HkdfSHA256", 24, true),
-  /** AES-GCM 256 */
-  ALG_AES_256_GCM_IV12_TAG16_HKDF_SHA256(
-      1, 128, 12, 16, Constants.GCM_MAX_CONTENT_LEN, "AES", 32, 0x0178, "HkdfSHA256", 32, true),
-
-  /** AES-GCM 128 with ECDSA (SHA256 with the secp256r1 curve) */
-  ALG_AES_128_GCM_IV12_TAG16_HKDF_SHA256_ECDSA_P256(
-      1,
-      128,
-      12,
-      16,
-      Constants.GCM_MAX_CONTENT_LEN,
-      "AES",
-      16,
-      0x0214,
-      "HkdfSHA256",
-      16,
-      true,
-      "SHA256withECDSA",
-      71),
-  /** AES-GCM 192 with ECDSA (SHA384 with the secp384r1 curve) */
-  ALG_AES_192_GCM_IV12_TAG16_HKDF_SHA384_ECDSA_P384(
-      1,
-      128,
-      12,
-      16,
-      Constants.GCM_MAX_CONTENT_LEN,
-      "AES",
-      24,
-      0x0346,
-      "HkdfSHA384",
-      24,
-      true,
-      "SHA384withECDSA",
-      103),
-  /** AES-GCM 256 with ECDSA (SHA384 with the secp384r1 curve) */
-  ALG_AES_256_GCM_IV12_TAG16_HKDF_SHA384_ECDSA_P384(
-      1,
-      128,
-      12,
-      16,
-      Constants.GCM_MAX_CONTENT_LEN,
-      "AES",
-      32,
-      0x0378,
-      "HkdfSHA384",
-      32,
-      true,
-      "SHA384withECDSA",
-      103),
+  ALG_AES_128_GCM_IV12_TAG16_HKDF_SHA256(0x0114),
+  /** AES-GCM 192 with HKDF-SHA256 */
+  ALG_AES_192_GCM_IV12_TAG16_HKDF_SHA256(0x0146),
+  /** AES-GCM 256 with HKDF-SHA256 */
+  ALG_AES_256_GCM_IV12_TAG16_HKDF_SHA256(0x0178),
+  /** AES-GCM 128 with HKDF-SHA256 and ECDSA (SHA256 with the secp256r1 curve) */
+  ALG_AES_128_GCM_IV12_TAG16_HKDF_SHA256_ECDSA_P256(0x0214),
+  /** AES-GCM 192 with HKDF-SHA384 ECDSA (SHA384 with the secp384r1 curve) */
+  ALG_AES_192_GCM_IV12_TAG16_HKDF_SHA384_ECDSA_P384(0x0346),
+  /** AES-GCM 256 with HKDF-SHA384 and ECDSA (SHA384 with the secp384r1 curve) */
+  ALG_AES_256_GCM_IV12_TAG16_HKDF_SHA384_ECDSA_P384(0x0378),
   /**
-   * AES-GCM 256 with key commitment Note: 1.7.0 of this library only supports decryption of using
-   * this crypto algorithm and does not support encryption with this algorithm
+   * AES-GCM 256 with HKDF-SHA512 and key commitment Note: 1.7.0 of this library only supports
+   * decryption of using this crypto algorithm and does not support encryption with this algorithm
    */
-  ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY(
-      2,
-      128,
-      12,
-      16,
-      Constants.GCM_MAX_CONTENT_LEN,
-      "AES",
-      32,
-      0x0478,
-      "HkdfSHA512",
-      32,
-      true,
-      null,
-      0,
-      "HkdfSHA512",
-      32,
-      32,
-      32),
+  ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY(0x0478),
   /**
-   * AES-GCM 256 with ECDSA (SHA384 with the secp384r1 curve) and key commitment Note: 1.7.0 of this
-   * library only supports decryption of using this crypto algorithm and does not support encryption
-   * with this algorithm
+   * AES-GCM 256 with HKDF-SHA512, ECDSA (SHA384 with the secp384r1 curve) and key commitment Note:
+   * 1.7.0 of this library only supports decryption of using this crypto algorithm and does not
+   * support encryption with this algorithm
    */
-  ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384(
-      2,
-      128,
-      12,
-      16,
-      Constants.GCM_MAX_CONTENT_LEN,
-      "AES",
-      32,
-      0x0578,
-      "HkdfSHA512",
-      32,
-      true,
-      "SHA384withECDSA",
-      103,
-      "HkdfSHA512",
-      32,
-      32,
-      32);
+  ALG_AES_256_GCM_HKDF_SHA512_COMMIT_KEY_ECDSA_P384(0x0578);
 
-  private final byte messageFormatVersion_;
-  private final int blockSizeBits_;
-  private final byte nonceLenBytes_;
-  private final int tagLenBytes_;
-  private final long maxContentLen_;
-  private final String keyAlgo_;
-  private final int keyLenBytes_;
-  private final short value_;
-  private final String trailingSigAlgo_;
-  private final short trailingSigLen_;
-  private final String dataKeyAlgo_;
-  private final int dataKeyLen_;
-  private final boolean safeToCache_;
-  private final String keyCommitmentAlgo_;
-  private final int commitmentLength_;
-  private final int commitmentNonceLength_;
-  private final int suiteDataLength_;
+  private final AlgorithmSuiteInfo info;
+  final MaterialProvidersConfig config = MaterialProvidersConfig.builder().build();
+  final MaterialProviders materialProviders =
+      MaterialProviders.builder().MaterialProvidersConfig(config).build();
+  private final short value;
 
-  private static final byte VERSION_1 = (byte) 1;
-  private static final byte VERSION_2 = (byte) 2;
+  CryptoAlgorithm(int value) {
+    if (value > Short.MAX_VALUE || value < Short.MIN_VALUE) {
+      throw new IllegalArgumentException("Invalid value " + value);
+    }
+    this.value = (short) value;
+    this.info =
+        materialProviders.GetAlgorithmSuiteInfo(ByteBuffer.allocate(2).putShort((short) value));
+  }
+
+  private static final String KEY_ALGORITHM = "AES";
+  private static final String HKDF_SHA256 = "HkdfSHA256";
+  private static final String HKDF_SHA384 = "HkdfSHA384";
+  private static final String HKDF_SHA512 = "HkdfSHA512";
+  private static final String ECDSA_P256 = "SHA256withECDSA";
+  private static final String ECDSA_P384 = "SHA384withECDSA";
+  private static final int BLOCK_SIZE_BYTES = 16;
   private static final int VERSION_1_MESSAGE_ID_LEN = 16;
   private static final int VERSION_2_MESSAGE_ID_LEN = 32;
 
@@ -169,125 +96,8 @@ public enum CryptoAlgorithm {
 
   static {
     for (final CryptoAlgorithm s : EnumSet.allOf(CryptoAlgorithm.class)) {
-      ID_MAPPING.put(fieldsToLookupKey(s.messageFormatVersion_, s.value_), s);
+      ID_MAPPING.put(fieldsToLookupKey(s.getMessageFormatVersion(), s.getValue()), s);
     }
-  }
-
-  CryptoAlgorithm(
-      final int messageFormatVersion,
-      final int blockSizeBits,
-      final int nonceLenBytes,
-      final int tagLenBytes,
-      final long maxContentLen,
-      final String keyAlgo,
-      final int keyLenBytes,
-      final int value,
-      final String dataKeyAlgo,
-      final int dataKeyLen,
-      boolean safeToCache) {
-    this(
-        messageFormatVersion,
-        blockSizeBits,
-        nonceLenBytes,
-        tagLenBytes,
-        maxContentLen,
-        keyAlgo,
-        keyLenBytes,
-        value,
-        dataKeyAlgo,
-        dataKeyLen,
-        safeToCache,
-        null,
-        0);
-  }
-
-  CryptoAlgorithm(
-      final int messageFormatVersion,
-      final int blockSizeBits,
-      final int nonceLenBytes,
-      final int tagLenBytes,
-      final long maxContentLen,
-      final String keyAlgo,
-      final int keyLenBytes,
-      final int value,
-      final String dataKeyAlgo,
-      final int dataKeyLen,
-      boolean safeToCache,
-      final String trailingSignatureAlgo,
-      final int trailingSignatureLength) {
-    this(
-        messageFormatVersion,
-        blockSizeBits,
-        nonceLenBytes,
-        tagLenBytes,
-        maxContentLen,
-        keyAlgo,
-        keyLenBytes,
-        value,
-        dataKeyAlgo,
-        dataKeyLen,
-        safeToCache,
-        trailingSignatureAlgo,
-        trailingSignatureLength,
-        null,
-        0,
-        0,
-        0);
-  }
-
-  CryptoAlgorithm(
-      final int messageFormatVersion,
-      final int blockSizeBits,
-      final int nonceLenBytes,
-      final int tagLenBytes,
-      final long maxContentLen,
-      final String keyAlgo,
-      final int keyLenBytes,
-      final int value,
-      final String dataKeyAlgo,
-      final int dataKeyLen,
-      boolean safeToCache,
-      final String trailingSignatureAlgo,
-      final int trailingSignatureLength,
-      final String keyCommitmentAlgo,
-      final int commitmentLength,
-      final int commitmentNonceLength,
-      final int suiteDataLength) {
-    if ((messageFormatVersion & 0xFF) != messageFormatVersion) {
-      throw new IllegalArgumentException("Invalid messageFormatVersion: " + messageFormatVersion);
-    }
-    // All non-null key commitment algs must be the same as the kdf alg
-    if (keyCommitmentAlgo != null && !keyCommitmentAlgo.equals(dataKeyAlgo)) {
-      throw new IllegalArgumentException(
-          "Invalid keyCommitmentAlgo "
-              + keyCommitmentAlgo
-              + ". Must be equal to dataKeyAlgo "
-              + dataKeyAlgo
-              + ".");
-    }
-    messageFormatVersion_ = (byte) (messageFormatVersion & 0xFF);
-    blockSizeBits_ = blockSizeBits;
-    nonceLenBytes_ = (byte) nonceLenBytes;
-    tagLenBytes_ = tagLenBytes;
-    keyAlgo_ = keyAlgo;
-    keyLenBytes_ = keyLenBytes;
-    maxContentLen_ = maxContentLen;
-    safeToCache_ = safeToCache;
-    if (value > Short.MAX_VALUE || value < Short.MIN_VALUE) {
-      throw new IllegalArgumentException("Invalid value " + value);
-    }
-    value_ = (short) value;
-    dataKeyAlgo_ = dataKeyAlgo;
-    dataKeyLen_ = dataKeyLen;
-    trailingSigAlgo_ = trailingSignatureAlgo;
-    if (trailingSignatureLength > Short.MAX_VALUE || trailingSignatureLength < 0) {
-      throw new IllegalArgumentException("Invalid value " + trailingSignatureLength);
-    }
-    trailingSigLen_ = (short) trailingSignatureLength;
-    keyCommitmentAlgo_ = keyCommitmentAlgo;
-    commitmentLength_ = commitmentLength;
-    commitmentNonceLength_ = commitmentNonceLength;
-    suiteDataLength_ = suiteDataLength;
   }
 
   private static int fieldsToLookupKey(final byte messageFormatVersion, final short algorithmId) {
@@ -311,17 +121,21 @@ public enum CryptoAlgorithm {
     return ID_MAPPING.get(fieldsToLookupKey(messageFormatVersion, value));
   }
 
+  public AlgorithmSuiteId getAlgorithmSuiteId() {
+    return info.id();
+  }
+
   /** Returns the length of the message Id in the header for this algorithm. */
   public int getMessageIdLength() {
     // For now this is a derived value rather than stored explicitly
-    switch (messageFormatVersion_) {
-      case VERSION_1:
+    switch (info.messageVersion()) {
+      case 1:
         return VERSION_1_MESSAGE_ID_LEN;
-      case VERSION_2:
+      case 2:
         return VERSION_2_MESSAGE_ID_LEN;
       default:
         throw new UnsupportedOperationException(
-            "Support for version " + messageFormatVersion_ + " not yet built.");
+            "Support for version " + info.messageVersion() + " not yet built.");
     }
   }
 
@@ -331,36 +145,36 @@ public enum CryptoAlgorithm {
    */
   public byte[] getHeaderNonce() {
     // For now this is a derived value rather than stored explicitly
-    switch (messageFormatVersion_) {
-      case VERSION_1:
+    switch (info.messageVersion()) {
+      case 1:
         return null;
-      case VERSION_2:
+      case 2:
         // V2 explicitly uses an IV of 0 in the header
-        return new byte[nonceLenBytes_];
+        return new byte[info.encrypt().AES_GCM().ivLength()];
       default:
         throw new UnsupportedOperationException(
-            "Support for version " + messageFormatVersion_ + " not yet built.");
+            "Support for version " + info.messageVersion() + " not yet built.");
     }
   }
 
   /** Returns the message format version associated with this algorithm suite. */
   public byte getMessageFormatVersion() {
-    return messageFormatVersion_;
+    return (byte) (info.messageVersion() & 0xFF);
   }
 
   /** Returns the block size of this algorithm in bytes. */
   public int getBlockSize() {
-    return blockSizeBits_ / 8;
+    return BLOCK_SIZE_BYTES;
   }
 
   /** Returns the nonce length used in this algorithm in bytes. */
   public byte getNonceLen() {
-    return nonceLenBytes_;
+    return (byte) info.encrypt().AES_GCM().ivLength();
   }
 
   /** Returns the tag length used in this algorithm in bytes. */
   public int getTagLen() {
-    return tagLenBytes_;
+    return info.encrypt().AES_GCM().tagLength();
   }
 
   /**
@@ -368,37 +182,65 @@ public enum CryptoAlgorithm {
    * this algorithm.
    */
   public long getMaxContentLen() {
-    return maxContentLen_;
+    return Constants.GCM_MAX_CONTENT_LEN;
   }
 
   /** Returns the algorithm used for encrypting the plaintext data. */
   public String getKeyAlgo() {
-    return keyAlgo_;
+    return KEY_ALGORITHM;
   }
 
   /** Returns the length of the key used in this algorithm in bytes. */
   public int getKeyLength() {
-    return keyLenBytes_;
+    return info.encrypt().AES_GCM().keyLength();
   }
 
   /** Returns the value used to encode this algorithm in the ciphertext. */
   public short getValue() {
-    return value_;
+    return value;
   }
 
   /** Returns the algorithm associated with the data key. */
   public String getDataKeyAlgo() {
-    return dataKeyAlgo_;
+    if (info.kdf().HKDF() == null) {
+      return KEY_ALGORITHM;
+    } else {
+      String hmac = info.kdf().HKDF().hmac().name();
+      switch (hmac) {
+        case "SHA_256":
+          return HKDF_SHA256;
+        case "SHA_384":
+          return HKDF_SHA384;
+        case "SHA_512":
+          return HKDF_SHA512;
+        default:
+          throw new UnsupportedOperationException(
+              "Support for Data Key Algorithm:" + hmac + " not yet built");
+      }
+    }
   }
 
   /** Returns the length of the data key in bytes. */
   public int getDataKeyLength() {
-    return dataKeyLen_;
+    return this.getKeyLength();
   }
 
   /** Returns the algorithm used to calculate the trailing signature */
   public String getTrailingSignatureAlgo() {
-    return trailingSigAlgo_;
+    if (info.signature().ECDSA() == null) {
+      return null;
+    } else {
+      String ecdsa = info.signature().ECDSA().curve().name();
+      switch (ecdsa) {
+        case "ECDSA_P256":
+          return ECDSA_P256;
+        case "ECDSA_P384":
+          return ECDSA_P384;
+        default:
+          throw new UnsupportedOperationException(
+              "Support for Data Key Algorithm:" + ecdsa + " not yet built");
+      }
+    }
   }
 
   /**
@@ -407,7 +249,7 @@ public enum CryptoAlgorithm {
    * cryptographic weaknesses, potentially even with only a single such use.
    */
   public boolean isSafeToCache() {
-    return safeToCache_;
+    return (info.kdf().HKDF() != null);
   }
 
   /**
@@ -415,11 +257,34 @@ public enum CryptoAlgorithm {
    * signature may be shorter than this.
    */
   public short getTrailingSignatureLength() {
-    return trailingSigLen_;
+    if (info.signature().ECDSA() == null) {
+      return 0;
+    } else {
+      String ecdsa = info.signature().ECDSA().curve().name();
+      switch (ecdsa) {
+        case "ECDSA_P256":
+          return 71;
+        case "ECDSA_P384":
+          return 103;
+        default:
+          throw new UnsupportedOperationException(
+              "Support for Data Key Algorithm:" + ecdsa + " not yet built");
+      }
+    }
   }
 
   public String getKeyCommitmentAlgo_() {
-    return keyCommitmentAlgo_;
+    HKDF keyCommitment = info.commitment().HKDF();
+    if (keyCommitment == null) {
+      return null;
+    }
+    switch (keyCommitment.hmac().name()) {
+      case "SHA_512":
+        return "HkdfSHA512";
+      default:
+        throw new UnsupportedOperationException(
+            "Support for Commitment Key Algorithm:" + info.commitment().HKDF() + " not yet built");
+    }
   }
 
   /**
@@ -427,19 +292,19 @@ public enum CryptoAlgorithm {
    * ensure key commitment.
    */
   public boolean isCommitting() {
-    return keyCommitmentAlgo_ != null;
+    return info.commitment().HKDF() != null;
   }
 
   public int getCommitmentLength() {
-    return commitmentLength_;
+    return info.commitment().HKDF() == null ? 0 : info.commitment().HKDF().inputKeyLength();
   }
 
   public int getCommitmentNonceLength() {
-    return commitmentNonceLength_;
+    return info.commitment().HKDF() == null ? 0 : info.commitment().HKDF().saltLength();
   }
 
   public int getSuiteDataLength() {
-    return suiteDataLength_;
+    return info.commitment().HKDF() == null ? 0 : info.commitment().HKDF().outputKeyLength();
   }
 
   public SecretKey getEncryptionKeyFromDataKey(
@@ -453,14 +318,14 @@ public enum CryptoAlgorithm {
     }
 
     // We perform key derivation differently depending on the message format version
-    switch (messageFormatVersion_) {
-      case VERSION_1:
+    switch (info.messageVersion()) {
+      case 1:
         return getNonCommittedEncryptionKey(dataKey, headers);
-      case VERSION_2:
+      case 2:
         return getCommittedEncryptionKey(dataKey, headers);
       default:
         throw new UnsupportedOperationException(
-            "Support for message format version " + messageFormatVersion_ + " not yet built.");
+            "Support for message format version " + info.messageVersion() + " not yet built.");
     }
   }
 

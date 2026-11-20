@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.lang3.StringUtils;
@@ -143,7 +144,7 @@ public class XCompatDecryptTest {
                   + "."
                   + paddingHash;
           String encAlg = (String) aMasterKey.get("encryption_algorithm");
-          switch (encAlg.toUpperCase()) {
+          switch (encAlg.toUpperCase(Locale.ROOT)) {
             case "RSA":
               String cipherBase = "RSA/ECB/";
               String cipherName;
@@ -176,7 +177,7 @@ public class XCompatDecryptTest {
               break;
             default:
               throw new IllegalArgumentException(
-                  "Unknown encryption algorithm: " + encAlg.toUpperCase());
+                  "Unknown encryption algorithm: " + encAlg.toUpperCase(Locale.ROOT));
           }
         }
       }
