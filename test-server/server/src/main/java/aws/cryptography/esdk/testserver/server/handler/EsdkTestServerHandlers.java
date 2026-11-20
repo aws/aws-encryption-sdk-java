@@ -25,6 +25,7 @@ public final class EsdkTestServerHandlers {
     private final DecryptHandler decrypt;
     private final EncryptStreamHandler encryptStream;
     private final DecryptStreamHandler decryptStream;
+    private final TestOnlyOperationsHandler testOnly = new TestOnlyOperationsHandler();
 
     public EsdkTestServerHandlers() {
         this(new ClientRegistry());
@@ -72,11 +73,15 @@ public final class EsdkTestServerHandlers {
     /** Build the generated service wired to these handlers. */
     public ESDKTestServer service() {
         return ESDKTestServer.builder()
+            .addAdvanceClockOperation(testOnly)
             .addCreateClientOperation(createClient)
             .addDecryptOperation(decrypt)
+            .addDecryptConcurrentlyOperation(testOnly)
             .addDecryptStreamOperation(decryptStream)
             .addEncryptOperation(encrypt)
+            .addEncryptConcurrentlyOperation(testOnly)
             .addEncryptStreamOperation(encryptStream)
+            .addGetCallCountsOperation(testOnly)
             .build();
     }
 }
