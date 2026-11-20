@@ -15,6 +15,7 @@ import com.amazonaws.encryptionsdk.kmssdkv2.KmsMasterKey;
 import com.amazonaws.encryptionsdk.kmssdkv2.KmsMasterKeyProvider;
 import com.amazonaws.encryptionsdk.CommitmentPolicy;
 import com.amazonaws.encryptionsdk.kms.DiscoveryFilter;
+import com.amazonaws.encryptionsdk.kmssdkv2.RegionalClientSupplier;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.kms.KmsClient;
 
@@ -47,6 +48,8 @@ public class RestrictRegionExample {
 
         encryptAndDecrypt(keyName, partition, accountId, region);
     }
+
+
 
     static void encryptAndDecrypt(final String keyName, final String partition, final String accountId, final Region region) {
         // Instantiate the SDK.
@@ -101,15 +104,7 @@ public class RestrictRegionExample {
         // This example also configures the AWS KMS master key provider with a Discovery Filter to limit
         // the attempted AWS KMS CMKs to a particular partition and account.
         final KmsMasterKeyProvider decryptingKeyProvider = KmsMasterKeyProvider.builder()
-                .customRegionalClientSupplier(cmkRegion -> {
-                    if(cmkRegion.equals(region)) {
-                        // return the previously built AWS KMS client so that we do
-                        // not create a new client on every decrypt call.
-                        return kmsClient;
-                    }
-
-                    throw new AwsCryptoException("Only " + region.id() + " is supported");
-                })
+                .customRegionalClientSupplier(new ARegionalClientSupplier(region, kmsClient))
                 .buildDiscovery(discoveryFilter);
 
         // 8. Decrypt the data
@@ -126,5 +121,31 @@ public class RestrictRegionExample {
 
         // 10. Verify that the decrypted plaintext matches the original plaintext
         assert Arrays.equals(decryptResult.getResult(), EXAMPLE_DATA);
+    }
+
+
+    /**
+     * This class is Thread Safe, as both of its members are thread safe.
+     * KMS Client Builders are NOT thread safe, and can lead to unexpected behavior if concurrently used.
+     */
+    private static class ARegionalClientSupplier implements RegionalClientSupplier {
+        private final Region region;
+        private final KmsClient kmsClient;
+
+        public ARegionalClientSupplier(Region region, KmsClient kmsClient) {
+            this.region = region;
+            this.kmsClient = kmsClient;
+        }
+
+        @Override
+        public KmsClient getClient(Region cmkRegion) {
+          if (cmkRegion.equals(region)) {
+            // return the previously built AWS KMS client so that we do
+            // not create a new client on every decrypt call.
+            return kmsClient;
+          }
+
+          throw new AwsCryptoException("Only " + region.id() + " is supported");
+        }
     }
 }

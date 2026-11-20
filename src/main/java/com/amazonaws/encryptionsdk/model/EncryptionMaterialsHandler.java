@@ -93,7 +93,6 @@ public class EncryptionMaterialsHandler {
     }
   }
 
-  @Deprecated
   public List<MasterKey> getMasterKeys() {
     if (materials != null) {
       return materials.getMasterKeys();

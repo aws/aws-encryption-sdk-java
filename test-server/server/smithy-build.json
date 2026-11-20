@@ -1,0 +1,13 @@
+{
+    "version": "1.0",
+    "plugins": {
+        "java-codegen": {
+            "service": "aws.cryptography.esdk.testserver#ESDKTestServer",
+            "namespace": "aws.cryptography.esdk.testserver.server",
+            "protocol": "smithy.protocols#rpcv2Cbor",
+            "modes": [
+                "server"
+            ]
+        }
+    }
+}

@@ -13,7 +13,7 @@ SPDX-License-Identifier: Apache-2.0
       <password>${codeartifact.token}</password>
     </server>
     <server>
-      <id>sonatype-nexus-staging</id>
+      <id>central</id>
       <username>${sonatype.username}</username>
       <password>${sonatype.password}</password>
     </server>

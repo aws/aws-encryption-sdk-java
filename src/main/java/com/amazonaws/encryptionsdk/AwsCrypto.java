@@ -294,7 +294,6 @@ public class AwsCrypto {
    * <p>This method is equivalent to calling {@link #estimateCiphertextSize(CryptoMaterialsManager,
    * int, Map)} with a {@link DefaultCryptoMaterialsManager} based on the given provider.
    */
-  @Deprecated
   public <K extends MasterKey<K>> long estimateCiphertextSize(
       final MasterKeyProvider<K> provider,
       final int plaintextSize,
@@ -327,7 +326,6 @@ public class AwsCrypto {
    * Returns the best estimate for the output length of encrypting a plaintext with the provided
    * {@code plaintextSize} and {@code encryptionContext}. The actual ciphertext may be shorter.
    */
-  @Deprecated
   public long estimateCiphertextSize(
       CryptoMaterialsManager materialsManager,
       final int plaintextSize,
@@ -388,7 +386,6 @@ public class AwsCrypto {
    * Returns the equivalent to calling {@link #estimateCiphertextSize(MasterKeyProvider, int, Map)}
    * with an empty {@code encryptionContext}.
    */
-  @Deprecated
   public <K extends MasterKey<K>> long estimateCiphertextSize(
       final MasterKeyProvider<K> provider, final int plaintextSize) {
     return estimateCiphertextSize(provider, plaintextSize, EMPTY_MAP);
@@ -407,7 +404,6 @@ public class AwsCrypto {
    * Returns the equivalent to calling {@link #estimateCiphertextSize(CryptoMaterialsManager, int,
    * Map)} with an empty {@code encryptionContext}.
    */
-  @Deprecated
   public long estimateCiphertextSize(
       final CryptoMaterialsManager materialsManager, final int plaintextSize) {
     return estimateCiphertextSize(materialsManager, plaintextSize, EMPTY_MAP);
@@ -488,7 +484,6 @@ public class AwsCrypto {
    * <p>This method is equivalent to calling {@link #encryptData(CryptoMaterialsManager, byte[],
    * Map)} using a {@link DefaultCryptoMaterialsManager} based on the given provider.
    */
-  @Deprecated
   public <K extends MasterKey<K>> CryptoResult<byte[], K> encryptData(
       final MasterKeyProvider<K> provider,
       final byte[] plaintext,
@@ -503,7 +498,6 @@ public class AwsCrypto {
    * Returns an encrypted form of {@code plaintext} that has been protected with {@link DataKey
    * DataKeys} that are in turn protected by the given CryptoMaterialsProvider.
    */
-  @Deprecated
   public CryptoResult<byte[], ?> encryptData(
       CryptoMaterialsManager materialsManager,
       final byte[] plaintext,
@@ -548,7 +542,6 @@ public class AwsCrypto {
    * Returns the equivalent to calling {@link #encryptData(MasterKeyProvider, byte[], Map)} with an
    * empty {@code encryptionContext}.
    */
-  @Deprecated
   public <K extends MasterKey<K>> CryptoResult<byte[], K> encryptData(
       final MasterKeyProvider<K> provider, final byte[] plaintext) {
     return encryptData(provider, plaintext, EMPTY_MAP);
@@ -558,7 +551,6 @@ public class AwsCrypto {
    * Returns the equivalent to calling {@link #encryptData(CryptoMaterialsManager, byte[], Map)}
    * with an empty {@code encryptionContext}.
    */
-  @Deprecated
   public CryptoResult<byte[], ?> encryptData(
       final CryptoMaterialsManager materialsManager, final byte[] plaintext) {
     return encryptData(materialsManager, plaintext, EMPTY_MAP);
@@ -650,7 +642,6 @@ public class AwsCrypto {
    * usable {@link DataKey} in the ciphertext and then decrypts the ciphertext using that {@code
    * DataKey}.
    */
-  @Deprecated
   public <K extends MasterKey<K>> CryptoResult<byte[], K> decryptData(
       final MasterKeyProvider<K> provider, final byte[] ciphertext) {
     return decryptData(provider, new ParsedCiphertext(ciphertext, maxEncryptedDataKeys_));
@@ -664,7 +655,6 @@ public class AwsCrypto {
    * @param ciphertext the ciphertext to attempt to decrypt.
    * @return the {@link CryptoResult} with the decrypted data.
    */
-  @Deprecated
   public CryptoResult<byte[], ?> decryptData(
       final CryptoMaterialsManager materialsManager, final byte[] ciphertext) {
     return decryptData(materialsManager, new ParsedCiphertext(ciphertext, maxEncryptedDataKeys_));
@@ -672,7 +662,6 @@ public class AwsCrypto {
 
   /** @see #decryptData(MasterKeyProvider, byte[]) */
   @SuppressWarnings("unchecked")
-  @Deprecated
   public <K extends MasterKey<K>> CryptoResult<byte[], K> decryptData(
       final MasterKeyProvider<K> provider, final ParsedCiphertext ciphertext) {
     Utils.assertNonNull(provider, "provider");
@@ -681,7 +670,6 @@ public class AwsCrypto {
   }
 
   /** @see #decryptData(CryptoMaterialsManager, byte[]) */
-  @Deprecated
   public CryptoResult<byte[], ?> decryptData(
       final CryptoMaterialsManager materialsManager, final ParsedCiphertext ciphertext) {
     Utils.assertNonNull(materialsManager, "materialsManager");
@@ -888,7 +876,6 @@ public class AwsCrypto {
    * @see #encryptData(MasterKeyProvider, byte[], Map)
    * @see javax.crypto.CipherOutputStream
    */
-  @Deprecated
   public <K extends MasterKey<K>> CryptoOutputStream<K> createEncryptingStream(
       final MasterKeyProvider<K> provider,
       final OutputStream os,
@@ -919,7 +906,6 @@ public class AwsCrypto {
    * @see #encryptData(MasterKeyProvider, byte[], Map)
    * @see javax.crypto.CipherOutputStream
    */
-  @Deprecated
   public CryptoOutputStream<?> createEncryptingStream(
       final CryptoMaterialsManager materialsManager,
       final OutputStream os,
@@ -947,7 +933,6 @@ public class AwsCrypto {
    * Returns the equivalent to calling {@link #createEncryptingStream(MasterKeyProvider,
    * OutputStream, Map)} with an empty {@code encryptionContext}.
    */
-  @Deprecated
   public <K extends MasterKey<K>> CryptoOutputStream<K> createEncryptingStream(
       final MasterKeyProvider<K> provider, final OutputStream os) {
     return createEncryptingStream(provider, os, EMPTY_MAP);
@@ -966,7 +951,6 @@ public class AwsCrypto {
    * Returns the equivalent to calling {@link #createEncryptingStream(CryptoMaterialsManager,
    * OutputStream, Map)} with an empty {@code encryptionContext}.
    */
-  @Deprecated
   public CryptoOutputStream<?> createEncryptingStream(
       final CryptoMaterialsManager materialsManager, final OutputStream os) {
     return createEncryptingStream(materialsManager, os, EMPTY_MAP);
@@ -989,7 +973,6 @@ public class AwsCrypto {
    * @see #encryptData(MasterKeyProvider, byte[], Map)
    * @see javax.crypto.CipherInputStream
    */
-  @Deprecated
   public <K extends MasterKey<K>> CryptoInputStream<K> createEncryptingStream(
       final MasterKeyProvider<K> provider,
       final InputStream is,
@@ -1020,7 +1003,6 @@ public class AwsCrypto {
    * @see #encryptData(MasterKeyProvider, byte[], Map)
    * @see javax.crypto.CipherInputStream
    */
-  @Deprecated
   public CryptoInputStream<?> createEncryptingStream(
       CryptoMaterialsManager materialsManager,
       final InputStream is,
@@ -1052,7 +1034,6 @@ public class AwsCrypto {
    * Returns the equivalent to calling {@link #createEncryptingStream(MasterKeyProvider,
    * InputStream, Map)} with an empty {@code encryptionContext}.
    */
-  @Deprecated
   public <K extends MasterKey<K>> CryptoInputStream<K> createEncryptingStream(
       final MasterKeyProvider<K> provider, final InputStream is) {
     return createEncryptingStream(provider, is, EMPTY_MAP);
@@ -1071,7 +1052,6 @@ public class AwsCrypto {
    * Returns the equivalent to calling {@link #createEncryptingStream(CryptoMaterialsManager,
    * InputStream, Map)} with an empty {@code encryptionContext}.
    */
-  @Deprecated
   public CryptoInputStream<?> createEncryptingStream(
       final CryptoMaterialsManager materialsManager, final InputStream is) {
     return createEncryptingStream(materialsManager, is, EMPTY_MAP);
@@ -1094,7 +1074,6 @@ public class AwsCrypto {
    * @see #decryptData(MasterKeyProvider, byte[])
    * @see javax.crypto.CipherOutputStream
    */
-  @Deprecated
   public <K extends MasterKey<K>> CryptoOutputStream<K> createUnsignedMessageDecryptingStream(
       final MasterKeyProvider<K> provider, final OutputStream os) {
     final MessageCryptoHandler cryptoHandler =
@@ -1150,7 +1129,6 @@ public class AwsCrypto {
    * @see #decryptData(MasterKeyProvider, byte[])
    * @see javax.crypto.CipherInputStream
    */
-  @Deprecated
   public <K extends MasterKey<K>> CryptoInputStream<K> createUnsignedMessageDecryptingStream(
       final MasterKeyProvider<K> provider, final InputStream is) {
     final MessageCryptoHandler cryptoHandler =
@@ -1206,7 +1184,6 @@ public class AwsCrypto {
    * @see #decryptData(CryptoMaterialsManager, byte[])
    * @see javax.crypto.CipherOutputStream
    */
-  @Deprecated
   public CryptoOutputStream<?> createUnsignedMessageDecryptingStream(
       final CryptoMaterialsManager materialsManager, final OutputStream os) {
     final MessageCryptoHandler cryptoHandler =
@@ -1264,7 +1241,6 @@ public class AwsCrypto {
    * @see #encryptData(CryptoMaterialsManager, byte[], Map)
    * @see javax.crypto.CipherInputStream
    */
-  @Deprecated
   public CryptoInputStream<?> createUnsignedMessageDecryptingStream(
       final CryptoMaterialsManager materialsManager, final InputStream is) {
     final MessageCryptoHandler cryptoHandler =
@@ -1330,7 +1306,6 @@ public class AwsCrypto {
    * @see #createUnsignedMessageDecryptingStream(MasterKeyProvider, OutputStream)
    * @see javax.crypto.CipherOutputStream
    */
-  @Deprecated
   public <K extends MasterKey<K>> CryptoOutputStream<K> createDecryptingStream(
       final MasterKeyProvider<K> provider, final OutputStream os) {
     final MessageCryptoHandler cryptoHandler =
@@ -1408,7 +1383,6 @@ public class AwsCrypto {
    * @see #createUnsignedMessageDecryptingStream(MasterKeyProvider, InputStream)
    * @see javax.crypto.CipherInputStream
    */
-  @Deprecated
   public <K extends MasterKey<K>> CryptoInputStream<K> createDecryptingStream(
       final MasterKeyProvider<K> provider, final InputStream is) {
     final MessageCryptoHandler cryptoHandler =
@@ -1486,7 +1460,6 @@ public class AwsCrypto {
    * @see #createUnsignedMessageDecryptingStream(CryptoMaterialsManager, OutputStream)
    * @see javax.crypto.CipherOutputStream
    */
-  @Deprecated
   public CryptoOutputStream<?> createDecryptingStream(
       final CryptoMaterialsManager materialsManager, final OutputStream os) {
     final MessageCryptoHandler cryptoHandler =
@@ -1568,7 +1541,6 @@ public class AwsCrypto {
    * @see #createUnsignedMessageDecryptingStream(CryptoMaterialsManager, InputStream)
    * @see javax.crypto.CipherInputStream
    */
-  @Deprecated
   public CryptoInputStream<?> createDecryptingStream(
       final CryptoMaterialsManager materialsManager, final InputStream is) {
     final MessageCryptoHandler cryptoHandler =

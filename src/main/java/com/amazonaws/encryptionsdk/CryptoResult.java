@@ -49,8 +49,6 @@ public class CryptoResult<T, K extends MasterKey<K>> {
   /**
    * The actual result of the cryptographic operation. This is not a defensive copy and callers
    * should not modify it.
-   *
-   * @return
    */
   public T getResult() {
     return result_;
@@ -60,16 +58,12 @@ public class CryptoResult<T, K extends MasterKey<K>> {
    * Returns all relevant {@link MasterKey}s. In the case of encryption, returns all {@code
    * MasterKey}s used to protect the ciphertext. In the case of decryption, returns just the {@code
    * MasterKey} used to decrypt the ciphertext.
-   *
-   * @return
    */
-  @Deprecated
   public List<K> getMasterKeys() {
     return masterKeys_;
   }
 
   /** Convenience method for retrieving the keyIds in the results from {@link #getMasterKeys()}. */
-  @Deprecated
   public List<String> getMasterKeyIds() {
     final List<String> result = new ArrayList<>(masterKeys_.size());
     for (final MasterKey<K> mk : masterKeys_) {

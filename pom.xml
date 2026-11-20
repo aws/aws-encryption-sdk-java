@@ -4,7 +4,7 @@
 
     <groupId>com.amazonaws</groupId>
     <artifactId>aws-encryption-sdk-java</artifactId>
-    <version>3.0.1</version>
+    <version>3.0.2</version>
     <packaging>jar</packaging>
 
     <name>aws-encryption-sdk-java</name>
@@ -37,6 +37,14 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+<!--    Uncomment the next block for development with TestVectorsAwsCryptographicMaterialProviders in local mvn -->
+<!--    <repositories>-->
+<!--        <repository>-->
+<!--            <id>localRepository</id>-->
+<!--            <name>localRepository</name>-->
+<!--            <url>file://${user.home}/.m2/repository/</url>-->
+<!--        </repository>-->
+<!--    </repositories>-->
 
     <dependencyManagement>
         <dependencies>
@@ -196,7 +204,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.8</version>
+                <version>0.8.12</version>
                 <executions>
                     <execution>
                         <goals>
@@ -245,6 +253,7 @@
                 <groupId>com.coveo</groupId>
                 <artifactId>fmt-maven-plugin</artifactId>
                 <version>2.13</version>
+
                 <!-- Configure no goals. -->
                 <!--Until our CI builds no longer depend on Java 8, skip this during build.-->
                 <!--We instead manually check this in Java 11 environments to block builds, -->
@@ -336,13 +345,13 @@
                     </plugin>
 
                     <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.6.13</version>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>0.7.0</version>
                         <extensions>true</extensions>
                         <configuration>
-                            <serverId>sonatype-nexus-staging</serverId>
-                            <nexusUrl>https://aws.oss.sonatype.org</nexusUrl>
+                            <publishingServerId>central</publishingServerId>
+                            <autoPublish>true</autoPublish>
                         </configuration>
                     </plugin>
                 </plugins>

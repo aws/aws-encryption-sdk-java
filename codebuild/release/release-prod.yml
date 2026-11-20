@@ -9,8 +9,8 @@ env:
   secrets-manager:
     GPG_KEY: Maven-GPG-Keys-Release-Credentials:Keyname
     GPG_PASS: Maven-GPG-Keys-Release-Credentials:Passphrase
-    SONA_USERNAME: Sonatype-User-Token:username
-    SONA_PASSWORD: Sonatype-User-Token:password
+    SONA_USERNAME: Sonatype-Central-Portal:Username
+    SONA_PASSWORD: Sonatype-Central-Portal:Password
 
 phases:
   install:
