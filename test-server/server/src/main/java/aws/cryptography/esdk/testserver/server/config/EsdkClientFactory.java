@@ -1,6 +1,7 @@
 package aws.cryptography.esdk.testserver.server.config;
 
 import aws.cryptography.esdk.testserver.server.model.AwsKmsDiscoveryKeyringConfig;
+import aws.cryptography.esdk.testserver.server.model.AwsKmsEcdhKeyringConfig;
 import aws.cryptography.esdk.testserver.server.model.AwsKmsHierarchicalKeyringConfig;
 import aws.cryptography.esdk.testserver.server.model.AwsKmsKeyringConfig;
 import aws.cryptography.esdk.testserver.server.model.AwsKmsMrkKeyringConfig;
@@ -11,21 +12,42 @@ import aws.cryptography.esdk.testserver.server.model.AwsKmsRsaKeyringConfig;
 import aws.cryptography.esdk.testserver.server.model.CachingCmmConfig;
 import aws.cryptography.esdk.testserver.server.model.CryptographicMaterialsManager;
 import aws.cryptography.esdk.testserver.server.model.DefaultCmmConfig;
+import aws.cryptography.esdk.testserver.server.model.EcdhCurveSpec;
 import aws.cryptography.esdk.testserver.server.model.ESDKClientConfig;
 import aws.cryptography.esdk.testserver.server.model.Keyring;
+import aws.cryptography.esdk.testserver.server.model.KmsEcdhKeyAgreementScheme;
 import aws.cryptography.esdk.testserver.server.model.KmsRsaEncryptionAlgorithm;
 import aws.cryptography.esdk.testserver.server.model.MultiKeyringConfig;
 import aws.cryptography.esdk.testserver.server.model.RawAesKeyringConfig;
+import aws.cryptography.esdk.testserver.server.model.RawEcdhKeyAgreementScheme;
+import aws.cryptography.esdk.testserver.server.model.RawEcdhKeyringConfig;
 import aws.cryptography.esdk.testserver.server.model.RawRsaKeyringConfig;
 import aws.cryptography.esdk.testserver.server.model.RequiredEncryptionContextCmmConfig;
 import aws.cryptography.esdk.testserver.server.registry.EsdkClient;
 import aws.cryptography.esdk.testserver.server.registry.RealEsdkClient;
 import com.amazonaws.encryptionsdk.CommitmentPolicy;
+import com.amazonaws.encryptionsdk.MasterKeyProvider;
+import com.amazonaws.encryptionsdk.caching.CachingCryptoMaterialsManager;
+import com.amazonaws.encryptionsdk.caching.CryptoMaterialsCache;
+import com.amazonaws.encryptionsdk.caching.LocalCryptoMaterialsCache;
+import com.amazonaws.encryptionsdk.jce.JceMasterKey;
+import com.amazonaws.encryptionsdk.kmssdkv2.AwsKmsMrkAwareMasterKeyProvider;
+import com.amazonaws.encryptionsdk.kmssdkv2.KmsMasterKeyProvider;
+import com.amazonaws.encryptionsdk.multi.MultipleProviderFactory;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyFactory;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
+import javax.crypto.spec.SecretKeySpec;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.kms.KmsClient;
@@ -39,6 +61,7 @@ import software.amazon.cryptography.materialproviders.IKeyring;
 import software.amazon.cryptography.materialproviders.MaterialProviders;
 import software.amazon.cryptography.materialproviders.model.AesWrappingAlg;
 import software.amazon.cryptography.materialproviders.model.CreateAwsKmsDiscoveryKeyringInput;
+import software.amazon.cryptography.materialproviders.model.CreateAwsKmsEcdhKeyringInput;
 import software.amazon.cryptography.materialproviders.model.CreateAwsKmsHierarchicalKeyringInput;
 import software.amazon.cryptography.materialproviders.model.CreateAwsKmsKeyringInput;
 import software.amazon.cryptography.materialproviders.model.CreateAwsKmsMrkKeyringInput;
@@ -49,10 +72,19 @@ import software.amazon.cryptography.materialproviders.model.CreateAwsKmsRsaKeyri
 import software.amazon.cryptography.materialproviders.model.CreateDefaultCryptographicMaterialsManagerInput;
 import software.amazon.cryptography.materialproviders.model.CreateMultiKeyringInput;
 import software.amazon.cryptography.materialproviders.model.CreateRawAesKeyringInput;
+import software.amazon.cryptography.materialproviders.model.CreateRawEcdhKeyringInput;
 import software.amazon.cryptography.materialproviders.model.CreateRawRsaKeyringInput;
 import software.amazon.cryptography.materialproviders.model.CreateRequiredEncryptionContextCMMInput;
+import software.amazon.cryptography.materialproviders.model.EphemeralPrivateKeyToStaticPublicKeyInput;
+import software.amazon.cryptography.materialproviders.model.KmsEcdhStaticConfigurations;
+import software.amazon.cryptography.materialproviders.model.KmsPrivateKeyToStaticPublicKeyInput;
+import software.amazon.cryptography.materialproviders.model.KmsPublicKeyDiscoveryInput;
 import software.amazon.cryptography.materialproviders.model.MaterialProvidersConfig;
 import software.amazon.cryptography.materialproviders.model.PaddingScheme;
+import software.amazon.cryptography.materialproviders.model.PublicKeyDiscoveryInput;
+import software.amazon.cryptography.materialproviders.model.RawEcdhStaticConfigurations;
+import software.amazon.cryptography.materialproviders.model.RawPrivateKeyToStaticPublicKeyInput;
+import software.amazon.cryptography.primitives.model.ECDHCurveSpec;
 
 /**
  * Translates a validated {@link ESDKClientConfig} into a {@link RealEsdkClient}
@@ -80,17 +112,32 @@ import software.amazon.cryptography.materialproviders.model.PaddingScheme;
  * network call —
  * the KMS client is built eagerly but is not invoked — so {@code CreateClient}
  * stays offline; the real AWS KMS calls happen only on {@code Encrypt}/{@code
- * Decrypt} (Requirements 14.1, 14.3, 14.4, 14.14). The single exception is the
+ * Decrypt} (Requirements 14.1, 14.3, 14.4, 14.14). The Raw ECDH and AWS KMS ECDH
+ * keyrings are wired as well. The exceptions are the AWS KMS ECDH keyring when its
+ * static configuration omits the sender's public key (fetched via
+ * {@code kms:GetPublicKey}), and the
  * {@code AwsKmsRsa} keyring when the modeled config omits the RSA public key: in
  * that case the factory fetches it once via {@code kms:GetPublicKey} at
  * construction (a network call the design explicitly permits at
  * {@code CreateClient} time); supplying {@code publicKey} in the config keeps
- * construction fully offline. The Caching CMM remains unwired and causes a
- * construction failure (GenericServerError) if requested (Requirement 3.6).
+ * construction fully offline.
+ *
+ * <p>The Caching CMM is the ESDK's {@code CachingCryptoMaterialsManager}: the
+ * Material Providers Library has no caching CMM, and the ESDK's caching CMM wraps
+ * master key providers rather than MPL keyrings. So a top-level Caching config is
+ * built over master key providers equivalent to its wrapped Default CMM's keyring
+ * (Raw AES and Raw RSA as {@code JceMasterKey}, the AWS KMS keyrings as the KMS
+ * master key providers, and Multi as a multi-provider); any other keyring, or a
+ * Caching CMM nested under another CMM, is a construction failure. Clients whose
+ * Caching configs name the same {@code sharedCacheName} share one cache for the
+ * life of the server.
  */
 public final class EsdkClientFactory {
 
     private final MaterialProviders materialProviders;
+
+    /** The named caches shared across this server's clients. */
+    private final ConcurrentMap<String, CryptoMaterialsCache> sharedCaches = new ConcurrentHashMap<>();
 
     public EsdkClientFactory() {
         this.materialProviders = MaterialProviders.builder()
@@ -109,6 +156,10 @@ public final class EsdkClientFactory {
         Integer maxEdk = config.getMaxEncryptedDataKeys() == null
             ? null
             : Math.toIntExact(config.getMaxEncryptedDataKeys());
+        CachingCmmConfig caching = config.getCmm().getCaching();
+        if (caching != null) {
+            return new RealEsdkClient(commitmentPolicy, maxEdk, buildCachingCmm(caching));
+        }
         ICryptographicMaterialsManager cmm = buildCmm(config.getCmm());
         return new RealEsdkClient(commitmentPolicy, maxEdk, cmm);
     }
@@ -136,10 +187,155 @@ public final class EsdkClientFactory {
         }
         if (caching != null) {
             throw new UnsupportedOperationException(
-                "Caching CMM is not wired in this pass of the ESDK TestServer");
+                "a Caching CMM is supported only as the client's top-level CMM");
         }
         throw new IllegalArgumentException(
             "CryptographicMaterialsManager had no variant member set");
+    }
+
+    /** Entries the Caching CMM's local cache holds. */
+    private static final int CACHE_CAPACITY = 100;
+
+    private CachingCryptoMaterialsManager buildCachingCmm(CachingCmmConfig config) {
+        DefaultCmmConfig underlying = config.getUnderlyingCMM().getDefault();
+        if (underlying == null) {
+            throw new UnsupportedOperationException(
+                "the Caching CMM must wrap a Default CMM: the ESDK's caching CMM wraps master key providers");
+        }
+        CachingCryptoMaterialsManager.Builder builder = CachingCryptoMaterialsManager.newBuilder()
+            .withMasterKeyProvider(toMasterKeyProvider(underlying.getKeyring()))
+            .withCache(config.getSharedCacheName() == null
+                ? new LocalCryptoMaterialsCache(CACHE_CAPACITY)
+                : sharedCaches.computeIfAbsent(config.getSharedCacheName(),
+                    name -> new LocalCryptoMaterialsCache(CACHE_CAPACITY)))
+            .withMaxAge(config.getCacheLimitTtlSeconds(), TimeUnit.SECONDS);
+        if (config.getPartitionId() != null) {
+            builder.withPartitionId(config.getPartitionId());
+        }
+        if (config.getLimitMessages() != null) {
+            builder.withMessageUseLimit(config.getLimitMessages());
+        }
+        if (config.getLimitBytes() != null) {
+            builder.withByteUseLimit(config.getLimitBytes());
+        }
+        return builder.build();
+    }
+
+    /**
+     * The master key provider equivalent to {@code keyring}: it writes and reads
+     * the same encrypted data keys as the MPL keyring of the same configuration.
+     */
+    private static MasterKeyProvider<?> toMasterKeyProvider(Keyring keyring) {
+        if (keyring.getRawAes() != null) {
+            RawAesKeyringConfig rawAes = keyring.getRawAes();
+            return JceMasterKey.getInstance(
+                new SecretKeySpec(bytes(rawAes.getWrappingKey()), "AES"),
+                rawAes.getKeyNamespace(), rawAes.getKeyName(), "AES/GCM/NoPadding");
+        }
+        if (keyring.getRawRsa() != null) {
+            RawRsaKeyringConfig rawRsa = keyring.getRawRsa();
+            return JceMasterKey.getInstance(
+                rawRsa.getPublicKey() == null ? null : rsaPublicKey(rawRsa.getPublicKey()),
+                rawRsa.getPrivateKey() == null ? null : rsaPrivateKey(rawRsa.getPrivateKey()),
+                rawRsa.getKeyNamespace(), rawRsa.getKeyName(),
+                rsaTransformation(rawRsa.getPaddingScheme().getValue()));
+        }
+        if (keyring.getAwsKms() != null) {
+            requireNoGrantTokens(keyring.getAwsKms().hasGrantTokens()
+                && !keyring.getAwsKms().getGrantTokens().isEmpty());
+            return KmsMasterKeyProvider.builder().buildStrict(keyring.getAwsKms().getKmsKeyId());
+        }
+        if (keyring.getAwsKmsMrk() != null) {
+            requireNoGrantTokens(keyring.getAwsKmsMrk().hasGrantTokens()
+                && !keyring.getAwsKmsMrk().getGrantTokens().isEmpty());
+            return AwsKmsMrkAwareMasterKeyProvider.builder()
+                .buildStrict(keyring.getAwsKmsMrk().getKmsKeyId());
+        }
+        if (keyring.getAwsKmsMultiKeyring() != null) {
+            AwsKmsMultiKeyringConfig multi = keyring.getAwsKmsMultiKeyring();
+            requireNoGrantTokens(multi.hasGrantTokens() && !multi.getGrantTokens().isEmpty());
+            return KmsMasterKeyProvider.builder().buildStrict(kmsKeyIds(multi.getGenerator(),
+                multi.hasKmsKeyIds() ? multi.getKmsKeyIds() : List.of()));
+        }
+        if (keyring.getAwsKmsMrkMultiKeyring() != null) {
+            AwsKmsMrkMultiKeyringConfig multi = keyring.getAwsKmsMrkMultiKeyring();
+            requireNoGrantTokens(multi.hasGrantTokens() && !multi.getGrantTokens().isEmpty());
+            return AwsKmsMrkAwareMasterKeyProvider.builder().buildStrict(kmsKeyIds(multi.getGenerator(),
+                multi.hasKmsKeyIds() ? multi.getKmsKeyIds() : List.of()));
+        }
+        if (keyring.getMulti() != null) {
+            MultiKeyringConfig multi = keyring.getMulti();
+            List<MasterKeyProvider<?>> providers = new ArrayList<>();
+            if (multi.getGenerator() != null) {
+                providers.add(toMasterKeyProvider(multi.getGenerator()));
+            }
+            for (Keyring child : multi.getChildKeyrings()) {
+                providers.add(toMasterKeyProvider(child));
+            }
+            return MultipleProviderFactory.buildMultiProvider(providers);
+        }
+        throw new UnsupportedOperationException(
+            "this keyring is not supported under the Caching CMM: the ESDK's caching CMM wraps"
+                + " master key providers, and only the Raw AES, Raw RSA, AWS KMS, AWS KMS MRK, AWS KMS"
+                + " (MRK) multi, and Multi keyrings have master key provider equivalents");
+    }
+
+    private static List<String> kmsKeyIds(String generator, List<String> keyIds) {
+        List<String> ids = new ArrayList<>();
+        if (generator != null) {
+            ids.add(generator);
+        }
+        ids.addAll(keyIds);
+        return ids;
+    }
+
+    private static void requireNoGrantTokens(boolean present) {
+        if (present) {
+            throw new UnsupportedOperationException(
+                "grant tokens are not supported under the Caching CMM");
+        }
+    }
+
+    /** The {@code JceMasterKey} RSA transformation for a modeled padding scheme. */
+    private static String rsaTransformation(String paddingScheme) {
+        return switch (paddingScheme) {
+            case "PKCS1" -> "RSA/ECB/PKCS1Padding";
+            case "OAEP_SHA1_MGF1" -> "RSA/ECB/OAEPWithSHA-1AndMGF1Padding";
+            case "OAEP_SHA256_MGF1" -> "RSA/ECB/OAEPWithSHA-256AndMGF1Padding";
+            case "OAEP_SHA384_MGF1" -> "RSA/ECB/OAEPWithSHA-384AndMGF1Padding";
+            case "OAEP_SHA512_MGF1" -> "RSA/ECB/OAEPWithSHA-512AndMGF1Padding";
+            default -> throw new IllegalArgumentException("Unknown RSA padding scheme: " + paddingScheme);
+        };
+    }
+
+    private static PublicKey rsaPublicKey(ByteBuffer pem) {
+        try {
+            return KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(pemBody(pem)));
+        } catch (Exception e) {
+            throw new IllegalArgumentException("invalid PEM RSA public key", e);
+        }
+    }
+
+    private static PrivateKey rsaPrivateKey(ByteBuffer pem) {
+        try {
+            return KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(pemBody(pem)));
+        } catch (Exception e) {
+            throw new IllegalArgumentException("invalid PEM RSA private key", e);
+        }
+    }
+
+    /** The DER bytes inside a PEM block. */
+    private static byte[] pemBody(ByteBuffer pem) {
+        String text = new String(bytes(pem), StandardCharsets.US_ASCII)
+            .replaceAll("-----[A-Z ]+-----", "")
+            .replaceAll("\\s", "");
+        return Base64.getDecoder().decode(text);
+    }
+
+    private static byte[] bytes(ByteBuffer buffer) {
+        byte[] copy = new byte[buffer.remaining()];
+        buffer.duplicate().get(copy);
+        return copy;
     }
 
     private IKeyring buildKeyring(Keyring keyring) {
@@ -154,6 +350,8 @@ public final class EsdkClientFactory {
         AwsKmsDiscoveryKeyringConfig awsKmsDiscovery = keyring.getAwsKmsDiscovery();
         AwsKmsMrkDiscoveryKeyringConfig awsKmsMrkDiscovery = keyring.getAwsKmsMrkDiscovery();
         AwsKmsHierarchicalKeyringConfig awsKmsHierarchical = keyring.getAwsKmsHierarchical();
+        RawEcdhKeyringConfig rawEcdh = keyring.getRawEcdh();
+        AwsKmsEcdhKeyringConfig awsKmsEcdh = keyring.getAwsKmsEcdh();
 
         if (rawAes != null) {
             return materialProviders.CreateRawAesKeyring(
@@ -253,7 +451,83 @@ public final class EsdkClientFactory {
         if (awsKmsHierarchical != null) {
             return buildAwsKmsHierarchicalKeyring(awsKmsHierarchical);
         }
+        if (rawEcdh != null) {
+            return buildRawEcdhKeyring(rawEcdh);
+        }
+        if (awsKmsEcdh != null) {
+            return buildAwsKmsEcdhKeyring(awsKmsEcdh);
+        }
         throw new IllegalArgumentException("Keyring had no variant member set");
+    }
+
+    /** Build the Raw ECDH keyring from its key agreement scheme and curve. */
+    private IKeyring buildRawEcdhKeyring(RawEcdhKeyringConfig config) {
+        RawEcdhKeyAgreementScheme scheme = config.getKeyAgreementScheme();
+        RawEcdhStaticConfigurations.Builder agreement = RawEcdhStaticConfigurations.builder();
+        if (scheme.getRawPrivateKeyToStaticPublicKey() != null) {
+            agreement.RawPrivateKeyToStaticPublicKey(RawPrivateKeyToStaticPublicKeyInput.builder()
+                .senderStaticPrivateKey(scheme.getRawPrivateKeyToStaticPublicKey().getSenderStaticPrivateKey())
+                .recipientPublicKey(scheme.getRawPrivateKeyToStaticPublicKey().getRecipientPublicKey())
+                .build());
+        } else if (scheme.getEphemeralPrivateKeyToStaticPublicKey() != null) {
+            agreement.EphemeralPrivateKeyToStaticPublicKey(EphemeralPrivateKeyToStaticPublicKeyInput.builder()
+                .recipientPublicKey(scheme.getEphemeralPrivateKeyToStaticPublicKey().getRecipientPublicKey())
+                .build());
+        } else {
+            agreement.PublicKeyDiscovery(PublicKeyDiscoveryInput.builder()
+                .recipientStaticPrivateKey(scheme.getPublicKeyDiscovery().getRecipientStaticPrivateKey())
+                .build());
+        }
+        return materialProviders.CreateRawEcdhKeyring(CreateRawEcdhKeyringInput.builder()
+            .KeyAgreementScheme(agreement.build())
+            .curveSpec(toCurveSpec(config.getCurveSpec()))
+            .build());
+    }
+
+    /**
+     * Build the AWS KMS ECDH keyring. The KMS client is in the region of the
+     * sender's (static) or recipient's (discovery) KMS key; construction makes no
+     * network call unless the static configuration omits the sender's public key,
+     * which the MPL then fetches with {@code kms:GetPublicKey}.
+     */
+    private IKeyring buildAwsKmsEcdhKeyring(AwsKmsEcdhKeyringConfig config) {
+        KmsEcdhKeyAgreementScheme scheme = config.getKeyAgreementScheme();
+        KmsEcdhStaticConfigurations.Builder agreement = KmsEcdhStaticConfigurations.builder();
+        String kmsKeyId;
+        if (scheme.getKmsPrivateKeyToStaticPublicKey() != null) {
+            var staticConfig = scheme.getKmsPrivateKeyToStaticPublicKey();
+            kmsKeyId = staticConfig.getSenderKmsIdentifier();
+            KmsPrivateKeyToStaticPublicKeyInput.Builder input = KmsPrivateKeyToStaticPublicKeyInput.builder()
+                .senderKmsIdentifier(kmsKeyId)
+                .recipientPublicKey(staticConfig.getRecipientPublicKey());
+            if (staticConfig.getSenderPublicKey() != null) {
+                input.senderPublicKey(staticConfig.getSenderPublicKey());
+            }
+            agreement.KmsPrivateKeyToStaticPublicKey(input.build());
+        } else {
+            kmsKeyId = scheme.getKmsPublicKeyDiscovery().getRecipientKmsIdentifier();
+            agreement.KmsPublicKeyDiscovery(KmsPublicKeyDiscoveryInput.builder()
+                .recipientKmsIdentifier(kmsKeyId)
+                .build());
+        }
+        CreateAwsKmsEcdhKeyringInput.Builder builder = CreateAwsKmsEcdhKeyringInput.builder()
+            .KeyAgreementScheme(agreement.build())
+            .curveSpec(toCurveSpec(config.getCurveSpec()))
+            .kmsClient(kmsClientForKey(kmsKeyId));
+        if (config.hasGrantTokens() && !config.getGrantTokens().isEmpty()) {
+            builder.grantTokens(new ArrayList<>(config.getGrantTokens()));
+        }
+        return materialProviders.CreateAwsKmsEcdhKeyring(builder.build());
+    }
+
+    private static ECDHCurveSpec toCurveSpec(EcdhCurveSpec curve) {
+        return switch (curve.getValue()) {
+            case "ECC_NIST_P256" -> ECDHCurveSpec.ECC_NIST_P256;
+            case "ECC_NIST_P384" -> ECDHCurveSpec.ECC_NIST_P384;
+            case "ECC_NIST_P521" -> ECDHCurveSpec.ECC_NIST_P521;
+            case "SM2" -> ECDHCurveSpec.SM2;
+            default -> throw new IllegalArgumentException("Unknown ECDH curve: " + curve.getValue());
+        };
     }
 
     /**
